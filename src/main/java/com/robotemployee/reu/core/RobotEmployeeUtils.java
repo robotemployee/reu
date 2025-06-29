@@ -1,6 +1,7 @@
 package com.robotemployee.reu.core;
 
 import com.mojang.logging.LogUtils;
+import com.robotemployee.reu.block.BlankEggBlock;
 import com.robotemployee.reu.compat.BaseGame;
 import com.robotemployee.reu.compat.BornInChaosCompat;
 import com.robotemployee.reu.compat.SculkHordeCompat;
@@ -59,6 +60,8 @@ public class RobotEmployeeUtils
 
     // THE EGG LIFE
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
+    public static final RegistryObject<Block> BLANK_EGG = BLOCKS.register("blank_egg", () -> new BlankEggBlock(BlockBehaviour.Properties.copy(Blocks.SNIFFER_EGG)));
+    public static final RegistryObject<Item> BLANK_EGG_ITEM = ITEMS.register("blank_egg", () -> new BlockItem(BLANK_EGG.get(), new Item.Properties()));
     public static final RegistryObject<Block> INFUSED_EGG = BLOCKS.register("infused_egg", () -> new InfusedEggBlock(BlockBehaviour.Properties.copy(Blocks.SNIFFER_EGG)));
 
     public static final RegistryObject<Item> INFUSED_EGG_ITEM = ITEMS.register("infused_egg", () -> new BlockItem(INFUSED_EGG.get(), new Item.Properties()));
@@ -77,6 +80,7 @@ public class RobotEmployeeUtils
                         output.accept(RECONSTRUCTOR.get());
                         output.accept(SCULK_RECONSTRUCTOR.get());
                         output.accept(INJECTOR.get());
+                        output.accept(BLANK_EGG_ITEM.get());
                         output.accept(INFUSED_EGG_ITEM.get());
                     })
                     .build()

@@ -68,7 +68,7 @@ public class ReconstructorItem extends Item {
     @Override
     public int getBarWidth(@NotNull ItemStack itemStack) {
         //return Math.round(13.0F * (getEnergy(itemStack) + getFluidAmount(itemStack)) / (float)(ENERGY_CAPACITY + FLUID_CAPACITY));
-        return Math.round(13.0F * getPoints(itemStack) / POINTS_REPAIRABLE  );
+        return Math.round(13.0F * getPoints(itemStack) / POINTS_REPAIRABLE);
     }
 
     @Override

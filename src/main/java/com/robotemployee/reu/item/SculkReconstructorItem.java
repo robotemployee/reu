@@ -150,7 +150,6 @@ public class SculkReconstructorItem extends ReconstructorItem {
         //}
         level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1.0F, 2.0F / (level.getRandom().nextFloat() * 0.5F + 1.0F) + 0.2F);
         level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.WARDEN_HEARTBEAT, SoundSource.PLAYERS, 1.0F, 1.0F);
-        return;
     }
 
     @Override
