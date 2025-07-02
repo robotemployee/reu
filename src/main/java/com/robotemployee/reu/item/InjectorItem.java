@@ -2,12 +2,12 @@ package com.robotemployee.reu.item;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.block.entity.InfusedEggBlockEntity;
+import com.robotemployee.reu.core.ModBlocks;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -17,7 +17,6 @@ import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
-import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
@@ -29,9 +28,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class InjectorItem extends Item {
 
@@ -63,7 +60,7 @@ public class InjectorItem extends Item {
         super(properties);
     }
 
-    Logger LOGGER = LogUtils.getLogger();
+    static Logger LOGGER = LogUtils.getLogger();
 
     public static final String MODE_PATH = "Mode";
     public static final String HELD_ENTITY_TYPE_PATH = "HeldEntityType";
@@ -88,7 +85,7 @@ public class InjectorItem extends Item {
 
     @Override
     public int getBarWidth(@NotNull ItemStack stack) {
-        float fraction = (getMode(stack) == Mode.BLANK_EGG ? 1 - getFillFraction(stack, FILL_BLANK_EGG_PATH) : getFillFraction(stack, FILL_CURRENT_PATH));
+        float fraction = getModeDependentFillFraction(stack);
         return Math.round(13.0F * fraction);
     }
 
@@ -124,10 +121,10 @@ public class InjectorItem extends Item {
         if (hitResult instanceof BlockHitResult blockHitResult) {
             LOGGER.info("hit a block");
             BlockState state = level.getBlockState(blockHitResult.getBlockPos());
-            if (state.is(RobotEmployeeUtils.INFUSED_EGG.get())) {
+            if (state.is(ModBlocks.INFUSED_EGG.get())) {
                 return beginInteractWithInfusedEgg(level, player, hand, stack);
             }
-            else if (state.is(RobotEmployeeUtils.BLANK_EGG.get())) {
+            else if (state.is(ModBlocks.BLANK_EGG.get())) {
                 return beginInteractWithBlankEgg(level, player, hand, stack);
             }
         } else if (hitResult instanceof EntityHitResult entityHitResult) {
@@ -211,7 +208,7 @@ public class InjectorItem extends Item {
                 if (!(hitResult instanceof BlockHitResult blockHitResult)) return;
                 BlockPos pos = blockHitResult.getBlockPos();
                 BlockState state = level.getBlockState(pos);
-                if (state != RobotEmployeeUtils.BLANK_EGG.get().defaultBlockState()) {
+                if (state != ModBlocks.BLANK_EGG.get().defaultBlockState()) {
                     entity.stopUsingItem();
                 }
 
@@ -222,8 +219,9 @@ public class InjectorItem extends Item {
                     // filling has been successful
                     if (!(entity instanceof Player player)) return;
                     // replacing the blank egg with an infused egg!
+                    entity.stopUsingItem();
                     if (level.isClientSide()) return;
-                    BlockState newState = RobotEmployeeUtils.INFUSED_EGG.get().defaultBlockState();
+                    BlockState newState = ModBlocks.INFUSED_EGG.get().defaultBlockState();
                     level.setBlockAndUpdate(pos, newState);
                     InfusedEggBlockEntity blockEntity = (InfusedEggBlockEntity)level.getBlockEntity(pos);
                     assert blockEntity != null; // look i , just don't like the yellow lines. they peeve me
@@ -231,7 +229,6 @@ public class InjectorItem extends Item {
                     assert type != null;
                     blockEntity.setup(player, type);
                     clear(stack);
-                    entity.stopUsingItem();
                     // i just realized that maybe
                     // it will . work ? ? ?????????
                 }
@@ -257,25 +254,37 @@ public class InjectorItem extends Item {
         for (String path : CLEARED_PATHS) tag.remove(path);
     }
 
-    public void setFillAmount(ItemStack stack, int amount, String path) {
+    public static void setFillAmount(ItemStack stack, int amount, String path) {
         CompoundTag tag = stack.getOrCreateTag();
         tag.putInt(path, amount);
         stack.setTag(tag);
     }
 
-    public int getFillAmount(ItemStack stack, String path) {
+    public static int getFillAmount(ItemStack stack, String path) {
         CompoundTag tag = stack.getTag();
         if (tag == null || !tag.contains(path)) return 0;
         return tag.getInt(path);
     }
 
-    public float getFillFraction(ItemStack stack, String path) {
+    public static int getModeDependentFillAmount(ItemStack stack) {
+        Mode mode = getMode(stack);
+
+        return (mode == Mode.BLANK_EGG) ?
+                getFillAmount(stack, FILL_MAX_PATH) - getFillAmount(stack, FILL_BLANK_EGG_PATH) :
+                getFillAmount(stack, FILL_CURRENT_PATH);
+    }
+
+    public static float getFillFraction(ItemStack stack, String path) {
         CompoundTag tag = stack.getTag();
         if (tag == null || !tag.contains(path) || !tag.contains(FILL_MAX_PATH)) return 0;
         return (float)tag.getInt(path) / tag.getInt(FILL_MAX_PATH);
     }
 
-    public void modifyFill(ItemStack stack, int amount, String path) {
+    public static float getModeDependentFillFraction(ItemStack stack) {
+        return getModeDependentFillAmount(stack) / (float)getFillAmount(stack, FILL_MAX_PATH);
+    }
+
+    public static void modifyFill(ItemStack stack, int amount, String path) {
         CompoundTag tag = stack.getOrCreateTag();
         int fillAmount = tag.getInt(path);
         fillAmount += amount;
@@ -285,25 +294,25 @@ public class InjectorItem extends Item {
     }
 
     // if you execute this function 'amount' times, the injector is completely drained
-    public void drainInSteps(ItemStack stack, int amount) {
+    public static void drainInSteps(ItemStack stack, int amount) {
         CompoundTag tag = stack.getTag();
         if (tag == null || !tag.contains(FILL_MAX_PATH)) return;
         modifyFill(stack, -(int)Math.ceil(tag.getInt(FILL_MAX_PATH) / (float)amount), FILL_CURRENT_PATH);
     }
 
-    public boolean isFilled(ItemStack stack) {
+    public static boolean isFilled(ItemStack stack) {
         CompoundTag tag = stack.getTag();
         if (tag == null || !tag.contains(FILL_CURRENT_PATH) || !tag.contains(FILL_MAX_PATH)) return false;
         return tag.getInt(FILL_CURRENT_PATH) >= tag.getInt(FILL_MAX_PATH);
     }
 
-    public boolean hasFluid(ItemStack stack) {
+    public static boolean hasFluid(ItemStack stack) {
         CompoundTag tag = stack.getTag();
         if (tag == null || !tag.contains(FILL_CURRENT_PATH)) return false;
         return tag.getInt(FILL_CURRENT_PATH) > 0;
     }
 
-    public void setHeldEntityType(ItemStack stack, EntityType<?> entityType) {
+    public static void setHeldEntityType(ItemStack stack, EntityType<?> entityType) {
         LOGGER.info("Setting held entity type: " + entityType);
         ResourceLocation loc = ForgeRegistries.ENTITY_TYPES.getKey(entityType);
         if (loc == null) return;
@@ -313,7 +322,7 @@ public class InjectorItem extends Item {
         stack.setTag(tag);
     }
 
-    public EntityType<?> getHeldEntityType(ItemStack stack) {
+    public static EntityType<?> getHeldEntityType(ItemStack stack) {
         CompoundTag tag = stack.getTag();
         LOGGER.info("Attempting to retrieve held entity type");
         if (tag == null || !tag.contains(HELD_ENTITY_TYPE_PATH)) return null;
@@ -325,7 +334,7 @@ public class InjectorItem extends Item {
 
     // Both entity picking and block picking
 
-    public HitResult superPick(LivingEntity entity) {
+    public static HitResult superPick(LivingEntity entity) {
         double range = entity.getAttributeValue(ForgeMod.BLOCK_REACH.get());
         HitResult result = entity.pick(range, 0.0F, false);
         if (result.getType() == HitResult.Type.MISS) {
@@ -345,20 +354,20 @@ public class InjectorItem extends Item {
 
     // Mode stuff
 
-    public void setMode(ItemStack stack, Mode mode) {
+    public static void setMode(ItemStack stack, Mode mode) {
         CompoundTag tag = stack.getOrCreateTag();
         tag.putInt(MODE_PATH, mode.toInt());
         stack.setTag(tag);
     }
 
-    public Mode getMode(ItemStack stack) {
+    public static Mode getMode(ItemStack stack) {
         CompoundTag tag = stack.getTag();
         if (tag == null || !tag.contains(MODE_PATH)) return Mode.NONE;
         return modeFromInt(tag.getInt(MODE_PATH));
     }
 
-    private final Mode[] values = Mode.values();
-    public Mode modeFromInt(int i) {
+    private static final Mode[] values = Mode.values();
+    public static Mode modeFromInt(int i) {
         return values[i];
     }
 

@@ -2,18 +2,23 @@ package com.robotemployee.reu.block;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.block.entity.InfusedEggBlockEntity;
+import com.robotemployee.reu.core.ModBlockEntities;
+import com.robotemployee.reu.core.RobotEmployeeUtils;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.*;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.entity.*;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 public class InfusedEggBlock extends BaseEntityBlock {
@@ -32,36 +37,30 @@ public class InfusedEggBlock extends BaseEntityBlock {
     // Spray resulting items out everywhere
     @Override
     public void onRemove(@NotNull BlockState oldState, @NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState newState, boolean isMoving) {
-        dropOnRemove(oldState, level, pos, newState, isMoving);
+        if (oldState.is(newState.getBlock())) return;
+        InfusedEggBlockEntity blockEntity = (InfusedEggBlockEntity)level.getBlockEntity(pos);
+        if (blockEntity == null) {
+            LOGGER.warn("level.getBlockEntity() returned null on removal");
+            return;
+        }
+        blockEntity.dropOnRemove(oldState, level, pos, newState, isMoving);
         super.onRemove(oldState, level, pos, newState, isMoving);
     }
 
-    public void dropOnRemove(@NotNull BlockState oldState, @NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState newState, boolean isMoving) {
-        LOGGER.info("Block was removed!");
-        LOGGER.info(oldState.getBlock().getDescriptionId() + " -> " + newState.getBlock().getDescriptionId());
-        if (oldState.getBlock() == newState.getBlock() || level.isClientSide()) return;
-        LOGGER.info("Passed first check");
-        //LOGGER.info(String.valueOf(level.getBlockEntity(pos) != null));
-        if (!(level.getBlockEntity(pos) instanceof InfusedEggBlockEntity infusedEggBlockEntity)) return;
-        LOGGER.info("and it knows it's a block entity!");
-        Container dropsContainer = infusedEggBlockEntity.getDropsContainer((ServerLevel)level);
-        if (dropsContainer == null) return;
-        LOGGER.info("Size: " + dropsContainer.getContainerSize());
-        Containers.dropContents(level, pos, dropsContainer);
+    @Override
+    @Nullable
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
+        if (level.isClientSide()) return null;
+
+        if (type == ModBlockEntities.INFUSED_EGG_BLOCK_ENTITY.get()) {
+            return (lvl, pos, st, blockEntity) -> {
+                InfusedEggBlockEntity.tick(lvl, pos, st, (InfusedEggBlockEntity) blockEntity);
+            };
+        } else return null;
     }
 
-    /*@Override
-    public void setPlacedBy(@NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState state, @Nullable LivingEntity entity, @NotNull ItemStack stack) {
-        super.setPlacedBy(level, pos, state, entity, stack);
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (!(blockEntity instanceof InfusedEggBlockEntity infusedEggBlockEntity)) return;
-        infusedEggBlockEntity.setOccupant(EntityType.CHICKEN);
-        // if it was placed autonomously, just get *a* player
-        if (entity instanceof Player player) infusedEggBlockEntity.setOwner(player);
-        else infusedEggBlockEntity.setOwner(level.players().get(0));
-    }*/
-
     @Override
+    @NotNull
     public InteractionResult use(@NotNull BlockState state, Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult result) {
         LOGGER.info("block interacted with!");
         if (level.isClientSide()) return InteractionResult.SUCCESS;

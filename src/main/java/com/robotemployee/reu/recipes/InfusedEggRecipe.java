@@ -1,14 +1,14 @@
 package com.robotemployee.reu.recipes;
 
+import com.robotemployee.reu.core.ModBlocks;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.registries.ForgeRegistries;
 
 public class InfusedEggRecipe {
-    private final ItemStack egg = new ItemStack(RobotEmployeeUtils.INFUSED_EGG_ITEM.get());;
+    private final ItemStack egg = new ItemStack(ModBlocks.INFUSED_EGG.getItem());
 
     private final ItemStack foodItem;
     private final EntityType<?> entityType;

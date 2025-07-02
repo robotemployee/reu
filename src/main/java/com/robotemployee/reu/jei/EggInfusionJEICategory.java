@@ -2,6 +2,7 @@ package com.robotemployee.reu.jei;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import com.robotemployee.reu.core.ModBlocks;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.recipes.InfusedEggRecipe;
 import mezz.jei.api.constants.VanillaTypes;
@@ -25,13 +26,14 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2i;
+import org.joml.Vector3i;
 
 public class EggInfusionJEICategory implements IRecipeCategory<InfusedEggRecipe> {
 
     private final IDrawable icon;
 
     public EggInfusionJEICategory(IGuiHelper guiHelper) {
-        icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(RobotEmployeeUtils.INFUSED_EGG_ITEM.get()));
+        icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(ModBlocks.INFUSED_EGG.getItem()));
     }
 
     @Override
@@ -83,22 +85,23 @@ public class EggInfusionJEICategory implements IRecipeCategory<InfusedEggRecipe>
         if (entity == null) return;
         entity.tickCount = 1;
 
-        Vector2i position = new Vector2i(80, 30);
+        Vector3i position = new Vector3i(120, 55, 50);
         float scale = 20f;
 
         // from -1 to 1
         // for making the mob follow your mouse a little
-        float mouseXRelShrunk = 2 * (float)mouseX / guiGraphics.guiWidth() - 1;
-        float mouseYRelShrunk = 2 * (float)mouseY / guiGraphics.guiHeight() - 1;
+        //float mouseXRelShrunk = 2 * (float)mouseX / guiGraphics.guiWidth() - 1;
+        //float mouseYRelShrunk = 2 * (float)mouseY / guiGraphics.guiHeight() - 1;
+
+        float time = Minecraft.getInstance().getFrameTime();
 
         PoseStack poseStack = guiGraphics.pose();
 
         poseStack.pushPose();
-        poseStack.translate(position.x, position.y, 50);
+        poseStack.translate(position.x, position.y, position.z);
         poseStack.scale(scale, -scale, scale);
-        //poseStack.mulPose(Axis.YP.rotationDegrees(-mouseXRelShrunk * 15));
-        //poseStack.mulPose(Axis.XP.rotationDegrees(-mouseYRelShrunk * 15));
-        //poseStack.mulPose(Axis.XP.rotationDegrees(15));
+        poseStack.mulPose(Axis.YP.rotationDegrees((float)Math.sin(time / 1000) * 30 - 15));
+        poseStack.mulPose(Axis.XP.rotationDegrees(15));
 
         EntityRenderDispatcher dispatcher = instance.getEntityRenderDispatcher();
         dispatcher.setRenderShadow(false);

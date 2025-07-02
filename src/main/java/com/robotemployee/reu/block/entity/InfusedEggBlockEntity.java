@@ -1,6 +1,7 @@
 package com.robotemployee.reu.block.entity;
 
 import com.mojang.logging.LogUtils;
+import com.robotemployee.reu.core.ModBlockEntities;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.eggs.LootTableMassDropper;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -9,6 +10,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
+import net.minecraft.world.Containers;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -47,7 +49,7 @@ public class InfusedEggBlockEntity extends BlockEntity {
     protected UUID owner;
 
     public InfusedEggBlockEntity(BlockPos pos, BlockState blockState) {
-        super(RobotEmployeeUtils.INFUSED_EGG_BLOCK_ENTITY.get(), pos, blockState);
+        super(ModBlockEntities.INFUSED_EGG_BLOCK_ENTITY.get(), pos, blockState);
     }
 
     public void setOccupant(String newOccupant) {
@@ -111,8 +113,19 @@ public class InfusedEggBlockEntity extends BlockEntity {
         return newbornType.create(level);
     }
 
-    // so this has to implement a custom loot pool parser
-
+    public void dropOnRemove(@NotNull BlockState oldState, @NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState newState, boolean isMoving) {
+        //LOGGER.info("Block was removed!");
+        //LOGGER.info(oldState.getBlock().getDescriptionId() + " -> " + newState.getBlock().getDescriptionId());
+        if (oldState.getBlock() == newState.getBlock() || level.isClientSide()) return;
+        //LOGGER.info("Passed first check");
+        //LOGGER.info(String.valueOf(level.getBlockEntity(pos) != null));
+        if (!(level.getBlockEntity(pos) instanceof InfusedEggBlockEntity infusedEggBlockEntity)) return;
+        //LOGGER.info("and it knows it's a block entity!");
+        Container dropsContainer = infusedEggBlockEntity.getDropsContainer((ServerLevel)level);
+        if (dropsContainer == null) return;
+        //LOGGER.info("Size: " + dropsContainer.getContainerSize());
+        Containers.dropContents(level, pos, dropsContainer);
+    }
 
     @Nullable
     public Container getDropsContainer(ServerLevel level) {
@@ -172,6 +185,16 @@ public class InfusedEggBlockEntity extends BlockEntity {
         occupant = tag.getString(TYPE_KEY);
         owner = tag.getUUID(OWNER_KEY);
     }
+
+    public static void tick(Level level, BlockPos pos, BlockState state, InfusedEggBlockEntity egg) {
+        if (level.isClientSide() || level.getGameTime() % 60 > 0) return;
+
+        egg.grow();
+        LOGGER.info("Ticking egg at " + pos);
+    }
+
+
+
 
     public void grow() {
         grow(1);
