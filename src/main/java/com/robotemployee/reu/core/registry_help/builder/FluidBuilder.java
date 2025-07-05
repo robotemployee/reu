@@ -5,6 +5,7 @@ import com.robotemployee.reu.core.ModBlocks;
 import com.robotemployee.reu.core.ModFluids;
 import com.robotemployee.reu.core.ModItems;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
+import com.robotemployee.reu.core.registry_help.entry.BlockRegistryEntry;
 import com.robotemployee.reu.core.registry_help.entry.FluidRegistryEntry;
 import com.robotemployee.reu.core.registry_help.datagen.FluidDatagen;
 import com.robotemployee.reu.core.registry_help.generics.FilledBottleItem;
@@ -77,9 +78,8 @@ public class FluidBuilder {
     // Building
 
     public FluidRegistryEntry build() {
-        DeferredRegister<Item> ITEMS = ModItems.ITEMS;
+
         DeferredRegister<Fluid> FLUIDS = ModFluids.FLUIDS;
-        DeferredRegister<Block> BLOCKS = ModBlocks.BLOCKS;
 
         ResourceLocation loc = new ResourceLocation(RobotEmployeeUtils.MODID, name);
 
@@ -108,22 +108,23 @@ public class FluidBuilder {
 
         RegistryObject<Item> bucket = null;
         RegistryObject<Item> bottle = null;
-        RegistryObject<LiquidBlock> block = null;
+        BlockRegistryEntry block = null;
 
         if (hasBucket) {
             Supplier<Item> supplier = getBucketSupplier(sourceFluid);
-            bucket = ITEMS.register(name + "_bucket", supplier);
+            bucket = (new ItemBuilder()).withName(name + "_bucket").withSupplier(supplier).build();
             ModFluids.bucketLookupTable.put(sourceFluid, bucket);
             queueBucketDatagen(bucket);
         }
         if (hasBottle) {
             Supplier<Item> supplier = getBottleSupplier(sourceFluid);
-            bottle = ITEMS.register(name + "_bottle", supplier);
+            bottle = (new ItemBuilder()).withName(name + "_bottle").withSupplier(supplier).build();
             ModFluids.bottleLookupTable.put(sourceFluid, bottle);
             queueBottleDatagen(bottle);
         }
         if (hasBlock) {
-            block = BLOCKS.register(name, getBlockSupplier(() -> (ForgeFlowingFluid.Source)sourceFluid.get()));
+            block = (new BlockBuilder()).withName(name).withSupplier(getBlockSupplier(() -> (ForgeFlowingFluid.Source)sourceFluid.get())).build();
+            //block = BLOCKS.register(name, getBlockSupplier());
         }
 
         return new FluidRegistryEntry(flowingFluid, sourceFluid, block, bucket, bottle);

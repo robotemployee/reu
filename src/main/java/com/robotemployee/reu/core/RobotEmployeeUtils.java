@@ -109,6 +109,7 @@ public class RobotEmployeeUtils
                 return isActivated ? 1.0f : 0.0f;
             });
 
+            /*
             ItemProperties.register(ModItems.INJECTOR.get(), new ResourceLocation(MODID, "is_injecting"), (stack, level, entity, seed) -> {
                 InjectorItem.Mode mode = InjectorItem.getMode(stack);
                 boolean isActivated = mode != InjectorItem.Mode.NONE && mode != InjectorItem.Mode.CLEAR;
@@ -120,6 +121,8 @@ public class RobotEmployeeUtils
                 int fillMax = InjectorItem.getFillAmount(stack, InjectorItem.FILL_MAX_PATH);
                 return Mth.clamp((float)fillAmount / fillMax, 0, 1);
             });
+
+             */
         }
 
         @SubscribeEvent

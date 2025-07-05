@@ -13,6 +13,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import org.slf4j.Logger;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class BlockBuilder {
@@ -21,6 +22,8 @@ public class BlockBuilder {
     private boolean hasItem = true;
     private String name;
     private Supplier<? extends Block> supplier;
+
+    private ItemBuilder itemBuilder = new ItemBuilder();
 
     public BlockBuilder withName(String name) {
         this.name = name;
@@ -46,7 +49,11 @@ public class BlockBuilder {
         //LOGGER.info("Blocky block block block" + block.get());
 
         if (hasItem()) {
-            RegistryObject<Item> item = ITEMS.register(getName(), () -> new BlockItem(block.get(), new Item.Properties()));
+            //RegistryObject<Item> item = ITEMS.register(getName(), () -> new BlockItem(block.get(), new Item.Properties()));
+            if (!itemBuilder.hasName()) itemBuilder.withName(getName());
+            if (!itemBuilder.hasSupplier()) itemBuilder.withSupplier(() -> new BlockItem(block.get(), new Item.Properties()));
+
+            RegistryObject<Item> item = itemBuilder.build();
             return new BlockRegistryEntry(block, item);
         }
 
@@ -57,6 +64,11 @@ public class BlockBuilder {
 
     public BlockBuilder noItem() {
         hasItem = false;
+        return this;
+    }
+
+    public BlockBuilder itemBuilder(Function<ItemBuilder, ItemBuilder> function) {
+        this.itemBuilder = function.apply(itemBuilder);
         return this;
     }
 

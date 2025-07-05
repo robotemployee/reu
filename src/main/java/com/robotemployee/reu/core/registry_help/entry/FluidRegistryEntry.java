@@ -15,11 +15,11 @@ public class FluidRegistryEntry {
     private final RegistryObject<Fluid> FLOW;
     private final RegistryObject<Item> BUCKET;
     private final RegistryObject<Item> BOTTLE;
-    private final RegistryObject<LiquidBlock> BLOCK;
+    private final BlockRegistryEntry BLOCK;
 
     public final FluidBuilder.Mode MODE;
 
-    public FluidRegistryEntry(RegistryObject<Fluid> flow, RegistryObject<Fluid> source, @Nullable RegistryObject<LiquidBlock> block, @Nullable RegistryObject<Item> bucket, @Nullable RegistryObject<Item> bottle) {
+    public FluidRegistryEntry(RegistryObject<Fluid> flow, RegistryObject<Fluid> source, @Nullable BlockRegistryEntry block, @Nullable RegistryObject<Item> bucket, @Nullable RegistryObject<Item> bottle) {
         this.SOURCE = source;
         this.FLOW = flow;
         this.BLOCK = block;
@@ -56,7 +56,7 @@ public class FluidRegistryEntry {
     public Item getBottle() { return BOTTLE != null ? BOTTLE.get() : null; }
 
     @Nullable
-    public LiquidBlock getBlock() { return BLOCK != null ? BLOCK.get() : null; }
+    public LiquidBlock getBlock() { return BLOCK != null ? (LiquidBlock)BLOCK.get() : null; }
 
     // only works when there's no flowing fluid
     @Nullable

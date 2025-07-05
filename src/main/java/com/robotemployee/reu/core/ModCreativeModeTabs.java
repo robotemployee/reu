@@ -10,10 +10,11 @@ import net.minecraftforge.registries.RegistryObject;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.function.Supplier;
 
 public class ModCreativeModeTabs {
 
-    public static final ArrayList<Item> addedItems = new ArrayList<>();
+    private static final ArrayList<Supplier<Item>> addedItems = new ArrayList<>();
 
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, RobotEmployeeUtils.MODID);
     public static final RegistryObject<CreativeModeTab> CREATIVE_TAB = CREATIVE_MODE_TABS.register("reu_tab",
@@ -26,8 +27,16 @@ public class ModCreativeModeTabs {
                         //output.accept(ModItems.INJECTOR.get());
                         //output.accept(ModBlocks.BLANK_EGG.getItem());
                         //output.accept(ModBlocks.INFUSED_EGG.getItem());
-                        for (RegistryObject<Item> item : ModItems.ITEMS.getEntries()) output.accept(item.get());
+                        for (Supplier<Item> item : addedItems) output.accept(item.get());
                     })
                     .build()
     );
+
+    public static ArrayList<Supplier<Item>> getAddedItems() {
+        return addedItems;
+    }
+
+    public static void addItem(Supplier<Item> item) {
+        addedItems.add(item);
+    }
 }

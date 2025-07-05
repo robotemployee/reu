@@ -35,11 +35,6 @@ public class FilteredSimpleFluidStorage extends FluidHandlerItemStackSimple.Swap
         return isFluidGood(stack);
     }
 
-    @Override
-    public boolean canDrainFluidType(FluidStack stack) {
-        return isFluidGood(stack);
-    }
-
     public boolean isFluidGood(FluidStack stack) {
         if (leniency.isIDStrict() && !stack.getFluid().isSame(acceptedFluid.getFluid())) return false;
         if (leniency.isTagStrict() && !Objects.equals(stack.getTag(), acceptedFluid.getTag())) return false;
