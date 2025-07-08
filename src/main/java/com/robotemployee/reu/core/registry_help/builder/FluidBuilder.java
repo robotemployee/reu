@@ -123,7 +123,7 @@ public class FluidBuilder {
             queueBottleDatagen(bottle);
         }
         if (hasBlock) {
-            block = (new BlockBuilder()).withName(name).withSupplier(getBlockSupplier(() -> (ForgeFlowingFluid.Source)sourceFluid.get())).build();
+            block = (new BlockBuilder()).withName(name).withSupplier(getBlockSupplier(() -> (ForgeFlowingFluid.Source)sourceFluid.get())).noCreativeTab().build();
             //block = BLOCKS.register(name, getBlockSupplier());
         }
 

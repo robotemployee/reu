@@ -9,6 +9,9 @@ import com.robotemployee.reu.fluid.MobFluid;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.EntityType;
@@ -59,6 +62,10 @@ public class InjectorItem extends Item {
     // people could make collections of fluids lol
      */
 
+    // so.
+    // anything related to the functionality I think is alright
+    // anything related to the aesthetics (like the ascii art) sucks. do noooot read do not read. skip. skip. skip.
+
 
     public InjectorItem(Item.Properties properties) {
         super(properties);
@@ -69,14 +76,20 @@ public class InjectorItem extends Item {
     public static final String MODE_PATH = "Mode";
     public static final String POSITION_PATH = "Position";
 
+    public static final String IS_USING_PATH = "Using";
+
     public static final int USE_DURATION = 72000;
 
     public static final int BLANK_EGG_FILL_TICKS = 40;
 
-    public final int FILL_PER_TICK = 10;
+    // amount of damage this does while filling
+    public static final float DAMAGE = 1.5f;
+    public final int FILL_PER_HP = 20;
 
     // this is for how many segments there are in the tooltip
     public static final int TUBE_LENGTH = 4;
+
+    public static final int CAPACITY = 250;
 
     @Override
     public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> components, @NotNull TooltipFlag flag) {
@@ -85,14 +98,16 @@ public class InjectorItem extends Item {
         IFluidHandlerItem handler = getHandler(stack);
 
         FluidStack fluid = handler.getFluidInTank(0);
-        int fill = TUBE_LENGTH * fluid.getAmount() / handler.getTankCapacity(0);
+        float fillFraction = ((float)fluid.getAmount() / handler.getTankCapacity(0));
+        int fill = (int)Math.ceil(TUBE_LENGTH * fillFraction);
+        //if (fill == TUBE_LENGTH && fillFraction < 0.85) fill--;
 
         components.add(Component.literal("§b  Δ"));
         components.add(Component.literal("/`§8~\\"));
 
         int[] indexes = new int[TUBE_LENGTH];
 
-        boolean isFull = fill == TUBE_LENGTH;
+        boolean isFull = fillFraction == 1;
 
         for (int i = TUBE_LENGTH; i > 0; i--) {
             if (fill > i || isFull) {
@@ -108,7 +123,7 @@ public class InjectorItem extends Item {
 
         String percentAftertouch = isFull ? "§2~§aReady" : String.format("§2~§a%.1f§2%%", 100 * (fluid.getAmount() / (float)handler.getTankCapacity(0)));
 
-        String typeAftertouch = String.format("§3 %s", !fluid.isEmpty() ? fluid.getTag().getString(MobFluid.ENTITY_TYPE_KEY) : "(empty)");
+        String typeAftertouch = String.format("§9=§3%s", !fluid.isEmpty() ? fluid.getTag().getString(MobFluid.ENTITY_TYPE_KEY) : "(empty)");
 
         boolean showedPercent = false;
         boolean firstTime = true;
@@ -123,7 +138,7 @@ public class InjectorItem extends Item {
             String border = visual < 3 ? "|" : "";
 
             components.add(Component.literal(
-                    border + colorFromFill(fill, visual) + levels[visual] + "§8" + border + aftertouch
+                    border + purpleColorFromFill(fill, visual, isFull) + levels[visual] + "§8" + border + aftertouch
 
             ));
             showedPercent = shouldShowPercent;
@@ -132,20 +147,6 @@ public class InjectorItem extends Item {
 
         components.add(Component.literal("`§8`|``|``" + (showedPercent ? typeAftertouch : "")));
         components.add(Component.literal(String.format("-§8'-'- %smb", fluid.getAmount())));
-    }
-
-    private String colorFromFill(int fill, int level) {
-        if (level == 0 || fill == 0) {
-            return "§8";
-        } else if (fill == TUBE_LENGTH) {
-            return "§5";
-        } else if (fill > TUBE_LENGTH / 2) {
-            return "§7";
-        } else if (fill > TUBE_LENGTH / 4) {
-            return "§6";
-        } else {
-            return "§4";
-        }
     }
 
     @Override @NotNull
@@ -173,12 +174,60 @@ public class InjectorItem extends Item {
     }
 
     @Override @NotNull
+    public Component getName(@NotNull ItemStack stack) {
+        IFluidHandlerItem handler = getHandler(stack);
+        FluidStack fluid = handler.getFluidInTank(0);
+        CompoundTag tag = fluid.getTag();
+        MutableComponent base = Component.translatable(this.getDescriptionId(stack));
+        if (fluid.isEmpty() || tag == null || !tag.contains(MobFluid.ENTITY_TYPE_KEY) || fluid.getAmount() == CAPACITY) return base;
+        Component appended = Component.literal(String.format(" §b(§r%s§7)", getFancySplitEntityType(tag, handler)));
+        return base.append(appended);
+    }
+
+    // shut up. this was afst
+
+    @NotNull
+    public String getFancySplitEntityType(@NotNull CompoundTag tag, @NotNull IFluidHandlerItem handler) {
+        FluidStack fluid = handler.getFluidInTank(0);
+
+        String type = tag.getString(MobFluid.ENTITY_TYPE_KEY);
+        float fillFraction = (float)fluid.getAmount() / handler.getTankCapacity(0);
+
+        int index = Mth.clamp((int)Math.ceil(type.length() * fillFraction), 0, type.length());
+        String before = type.substring(0, index);
+        String after = type.substring(index);
+        return greenColorFromFill(fillFraction) + before + "§7" + after;
+    }
+
+    @Override @NotNull
     public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        InteractionHand offhand = hand == InteractionHand.MAIN_HAND ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
         HitResult hitResult = superPick(player);
         Mode mode = Mode.fromContext(hitResult, level, player, stack);
 
         mode.saveToItem(stack);
+
+        if (mode == Mode.BOTTLE) {
+            LOGGER.info("bottle");
+            IFluidHandlerItem handler = getHandler(stack);
+            ItemStack offhandItem = player.getItemInHand(offhand);
+            if (offhandItem.is(Items.GLASS_BOTTLE)) {
+                if (handler.getFluidInTank(0).getAmount() < 250) return InteractionResultHolder.fail(stack);
+                if (!level.isClientSide()) {
+                    handler.drain(250, IFluidHandler.FluidAction.EXECUTE);
+                }
+                player.setItemInHand(offhand, MobFluid.createBottle(handler.getFluidInTank(0)));
+            } else if (offhandItem.is(ModFluids.MOB_FLUID.getBottle())) {
+                IFluidHandlerItem offhandHandler = getHandler(offhandItem);
+                if (handler.fill(offhandHandler.getFluidInTank(0), IFluidHandler.FluidAction.SIMULATE) < 250) return InteractionResultHolder.fail(stack);
+                if (!level.isClientSide()) {
+                    handler.fill(offhandHandler.getFluidInTank(0), IFluidHandler.FluidAction.EXECUTE);
+                }
+                player.setItemInHand(offhand, new ItemStack(Items.GLASS_BOTTLE));
+            }
+            return InteractionResultHolder.consume(stack);
+        }
 
         if (mode == Mode.ENTITY) {
             IFluidHandlerItem handler = getHandler(stack);
@@ -187,7 +236,7 @@ public class InjectorItem extends Item {
 
             if (contained == null) {
                 fillWithEntity(handler, victim, 1);
-            } else if (victim.getType() != contained) {
+            } else if (victim.getType() != contained || handler.getFluidInTank(0).getAmount() == handler.getTankCapacity(0)) {
 
                 stopInjection(player);
                 return InteractionResultHolder.fail(stack);
@@ -205,6 +254,9 @@ public class InjectorItem extends Item {
         }
 
         if (mode.isContinuous()) {
+            CompoundTag tag = stack.getOrCreateTag();
+            tag.putBoolean(IS_USING_PATH, true);
+            stack.setTag(tag);
             player.startUsingItem(hand);
             return InteractionResultHolder.consume(stack);
         }
@@ -253,14 +305,30 @@ public class InjectorItem extends Item {
                     return;
                 }
 
-                if (level.isClientSide()) return;
+                if (!level.isClientSide()) {
+                    // serverside
 
-                if (handler.getFluidInTank(0).getAmount() == 1000) stopInjection(player);
+                    if (handler.getFluidInTank(0).getAmount() == 1000) stopInjection(player);
 
 
-
-                victim.hurt(victim.damageSources().playerAttack(player), 1);
-                fillWithEntity(handler, victim, FILL_PER_TICK);
+                    //LOGGER.info("Invulnerable time: " + victim.invulnerableTime);
+                    if (victim.invulnerableTime == 0 && !entity.isInvulnerable()) {
+                        victim.hurt(victim.damageSources().playerAttack(player), DAMAGE);
+                        fillWithEntity(handler, victim, (int)Math.round(DAMAGE * FILL_PER_HP));
+                        // if we're full
+                        if (handler.getFluidInTank(0).getAmount() == handler.getTankCapacity(0)) {
+                            player.playSound(SoundEvents.NOTE_BLOCK_BELL.get());
+                            stopInjection(player);
+                        }
+                    }
+                } /*else {
+                    // clientside
+                    FluidStack fluid = handler.getFluidInTank(0);
+                    CompoundTag fluidTag = fluid.getTag();
+                    if (tag != null && tag.contains(MobFluid.ENTITY_TYPE_KEY)) {
+                        player.displayClientMessage(Component.literal("MESSAGE: " + getFancySplitEntityType(fluidTag, handler)  ), false);
+                    }
+                }*/
             }
             case BLANK_EGG -> {
                 if (level.isClientSide()) return;
@@ -284,9 +352,22 @@ public class InjectorItem extends Item {
                 stopInjection(player);
             }
         }
+    }
 
+    @Override
+    public void onStopUsing(ItemStack stack, LivingEntity entity, int count) {
+        super.onStopUsing(stack, entity, count);
+        if (entity instanceof Player) {
+            CompoundTag tag = stack.getOrCreateTag();
+            tag.putBoolean(IS_USING_PATH, false);
+            stack.setTag(tag);
+        }
+    }
 
-
+    @Override @NotNull
+    public ItemStack finishUsingItem(@NotNull ItemStack stack, @NotNull Level level, @NotNull LivingEntity entity) {
+        if (entity instanceof Player player) stopInjection(player);
+        return stack;
     }
 
     // Both entity picking and block picking
@@ -311,7 +392,7 @@ public class InjectorItem extends Item {
         if (!foundBlock && foundEntity) return entityHitResult;
         if (!foundEntity && foundBlock) return blockHitResult;
 
-        if (!foundEntity || !(entityHitResult.getEntity() instanceof LivingEntity)) return null;
+        if (!foundEntity || !(entityHitResult.getEntity() instanceof LivingEntity)) return blockHitResult;
 
         return blockHitResult.distanceTo(picker) < entityHitResult.distanceTo(picker) ?
                 blockHitResult : entityHitResult;
@@ -320,7 +401,7 @@ public class InjectorItem extends Item {
     @Override
     public @Nullable ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
         //return new FluidHandlerItemStack(stack, 400);
-        return new FilteredFluidStorage(new FluidStack(ModFluids.MOB_FLUID.get(), 1000), stack, 1000);
+        return new FilteredFluidStorage(new FluidStack(ModFluids.MOB_FLUID.get(), CAPACITY), stack, CAPACITY);
     }
 
     public void stopInjection(Player player) {
@@ -328,6 +409,10 @@ public class InjectorItem extends Item {
     }
 
     public void stopInjection(Player player, int ticks) {
+        ItemStack stack = player.getUseItem();
+        CompoundTag tag = stack.getOrCreateTag();
+        tag.putBoolean(IS_USING_PATH, false);
+        stack.setTag(tag);
         player.stopUsingItem();
         player.getCooldowns().addCooldown(this, ticks);
     }
@@ -340,6 +425,30 @@ public class InjectorItem extends Item {
 
     public void fillWithEntity(IFluidHandlerItem handler, LivingEntity victim, int amount) {
         handler.fill(MobFluid.fromEntity(victim, amount), IFluidHandler.FluidAction.EXECUTE);
+    }
+
+    private String purpleColorFromFill(int fill, int visual, boolean isFull) {
+        if (visual == 0 || fill == 0) {
+            return "§8";
+        } else if (isFull) {
+            return "§5";
+        } else if (fill > TUBE_LENGTH / 4) {
+            return "§6";
+        } else {
+            return "§4";
+        }
+    }
+
+    private String greenColorFromFill(float fraction) {
+        if (fraction == 0) {
+            return "§8";
+        } else if (fraction == 1) {
+            return "§a";
+        } else if (fraction > 0.25) {
+            return "§6";
+        } else {
+            return "§4";
+        }
     }
 
     // Mode stuff
@@ -356,21 +465,19 @@ public class InjectorItem extends Item {
             return (this == ENTITY || this == BLANK_EGG || this == INFUSED_EGG);
         }
 
-        public boolean isBlock() {
-            return (this == BLANK_EGG || this == INFUSED_EGG);
-        }
+        public boolean isBlock() { return (this == BLANK_EGG || this == INFUSED_EGG); }
 
         @NotNull
-        public static Mode fromString(String input) {
-            return Enum.valueOf(Mode.class, input);
-        }
+        public static Mode fromString(String input) { return Enum.valueOf(Mode.class, input); }
 
         public static Mode fromContext(@Nullable HitResult result, @NotNull Level level, @NotNull LivingEntity entity, @NotNull ItemStack stack) {
             // prioritize the hit result first, if we aren't crouching
 
             if (result instanceof EntityHitResult) return ENTITY;
 
-            ItemStack offhandItem = entity.getOffhandItem();
+            InteractionHand used = entity.getUsedItemHand();
+
+            ItemStack offhandItem = used == InteractionHand.MAIN_HAND ? entity.getOffhandItem() : entity.getMainHandItem();
             if (offhandItem.is(Items.GLASS_BOTTLE) || offhandItem.is(ModFluids.MOB_FLUID.getBottle())) {
                 return BOTTLE;
             }

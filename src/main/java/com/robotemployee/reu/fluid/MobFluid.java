@@ -1,6 +1,7 @@
 package com.robotemployee.reu.fluid;
 
 import com.mojang.logging.LogUtils;
+import com.robotemployee.reu.capability.FilteredSimpleFluidStorage;
 import com.robotemployee.reu.core.ModFluids;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -9,6 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -18,8 +20,10 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.ForgeFlowingFluid;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -101,7 +105,7 @@ public class MobFluid extends ForgeFlowingFluid {
         FluidStack result = new FluidStack(ModFluids.MOB_FLUID.get(), amount);
         CompoundTag tag = new CompoundTag();
         String typeKey = ForgeRegistries.ENTITY_TYPES.getKey(type).toString();
-        LOGGER.info(typeKey);
+        //LOGGER.info(typeKey);
         tag.putString(ENTITY_TYPE_KEY, typeKey);
         result.setTag(tag);
         return result;
@@ -118,6 +122,19 @@ public class MobFluid extends ForgeFlowingFluid {
         CompoundTag tag = stack.getTag();
         if (!tag.contains(ENTITY_TYPE_KEY)) return null;
         return ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation(tag.getString(ENTITY_TYPE_KEY)));
+    }
+
+    @Nullable
+    public static ItemStack createBottle(@NotNull FluidStack stack) {
+        CompoundTag tag = stack.getTag();
+        if (tag == null || !tag.contains(ENTITY_TYPE_KEY)) return null;
+
+        ItemStack newborn = new ItemStack(ModFluids.MOB_FLUID.getBottle());
+        FilteredSimpleFluidStorage handler = (FilteredSimpleFluidStorage)newborn.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM)
+                .map(h -> h).orElse(null);
+
+        handler.setFluid(stack);
+        return newborn;
     }
 
     public static class Flowing extends MobFluid {

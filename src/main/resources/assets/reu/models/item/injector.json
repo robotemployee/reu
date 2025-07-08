@@ -1,6 +1,58 @@
 {
-  "parent": "item/generated",
+  "parent": "item/handheld",
   "textures": {
-    "layer0": "reu:item/injector_full"
-  }
+    "layer0": "reu:item/injector_0"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "reu:using": 1,
+        "reu:fill": 0.25
+      },
+      "model": "reu:item/injector_pulling_25"
+    },
+    {
+      "predicate": {
+        "reu:using": 1,
+        "reu:fill": 0.5
+      },
+      "model": "reu:item/injector_pulling_50"
+    },
+    {
+      "predicate": {
+        "reu:using": 1,
+        "reu:fill": 0.75
+      },
+      "model": "reu:item/injector_pulling_75"
+    },
+
+    {
+      "predicate": {
+        "reu:using": 0,
+        "reu:fill": 0.25
+      },
+      "model": "reu:item/injector_25"
+    },
+    {
+      "predicate": {
+        "reu:using": 0,
+        "reu:fill": 0.50
+      },
+      "model": "reu:item/injector_50"
+    },
+    {
+      "predicate": {
+        "reu:using": 0,
+        "reu:fill": 0.75
+      },
+      "model": "reu:item/injector_75"
+    },
+    {
+      "predicate": {
+        "reu:using": 0,
+        "reu:fill": 1
+      },
+      "model": "reu:item/injector_100"
+    }
+  ]
 }

@@ -44,22 +44,16 @@ public class FilledBottleItem extends Item {
     @Override @NotNull
     public ItemStack finishUsingItem(@NotNull ItemStack stack, @NotNull Level level, @NotNull LivingEntity entity) {
         super.finishUsingItem(stack, level, entity);
-        if (entity instanceof ServerPlayer serverplayer) {
-            CriteriaTriggers.CONSUME_ITEM.trigger(serverplayer, stack);
-            serverplayer.awardStat(Stats.ITEM_USED.get(this));
+        if (entity instanceof ServerPlayer player) {
+            CriteriaTriggers.CONSUME_ITEM.trigger(player, stack);
+            player.awardStat(Stats.ITEM_USED.get(this));
+            ItemStack glassBottle = new ItemStack(Items.GLASS_BOTTLE);
+            if (!player.getInventory().add(glassBottle)) {
+                player.drop(glassBottle, false);
+            }
         }
 
-        if (stack.isEmpty()) {
-            return new ItemStack(Items.GLASS_BOTTLE);
-        } else {
-            if (entity instanceof Player player && !((Player)entity).getAbilities().instabuild) {
-                ItemStack itemstack = new ItemStack(Items.GLASS_BOTTLE);
-                if (!player.getInventory().add(itemstack)) {
-                    player.drop(itemstack, false);
-                }
-            } else return stack;
-        }
-        return ItemStack.EMPTY;
+        return new ItemStack(Items.GLASS_BOTTLE);
     }
 
     public int getUseDuration(@NotNull ItemStack stack) {
@@ -73,12 +67,12 @@ public class FilledBottleItem extends Item {
 
     @Override @NotNull
     public SoundEvent getDrinkingSound() {
-        return SoundEvents.HONEY_DRINK;
+        return SoundEvents.GENERIC_DRINK;
     }
 
     @Override @NotNull
     public SoundEvent getEatingSound() {
-        return SoundEvents.HONEY_DRINK;
+        return SoundEvents.GENERIC_DRINK;
     }
 
     @Override @NotNull

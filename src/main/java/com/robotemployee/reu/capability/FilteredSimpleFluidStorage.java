@@ -42,6 +42,11 @@ public class FilteredSimpleFluidStorage extends FluidHandlerItemStackSimple.Swap
         return true;
     }
 
+    @Override
+    public void setFluid(FluidStack fluid) {
+        super.setFluid(fluid);
+    }
+
     public enum Leniency {
         // does not care about the tags, only wants the fluids themselves to match
         ID,

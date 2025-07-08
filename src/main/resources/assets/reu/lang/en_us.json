@@ -1,6 +1,15 @@
 {
   "item.reu.reconstructor": "Ringer of Repair",
   "item.reu.sculk_reconstructor" : "§3Soul Resonator",
+
+  "item.reu.injector" : "Injector",
+  "item.reu.mob_fluid_bucket" : "Mob Fluid Bucket",
+  "item.reu.mob_fluid_bottle" : "Mob Fluid Bottle",
+
+  "block.reu.infused_egg" : "Infused Egg",
+  "block.reu.blank_egg" : "Blank Egg",
+  "block.reu.mob_fluid" : "Mob Fluid",
+
   "creativetab.reu_tab": "RE Utilities",
   "gui.jei.category.reu.egg_infusion": "Egg Synthesis"
 }

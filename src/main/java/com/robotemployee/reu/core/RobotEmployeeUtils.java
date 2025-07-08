@@ -3,26 +3,23 @@ package com.robotemployee.reu.core;
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.compat.BaseGame;
 import com.robotemployee.reu.compat.BornInChaosCompat;
+import com.robotemployee.reu.compat.FriendsAndFoesCompat;
 import com.robotemployee.reu.compat.SculkHordeCompat;
 import com.robotemployee.reu.core.registry_help.datagen.DataGenerators;
-import com.robotemployee.reu.core.registry_help.datagen.Datagen;
 import com.robotemployee.reu.core.registry_help.generics.FilledBottleItem;
 import com.robotemployee.reu.item.InjectorItem;
 import com.robotemployee.reu.item.ReconstructorItem;
-import net.minecraft.client.color.item.ItemColor;
 import net.minecraft.client.renderer.item.ItemProperties;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
-import net.minecraft.world.item.BottleItem;
-import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.data.event.GatherDataEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -72,6 +69,8 @@ public class RobotEmployeeUtils
         MinecraftForge.EVENT_BUS.register(SculkHordeCompat.class);
         MinecraftForge.EVENT_BUS.register(BornInChaosCompat.class);
         MinecraftForge.EVENT_BUS.register(BaseGame.class);
+        MinecraftForge.EVENT_BUS.register(FriendsAndFoesCompat.class);
+
         MinecraftForge.EVENT_BUS.register(DataGenerators.class);
 
         // Register our mod's ForgeConfigSpec so that Forge can create and load the config file for us
@@ -107,6 +106,25 @@ public class RobotEmployeeUtils
             ItemProperties.register(ModItems.SCULK_RECONSTRUCTOR.get(), new ResourceLocation(MODID, "is_auto_repairing"), (stack, level, entity, seed) -> {
                 boolean isActivated = stack.getOrCreateTag().getInt(ReconstructorItem.LAST_AUTO_REPAIR_TAG) > 0;
                 return isActivated ? 1.0f : 0.0f;
+            });
+
+            ItemProperties.register(ModItems.INJECTOR.get(), new ResourceLocation(MODID, "using"), (stack, level, entity, seed) -> {
+                CompoundTag tag = stack.getTag();
+                if (tag == null) return 0;
+                return tag.getBoolean(InjectorItem.IS_USING_PATH) ? 1 : 0;
+            });
+
+            ItemProperties.register(ModItems.INJECTOR.get(), new ResourceLocation(MODID, "fill"), (stack, level, entity, seed) -> {
+                CompoundTag tag = stack.getTag();
+                if (tag == null || !tag.contains(FluidHandlerItemStack.FLUID_NBT_KEY)) return 0;
+                CompoundTag fluid = tag.getCompound(FluidHandlerItemStack.FLUID_NBT_KEY);
+
+                float fraction = fluid.getInt("Amount") / (float)InjectorItem.CAPACITY;
+                if (fraction == 1) return 1;
+                else if (fraction > 0.75) return 0.75f;
+                else if (fraction > 0.5) return 0.5f;
+                else if (fraction > 0) return 0.25f;
+                else return 0;
             });
 
             /*

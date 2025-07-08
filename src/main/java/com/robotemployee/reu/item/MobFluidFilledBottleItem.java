@@ -1,6 +1,7 @@
 package com.robotemployee.reu.item;
 
 import com.robotemployee.reu.core.registry_help.generics.FilledBottleItem;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
@@ -19,9 +20,7 @@ public class MobFluidFilledBottleItem extends FilledBottleItem {
 
     @Override
     public @NotNull ItemStack finishUsingItem(@NotNull ItemStack stack, @NotNull Level level, @NotNull LivingEntity entity) {
-        super.finishUsingItem(stack, level, entity);
-
-        if (stack.isEmpty() && entity instanceof Player player) {
+        if (entity instanceof ServerPlayer player) {
             player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200, 0));
             player.addEffect(new MobEffectInstance(MobEffects.POISON, 200, 0));
             player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 100, 0));
@@ -31,6 +30,6 @@ public class MobFluidFilledBottleItem extends FilledBottleItem {
             }
         }
 
-        return stack;
+        return new ItemStack(Items.GLASS_BOTTLE);
     }
 }

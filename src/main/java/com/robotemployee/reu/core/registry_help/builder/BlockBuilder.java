@@ -20,6 +20,7 @@ public class BlockBuilder {
 
     Logger LOGGER = LogUtils.getLogger();
     private boolean hasItem = true;
+    private boolean hasCreativeTab = true;
     private String name;
     private Supplier<? extends Block> supplier;
 
@@ -53,6 +54,8 @@ public class BlockBuilder {
             if (!itemBuilder.hasName()) itemBuilder.withName(getName());
             if (!itemBuilder.hasSupplier()) itemBuilder.withSupplier(() -> new BlockItem(block.get(), new Item.Properties()));
 
+            if (!hasCreativeTab) itemBuilder.noCreativeTab();
+
             RegistryObject<Item> item = itemBuilder.build();
             return new BlockRegistryEntry(block, item);
         }
@@ -61,6 +64,11 @@ public class BlockBuilder {
     }
 
     // Optional things
+
+    public BlockBuilder noCreativeTab() {
+        hasCreativeTab = false;
+        return this;
+    }
 
     public BlockBuilder noItem() {
         hasItem = false;
