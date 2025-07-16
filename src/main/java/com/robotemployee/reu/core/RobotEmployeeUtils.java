@@ -6,8 +6,6 @@ import com.robotemployee.reu.compat.BornInChaosCompat;
 import com.robotemployee.reu.compat.FriendsAndFoesCompat;
 import com.robotemployee.reu.compat.SculkHordeCompat;
 import com.robotemployee.reu.core.registry_help.datagen.DataGenerators;
-import com.robotemployee.reu.core.registry_help.generics.FilledBottleItem;
-import com.robotemployee.reu.item.InjectorItem;
 import com.robotemployee.reu.item.ReconstructorItem;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.nbt.CompoundTag;
@@ -107,50 +105,6 @@ public class RobotEmployeeUtils
                 boolean isActivated = stack.getOrCreateTag().getInt(ReconstructorItem.LAST_AUTO_REPAIR_TAG) > 0;
                 return isActivated ? 1.0f : 0.0f;
             });
-
-            ItemProperties.register(ModItems.INJECTOR.get(), new ResourceLocation(MODID, "using"), (stack, level, entity, seed) -> {
-                CompoundTag tag = stack.getTag();
-                if (tag == null) return 0;
-                return tag.getBoolean(InjectorItem.IS_USING_PATH) ? 1 : 0;
-            });
-
-            ItemProperties.register(ModItems.INJECTOR.get(), new ResourceLocation(MODID, "fill"), (stack, level, entity, seed) -> {
-                CompoundTag tag = stack.getTag();
-                if (tag == null || !tag.contains(FluidHandlerItemStack.FLUID_NBT_KEY)) return 0;
-                CompoundTag fluid = tag.getCompound(FluidHandlerItemStack.FLUID_NBT_KEY);
-
-                float fraction = fluid.getInt("Amount") / (float)InjectorItem.CAPACITY;
-                if (fraction == 1) return 1;
-                else if (fraction > 0.75) return 0.75f;
-                else if (fraction > 0.5) return 0.5f;
-                else if (fraction > 0) return 0.25f;
-                else return 0;
-            });
-
-            /*
-            ItemProperties.register(ModItems.INJECTOR.get(), new ResourceLocation(MODID, "is_injecting"), (stack, level, entity, seed) -> {
-                InjectorItem.Mode mode = InjectorItem.getMode(stack);
-                boolean isActivated = mode != InjectorItem.Mode.NONE && mode != InjectorItem.Mode.CLEAR;
-                return isActivated ? 1.0f : 0.0f;
-            });
-
-            ItemProperties.register(ModItems.INJECTOR.get(), new ResourceLocation(MODID, "fill_amount"), (stack, level, entity, seed) -> {
-                int fillAmount = InjectorItem.getModeDependentFillAmount(stack);
-                int fillMax = InjectorItem.getFillAmount(stack, InjectorItem.FILL_MAX_PATH);
-                return Mth.clamp((float)fillAmount / fillMax, 0, 1);
-            });
-
-             */
-        }
-
-        @SubscribeEvent
-        public static void registerItemColors(RegisterColorHandlersEvent.Item event) {
-            for (FilledBottleItem bottle : ModFluids.getBottles()) {
-                int tint = ModFluidTypes.getTintFromType(ModFluids.MOB_FLUID.get().getFluidType());
-                event.register((stack, index) -> {
-                    return index == 1 ? tint : -1;
-                }, bottle);
-            }
         }
     }
 }
