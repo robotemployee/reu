@@ -1,6 +1,7 @@
 package com.robotemployee.reu.core;
 
 import com.robotemployee.reu.core.registry_help.builder.ItemBuilder;
+import com.robotemployee.reu.item.FryingPanItem;
 import com.robotemployee.reu.item.ReconstructorItem;
 import com.robotemployee.reu.item.SculkReconstructorItem;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -51,5 +52,14 @@ public class ModItems {
                                     .nutrition(4)
                                     .build()
                             )))
+            .build();
+
+    public static final RegistryObject<Item> FRYING_PAN = new ItemBuilder()
+            .withName("frying_pan")
+            .withSupplier(() -> new FryingPanItem(
+                    new Item.Properties()
+                            .stacksTo(1)
+                            .defaultDurability(10)
+            ))
             .build();
 }
