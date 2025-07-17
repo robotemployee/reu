@@ -8,6 +8,7 @@ import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.core.registry_help.entry.BlockRegistryEntry;
 import com.robotemployee.reu.core.registry_help.entry.FluidRegistryEntry;
 import com.robotemployee.reu.core.registry_help.datagen.FluidDatagen;
+import com.robotemployee.reu.core.registry_help.generics.FilledBottleItem;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
