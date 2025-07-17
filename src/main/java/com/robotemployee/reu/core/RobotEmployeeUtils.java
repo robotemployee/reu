@@ -1,10 +1,7 @@
 package com.robotemployee.reu.core;
 
 import com.mojang.logging.LogUtils;
-import com.robotemployee.reu.compat.BaseGame;
-import com.robotemployee.reu.compat.BornInChaosCompat;
-import com.robotemployee.reu.compat.FriendsAndFoesCompat;
-import com.robotemployee.reu.compat.SculkHordeCompat;
+import com.robotemployee.reu.compat.*;
 import com.robotemployee.reu.core.registry_help.datagen.DataGenerators;
 import com.robotemployee.reu.item.ReconstructorItem;
 import net.minecraft.client.renderer.item.ItemProperties;
@@ -68,6 +65,7 @@ public class RobotEmployeeUtils
         MinecraftForge.EVENT_BUS.register(BornInChaosCompat.class);
         MinecraftForge.EVENT_BUS.register(BaseGame.class);
         MinecraftForge.EVENT_BUS.register(FriendsAndFoesCompat.class);
+        MinecraftForge.EVENT_BUS.register(AlexsCavesCompat.class);
 
         MinecraftForge.EVENT_BUS.register(DataGenerators.class);
 
