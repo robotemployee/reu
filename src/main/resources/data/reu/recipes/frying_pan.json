@@ -1,0 +1,13 @@
+{
+  "type": "create:pressing",
+  "ingredients": [
+    {
+      "tag": "minecraft:tools"
+    }
+  ],
+  "results": [
+    {
+      "item": "reu:frying_pan"
+    }
+  ]
+}

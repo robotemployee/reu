@@ -3,6 +3,7 @@ package com.robotemployee.reu.item;
 import com.robotemployee.reu.core.ModItems;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.LivingEntity;
@@ -23,14 +24,17 @@ public class FryingPanItem extends Item {
     }
 
     public static ItemStack craftFrom(ItemStack held) {
+        return saveTo(new ItemStack(ModItems.FRYING_PAN.get()), held);
+    }
+
+    public static ItemStack saveTo(ItemStack pan, ItemStack held) {
         CompoundTag savedTag = held.save(new CompoundTag());
 
-        ItemStack newborn = new ItemStack(ModItems.FRYING_PAN.get());
-        CompoundTag newTag = newborn.getOrCreateTag();
+        CompoundTag newTag = pan.getOrCreateTag();
         newTag.put(HELD_PATH, savedTag);
-        newborn.setTag(newTag);
+        pan.setTag(newTag);
 
-        return newborn;
+        return pan;
     }
 
     @Override
@@ -44,9 +48,12 @@ public class FryingPanItem extends Item {
         return 40;
     }
 
+
+
     @Override
     @NotNull
     public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
+        player.startUsingItem(hand);
         return InteractionResultHolder.consume(player.getItemInHand(hand));
     }
 
@@ -57,6 +64,8 @@ public class FryingPanItem extends Item {
             if (level.isClientSide()) entity.sendSystemMessage(Component.literal("Error due to the frying pan having no tag"));
             return ItemStack.EMPTY;
         }
+
+        entity.playSound(SoundEvents.FIRE_EXTINGUISH);
 
         return ItemStack.of(tag.getCompound(HELD_PATH));
     }

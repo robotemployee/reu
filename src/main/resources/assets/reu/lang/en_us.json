@@ -1,15 +1,12 @@
 {
   "item.reu.reconstructor": "Ringer of Repair",
   "item.reu.sculk_reconstructor" : "§3Soul Resonator",
+  "item.reu.one_day_blinding_stew": "1-Day Blinding Stew",
+  "item.reu.frying_pan": "I'm peased to meet you",
 
-  "item.reu.injector" : "Injector",
-  "item.reu.mob_fluid_bucket" : "Mob Fluid Bucket",
-  "item.reu.mob_fluid_bottle" : "Mob Fluid Bottle",
+  "item.reu.one_day_blinding_stew.tooltip": "§7A stew which makes you go blind.\n§7A stew that makes you go blind for 1 day.\n§7Stew that blinds you for a day.\n§7A type of stew that makes you blind for 1 day.\n§71 day blinding stew.",
 
-  "block.reu.infused_egg" : "Infused Egg",
-  "block.reu.blank_egg" : "Blank Egg",
-  "block.reu.mob_fluid" : "Mob Fluid",
 
-  "creativetab.reu_tab": "RE Utilities",
-  "gui.jei.category.reu.egg_infusion": "Egg Synthesis"
+
+  "creativetab.reu_tab": "RE Utilities"
 }

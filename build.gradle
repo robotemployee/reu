@@ -202,6 +202,12 @@ dependencies {
 
     // Upgrade Aquatic
     implementation fg.deobf("maven.modrinth:upgrade-aquatic:${upgrade_aquatic_version}")
+    // Blueprint
+    implementation fg.deobf("maven.modrinth:blueprint:${blueprint_version}")
+
+    // Create
+    implementation fg.deobf("maven.modrinth:create:${create_version}")
+
     //implementation fg.deobf("curse.maven:upgrade-aquatic-326895:6393133")
 
 
