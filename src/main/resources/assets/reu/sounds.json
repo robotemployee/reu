@@ -1,0 +1,56 @@
+{
+  "music_disc.birdbrain": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "reu:music_disc/birdbrain",
+        "stream": true
+      }
+    ]
+  },
+  "music_disc.hatred_jackulation": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "reu:music_disc/hatred_jackulation",
+        "stream": true
+      }
+    ]
+  },
+  "music_disc.california_girls": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "reu:music_disc/california_girls",
+        "stream": true
+      }
+    ]
+  },
+  "music_disc.triple_baka": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "reu:music_disc/triple_baka",
+        "stream": true
+      }
+    ]
+  },
+  "music_disc.clairo": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "reu:music_disc/clairo",
+        "stream": true
+      }
+    ]
+  },
+  "music_disc.giant_robots": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "reu:music_disc/giant_robots",
+        "stream": true
+      }
+    ]
+  }
+}

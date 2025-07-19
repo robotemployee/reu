@@ -27,7 +27,7 @@ public class FluidDatagen {
     }
 
     public static void generateBottle(Supplier<Item> supplier) throws IOException {
-        Datagen.queueModelRequest((provider) -> {
+        Datagen.ModItemModelProvider.queueRequest((provider) -> {
             ResourceLocation loc = ForgeRegistries.ITEMS.getKey(supplier.get());
             provider.getBuilder(loc.toString())
                     .parent(new ModelFile.UncheckedModelFile("item/generated"))

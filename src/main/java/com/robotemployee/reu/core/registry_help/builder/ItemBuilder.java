@@ -2,16 +2,22 @@ package com.robotemployee.reu.core.registry_help.builder;
 
 import com.robotemployee.reu.core.ModCreativeModeTabs;
 import com.robotemployee.reu.core.ModItems;
+import com.robotemployee.reu.core.registry_help.datagen.Datagen;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.registries.RegistryObject;
 
+import java.util.ArrayList;
 import java.util.function.Supplier;
 
 public class ItemBuilder {
 
     private String name;
     private Supplier<Item> supplier;
+    private final ArrayList<Supplier<TagKey<Item>>> tags = new ArrayList<>();
     private boolean inCreativeTab = true;
+
+    private boolean doDatagen = true;
 
     public ItemBuilder withName(String name) {
         this.name = name;
@@ -27,7 +33,16 @@ public class ItemBuilder {
         checkForInsufficientParams();
         RegistryObject<Item> newborn = ModItems.ITEMS.register(name, supplier);
         if (inCreativeTab) ModCreativeModeTabs.addItem(newborn);
+        if (doDatagen) Datagen.basicItem(newborn);
+        for (Supplier<TagKey<Item>> tag : tags) {
+            Datagen.addTagToItem(newborn, tag);
+        }
         return newborn;
+    }
+
+    public ItemBuilder addTag(Supplier<TagKey<Item>> tagSupplier) {
+        this.tags.add(tagSupplier);
+        return this;
     }
 
     public boolean hasName() {
@@ -36,6 +51,11 @@ public class ItemBuilder {
 
     public boolean hasSupplier() {
         return supplier != null;
+    }
+
+    public ItemBuilder noDatagen() {
+        this.doDatagen = false;
+        return this;
     }
 
     public ItemBuilder noCreativeTab() {

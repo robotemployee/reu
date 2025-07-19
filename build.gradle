@@ -204,6 +204,8 @@ dependencies {
     implementation fg.deobf("maven.modrinth:upgrade-aquatic:${upgrade_aquatic_version}")
     // Blueprint
     implementation fg.deobf("maven.modrinth:blueprint:${blueprint_version}")
+    // Gallery
+    implementation fg.deobf("maven.modrinth:gallery:${gallery_version}")
 
     // Create
     implementation fg.deobf("maven.modrinth:create:${create_version}")

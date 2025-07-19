@@ -1,11 +1,29 @@
 {
   "item.reu.reconstructor": "Ringer of Repair",
   "item.reu.sculk_reconstructor" : "§3Soul Resonator",
-  "item.reu.one_day_blinding_stew": "1-Day Blinding Stew",
-  "item.reu.frying_pan": "I'm peased to meet you",
 
+  "item.reu.one_day_blinding_stew": "1-Day Blinding Stew",
   "item.reu.one_day_blinding_stew.tooltip": "§7A stew which makes you go blind.\n§7A stew that makes you go blind for 1 day.\n§7Stew that blinds you for a day.\n§7A type of stew that makes you blind for 1 day.\n§71 day blinding stew.",
 
+  "item.reu.frying_pan": "I'm peased to meet you",
+
+  "item.reu.music_disc_birdbrain": "Music Disc",
+  "item.reu.music_disc_birdbrain.desc": "BIRDBRAIN - (w/ OK Glass) feat. Kasane Teto",
+
+  "item.reu.music_disc_hatred_jackulation": "Music Disc",
+  "item.reu.music_disc_hatred_jackulation.desc": "Hatredcopter + I Ejaculate Fire - Dethklok feat. Custom Wood Burning",
+
+  "item.reu.music_disc_california_girls": "Music Disc",
+  "item.reu.music_disc_california_girls.desc": "California Gurls - Katy Perry",
+
+  "item.reu.music_disc_triple_baka": "Music Disc",
+  "item.reu.music_disc_triple_baka.desc": "Triple Baka - LamazeP",
+
+  "item.reu.music_disc_clairo": "Music Disc",
+  "item.reu.music_disc_clairo.desc": "Clairo - Juna",
+
+  "item.reu.music_disc_giant_robots": "Music Disc",
+  "item.reu.music_disc_giant_robots.desc": "The Giant Robots Are Doing Something - Tristan McCammond",
 
 
   "creativetab.reu_tab": "RE Utilities"

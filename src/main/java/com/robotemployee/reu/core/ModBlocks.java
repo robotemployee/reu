@@ -12,7 +12,6 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, RobotEmployeeUtils.MODID);
-    public static final DeferredRegister<Item> ITEMS = ModItems.ITEMS;
 
     // BlockRegistryEntry has both a block and an item
 }

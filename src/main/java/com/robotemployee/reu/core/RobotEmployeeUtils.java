@@ -2,7 +2,7 @@ package com.robotemployee.reu.core;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.compat.*;
-import com.robotemployee.reu.core.registry_help.datagen.DataGenerators;
+import com.robotemployee.reu.core.registry_help.datagen.Datagen;
 import com.robotemployee.reu.item.ReconstructorItem;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.nbt.CompoundTag;
@@ -40,6 +40,7 @@ public class RobotEmployeeUtils
     private static final Logger LOGGER = LogUtils.getLogger();
 
     // sequence of registering:
+    // sounds
     // blocks
     // block entities
     // fluid types
@@ -57,6 +58,7 @@ public class RobotEmployeeUtils
         modEventBus.addListener(this::commonSetup);
 
         // Register the Deferred Register to the mod event bus so items get registered
+        ModSounds.SOUNDS.register(modEventBus);
         ModBlocks.BLOCKS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModFluidTypes.FLUID_TYPES.register(modEventBus);
@@ -74,7 +76,7 @@ public class RobotEmployeeUtils
         MinecraftForge.EVENT_BUS.register(FriendsAndFoesCompat.class);
         MinecraftForge.EVENT_BUS.register(AlexsCavesCompat.class);
 
-        MinecraftForge.EVENT_BUS.register(DataGenerators.class);
+        //MinecraftForge.EVENT_BUS.register(Datagen.class);
         MinecraftForge.EVENT_BUS.register(ClientModEvents.class);
 
         // Register our mod's ForgeConfigSpec so that Forge can create and load the config file for us

@@ -1,17 +1,24 @@
 package com.robotemployee.reu.core;
 
+import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.registry_help.builder.ItemBuilder;
 import com.robotemployee.reu.item.FryingPanItem;
 import com.robotemployee.reu.item.ReconstructorItem;
 import com.robotemployee.reu.item.SculkReconstructorItem;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.RecordItem;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import org.slf4j.Logger;
+
+import java.util.function.Supplier;
 
 public class ModItems {
 
@@ -24,6 +31,7 @@ public class ModItems {
     //public static final RegistryObject<Item> INJECTOR = ITEMS.register("injector", () -> new InjectorItem(new Item.Properties()));
 
 
+    static Logger LOGGER = LogUtils.getLogger();
 
     public static final RegistryObject<Item> RECONSTRUCTOR = new ItemBuilder()
             .withName("reconstructor")
@@ -31,7 +39,9 @@ public class ModItems {
                     new Item.Properties()
                             .rarity(Rarity.RARE)
                     ))
+            .noDatagen()
             .build();
+
 
     public static final RegistryObject<Item> SCULK_RECONSTRUCTOR = new ItemBuilder()
             .withName("sculk_reconstructor")
@@ -39,6 +49,7 @@ public class ModItems {
                     new Item.Properties()
                             .rarity(Rarity.EPIC)
                     ))
+            .noDatagen()
             .build();
 
 
@@ -61,5 +72,57 @@ public class ModItems {
                             .stacksTo(1)
                             .defaultDurability(10)
             ))
+            .noDatagen()
             .build();
+
+    public static final RegistryObject<Item> MUSIC_DISC_FINLEY = createDiscItem("birdbrain", ModSounds.BIRDBRAIN_DISC, 5140); // 5140
+    public static final RegistryObject<Item> MUSIC_DISC_SOPHIA = createDiscItem("hatred_jackulation", ModSounds.HATRED_JACKULATION_DISC, 8400);
+
+    public static final RegistryObject<Item> MUSIC_DISC_BRYCE = createDiscItem("california_girls", ModSounds.CALIFORNIA_GIRLS_DISC, 4720);
+
+    public static final RegistryObject<Item> MUSIC_DISC_CALLAHAN = createDiscItem("triple_baka", ModSounds.TRIPLE_BAKA_DISC, 4780);
+
+    public static final RegistryObject<Item> MUSIC_DISC_JASON = createDiscItem("clairo", ModSounds.CLAIRO_DISC, 4000);
+
+    public static final RegistryObject<Item> MUSIC_DISC_TRISTAN = createDiscItem("giant_robots", ModSounds.GIANT_ROBOTS_DISC, 4540);
+
+    // note that the resulting item id will have "music_disc_" appended to the start of the itemId input
+    public static RegistryObject<Item> createDiscItem(String itemId, Supplier<SoundEvent> sound, int ticks) {
+        String finalItemId = "music_disc_" + itemId;
+
+        RegistryObject<Item> newborn = new ItemBuilder()
+                .withName(finalItemId)
+                .withSupplier(() -> {
+                        assert sound.get() != null;
+                        LOGGER.info(String.format("Registering new music disc... id=%s sound=%s duration=%s", finalItemId, sound.get().getLocation(), ticks));
+                        return new RecordItem(
+                                1,
+                                sound,
+                                new Item.Properties()
+                                        .rarity(Rarity.RARE)
+                                        .stacksTo(1)
+                                ,
+                                ticks
+                        );
+                })
+                .addTag(() -> ItemTags.MUSIC_DISCS)
+                .build();
+        /*
+        RegistryObject<Item> newborn = ITEMS.register(itemId, () -> {
+            assert sound.get() != null;
+            LOGGER.info(String.format("Registering new music disc... id=%s sound=%s duration=%s", itemId, sound.get().getLocation(), ticks));
+            return new RecordItem(
+                    1,
+                    sound,
+                    new Item.Properties()
+                            .rarity(Rarity.RARE)
+                            .stacksTo(1)
+                    ,
+                    ticks
+            );
+        });*/
+
+        //Datagen.basicItem(newborn);
+        return newborn;
+    }
 }
