@@ -192,7 +192,12 @@ repositories {
 dependencies {
     // Sculk Horde dependency
     implementation fg.deobf("maven.modrinth:sculk-horde:${sculkhorde_version}")
+
+    // Alex's Caves
     implementation fg.deobf("maven.modrinth:alexs-caves:${alexscaves_version}")
+    // Alex's Mobs
+    implementation fg.deobf("maven.modrinth:alexs-mobs:${alexsmobs_version}")
+    // Citadel
     implementation fg.deobf("maven.modrinth:citadel:${citadel_version}")
     //implementation fg.deobf("curse.maven:born-in-chaos-686437:6474407")
 

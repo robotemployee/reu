@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "reu:item/music_disc_heart_of_glass"
+  }
+}

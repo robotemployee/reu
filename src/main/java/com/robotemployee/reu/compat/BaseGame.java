@@ -1,16 +1,19 @@
 package com.robotemployee.reu.compat;
 
+import com.github.alexthe666.alexsmobs.entity.EntityGorilla;
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.ModItems;
 import com.simibubi.create.content.kinetics.press.PressingRecipe;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -35,16 +38,16 @@ public class BaseGame {
 
     @SubscribeEvent
     public static void onLivingDeath(LivingDeathEvent event) {
-        //LOGGER.info("Living died");
         LivingEntity entity = event.getEntity();
-        if (!(entity instanceof Chicken)) return;
-        //LOGGER.info("Living is chicken");
-        //LOGGER.info(event.getSource().getMsgId());
+        if (entity instanceof Chicken) chickenDeath(event);
+        if (entity instanceof EntityGorilla) gorillaDeath(event);
+    }
+
+    public static void chickenDeath(LivingDeathEvent event) {
+        LivingEntity entity = event.getEntity();
         if (!event.getSource().is(DamageTypes.LIGHTNING_BOLT)) return;
-        //LOGGER.info("and it died to lightning");
         Level level = entity.level();
         if (level.isClientSide()) return;
-        //LOGGER.info("and the level isn't clientside");
 
         ItemEntity newborn = new ItemEntity(
                 level,
@@ -52,6 +55,24 @@ public class BaseGame {
                 entity.getY(),
                 entity.getZ(),
                 new ItemStack(ModItems.MUSIC_DISC_FINLEY.get())
+        );
+        level.addFreshEntity(newborn);
+    }
+
+    public static void gorillaDeath(LivingDeathEvent event) {
+        LivingEntity entity = event.getEntity();
+        LivingEntity attacker = entity.getLastAttacker();
+        Level level = entity.level();
+        if (level.isClientSide()) return;
+        if (!(attacker instanceof Player player)) return;
+        if (player.getMainHandItem() != ItemStack.EMPTY) return;
+
+        ItemEntity newborn = new ItemEntity(
+                level,
+                entity.getX(),
+                entity.getY(),
+                entity.getZ(),
+                new ItemStack(ModItems.MUSIC_DISC_JASON.get())
         );
         level.addFreshEntity(newborn);
     }
