@@ -13,8 +13,6 @@ public class ModSounds {
     static Logger LOGGER = LogUtils.getLogger();
     public static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, RobotEmployeeUtils.MODID);
 
-    //public static final RegistryObject<SoundEvent> BIRDBRAIN_DISC = registerDiscSound("music_disc.birdbrain");
-
     public static final RegistryObject<SoundEvent> BIRDBRAIN_DISC = registerDiscSound("birdbrain");
 
     public static final RegistryObject<SoundEvent> HATRED_JACKULATION_DISC = registerDiscSound("hatred_jackulation");
@@ -26,6 +24,12 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> CLAIRO_DISC = registerDiscSound("clairo");
 
     public static final RegistryObject<SoundEvent> GIANT_ROBOTS_DISC = registerDiscSound("giant_robots");
+
+    public static final RegistryObject<SoundEvent> ARMORED_CORE_20TH_DISC = registerDiscSound("armored_core_20th");
+
+    public static final RegistryObject<SoundEvent> SO_BE_IT_DISC = registerDiscSound("so_be_it");
+
+    public static final RegistryObject<SoundEvent> HEART_OF_GLASS_DISC = registerDiscSound("heart_of_glass");
 
     public static RegistryObject<SoundEvent> registerDiscSound(String location) {
 

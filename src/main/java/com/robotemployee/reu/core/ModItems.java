@@ -86,11 +86,17 @@ public class ModItems {
 
     public static final RegistryObject<Item> MUSIC_DISC_TRISTAN = createDiscItem("giant_robots", ModSounds.GIANT_ROBOTS_DISC, 4540);
 
+    public static final RegistryObject<Item> MUSIC_DISC_SALTY = createDiscItem("armored_core_20th", ModSounds.ARMORED_CORE_20TH_DISC, 6600);
+
+    public static final RegistryObject<Item> MUSIC_DISC_ALEX = createDiscItem("so_be_it", ModSounds.SO_BE_IT_DISC, 4060);
+
+    public static final RegistryObject<Item> MUSIC_DISC_HEART_OF_GLASS = createDiscItem("heart_of_glass", ModSounds.HEART_OF_GLASS_DISC, 4680);
+
     // note that the resulting item id will have "music_disc_" appended to the start of the itemId input
     public static RegistryObject<Item> createDiscItem(String itemId, Supplier<SoundEvent> sound, int ticks) {
         String finalItemId = "music_disc_" + itemId;
 
-        RegistryObject<Item> newborn = new ItemBuilder()
+        return new ItemBuilder()
                 .withName(finalItemId)
                 .withSupplier(() -> {
                         assert sound.get() != null;
@@ -107,22 +113,6 @@ public class ModItems {
                 })
                 .addTag(() -> ItemTags.MUSIC_DISCS)
                 .build();
-        /*
-        RegistryObject<Item> newborn = ITEMS.register(itemId, () -> {
-            assert sound.get() != null;
-            LOGGER.info(String.format("Registering new music disc... id=%s sound=%s duration=%s", itemId, sound.get().getLocation(), ticks));
-            return new RecordItem(
-                    1,
-                    sound,
-                    new Item.Properties()
-                            .rarity(Rarity.RARE)
-                            .stacksTo(1)
-                    ,
-                    ticks
-            );
-        });*/
 
-        //Datagen.basicItem(newborn);
-        return newborn;
     }
 }

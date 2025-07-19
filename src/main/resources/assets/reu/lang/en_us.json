@@ -25,6 +25,14 @@
   "item.reu.music_disc_giant_robots": "Music Disc",
   "item.reu.music_disc_giant_robots.desc": "The Giant Robots Are Doing Something - Tristan McCammond",
 
+  "item.reu.music_disc_armored_core_20th": "Music Disc",
+  "item.reu.music_disc_armored_core_20th.desc": "Mechanized Memories - in the end - Keiichiro Segawa & Masaru Tateyama",
+
+  "item.reu.music_disc_so_be_it": "Music Disc",
+  "item.reu.music_disc_so_be_it.desc": "So Be It - Clipse",
+
+  "item.reu.music_disc_heart_of_glass": "Music Disc",
+  "item.reu.music_disc_heart_of_glass.desc": "Heart Of Glass - Blondie",
 
   "creativetab.reu_tab": "RE Utilities"
 }

@@ -52,5 +52,32 @@
         "stream": true
       }
     ]
+  },
+  "music_disc.armored_core_20th": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "reu:music_disc/armored_core_20th",
+        "stream": true
+      }
+    ]
+  },
+  "music_disc.so_be_it": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "reu:music_disc/so_be_it",
+        "stream": true
+      }
+    ]
+  },
+  "music_disc.heart_of_glass": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "reu:music_disc/heart_of_glass",
+        "stream": true
+      }
+    ]
   }
 }
