@@ -2,6 +2,7 @@ package com.robotemployee.reu.compat;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.event.entity.living.MobSpawnEvent;
+import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -17,6 +18,6 @@ public class FriendsAndFoesCompat {
         assert loc != null;
         String name = loc.getPath();
         // death.
-        if (name.equals(GLARE)) event.setCanceled(true);
+        if (name.equals(GLARE)) event.setResult(Event.Result.DENY);
     }
 }
