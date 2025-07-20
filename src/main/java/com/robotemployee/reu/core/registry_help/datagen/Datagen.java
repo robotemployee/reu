@@ -1,21 +1,38 @@
 package com.robotemployee.reu.core.registry_help.datagen;
 
 import com.mojang.logging.LogUtils;
+import com.robotemployee.reu.core.ModAdvancements;
+import com.robotemployee.reu.core.ModItems;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import net.minecraft.ResourceLocationException;
+import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.FrameType;
+import net.minecraft.advancements.critereon.InventoryChangeTrigger;
+import net.minecraft.advancements.critereon.LocationPredicate;
+import net.minecraft.advancements.critereon.PlayerTrigger;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.PackOutput;
+import net.minecraft.data.loot.LootTableProvider;
+import net.minecraft.data.loot.LootTableSubProvider;
 import net.minecraft.data.tags.TagsProvider;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.loot.LootPool;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.entries.LootItem;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSet;
+import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraftforge.client.model.generators.ItemModelProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
+import net.minecraftforge.common.data.ForgeAdvancementProvider;
 import net.minecraftforge.data.event.GatherDataEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -31,9 +48,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -44,6 +62,14 @@ public class Datagen {
 
     public static boolean doesResourceAlreadyExist(ResourceLocation loc) {
         return Files.exists(Paths.get("src", "main", "resources", "assets", loc.getNamespace(), loc.getPath()));
+    }
+
+    public static void simpleSingleLootTable(ResourceLocation loc, Supplier<ItemStack> supplier, LootContextParamSet params) {
+        ModLootTableProvider.queueRequest(loc, params, () -> LootTable.lootTable()
+                .withPool(LootPool.lootPool()
+                        .setRolls(ConstantValue.exactly(1))
+                        .add(LootItem.lootTableItem(supplier.get().getItem())))
+        );
     }
 
     public static void basicItemModel(ResourceLocation loc) {
@@ -127,6 +153,12 @@ public class Datagen {
 
         gen.addProvider(event.includeClient(), new ModItemModelProvider(gen.getPackOutput(), event.getExistingFileHelper()));
         ModTagsProvider.attach(event);
+
+        gen.addProvider(event.includeServer(), ModLootTableProvider.create(gen.getPackOutput()));
+
+        // loading this into the JVM and stuff and jazz
+        ModAdvancements.register();
+        gen.addProvider(event.includeServer(), new ModAdvancementProvider(gen.getPackOutput(), event.getLookupProvider(), event.getExistingFileHelper()));
     }
 
 
@@ -172,7 +204,7 @@ public class Datagen {
             ArrayList<Consumer<TagsProviderImpl<?>>> specificRequests = requests.get(key);
             // don't look
             LOGGER.info("Queuing tag datagen request of type " + key.location());
-            specificRequests.add((Consumer<TagsProviderImpl<?>>)(Consumer<?>)request);
+            specificRequests.add((Consumer<TagsProviderImpl<?>>) (Consumer<?>) request);
         }
 
 
@@ -196,74 +228,194 @@ public class Datagen {
                 return super.tag(key);
             }
         }
+    }
 
-        /*private static class ItemTagProvider extends TagsProvider<Item> {
+    // i can guarantee you this code sucks completely i have barely any understanding of what's going on and honestly i just got my wisdom teeth removed i don't care anymore
 
-            protected ItemTagProvider(PackOutput output, ResourceKey<? extends Registry<Item>> resourceKey, CompletableFuture<HolderLookup.Provider> future, String modId, @Nullable ExistingFileHelper existingFileHelper) {
-                super(output, resourceKey, future, modId, existingFileHelper);
+    public static class ModLootTableProvider extends LootTableProvider {
+
+        //public static final HashSet<SubProviderEntry> requests = new HashSet<>();
+
+        protected static final HashSet<ResourceLocation> locs = new HashSet<>();
+
+        // these are basically just entries but using a HashMap so that there can be 1 provider per LootContextParamSet
+        // in create() it actually just iterates through the map and creates a LootTableSubProviderEntry whatever thingy for each pair
+        protected static final HashMap<LootContextParamSet, LootTableSubProvider> requests = new HashMap<>();
+
+
+
+        /*public static void queueRequest(ResourceLocation loc, LootContextParamSet params, Consumer<LootTable.Builder> consumer) {
+            queueRequest(loc, new SubProviderEntry(() -> new EveryLootTableSubProvider(loc, consumer), params));
+        }*/
+
+        public static void queueRequest(ResourceLocation loc, LootContextParamSet params, Supplier<LootTable.Builder> builder) {
+            if (locs.contains(loc)) {
+                LOGGER.error("attempted to queue loot tables with duplicate resource locations");
+                return;
+            }
+
+            locs.add(loc);
+
+
+            if (!requests.containsKey(params)) requests.put(params, new EveryLootTableSubProvider());
+
+            LootTableSubProvider provider = requests.get(params);
+
+            if (provider instanceof EveryLootTableSubProvider every) {
+                every.queueRequest(loc, builder);
+            }
+        }
+
+        public static ModLootTableProvider create(PackOutput output) {
+            ArrayList<SubProviderEntry> entries = new ArrayList<>();
+
+            for (HashMap.Entry<LootContextParamSet, LootTableSubProvider> entry : requests.entrySet()) {
+                entries.add(new SubProviderEntry(entry::getValue, entry.getKey()));
+            }
+
+            return new ModLootTableProvider(output, entries);
+        }
+
+
+        protected ModLootTableProvider(PackOutput output, ArrayList<SubProviderEntry> entries) {
+            super(output, locs, entries);
+
+        }
+
+
+
+        public static class EveryLootTableSubProvider implements LootTableSubProvider {
+
+            public final HashMap<ResourceLocation, Supplier<LootTable.Builder>> requests = new HashMap<>();
+
+            public EveryLootTableSubProvider() {}
+
+            public void queueRequest(ResourceLocation loc, Supplier<LootTable.Builder> builder) {
+                requests.put(loc, builder);
             }
 
             @Override
-            protected void addTags(HolderLookup.Provider provider) {
-
+            public void generate(@NotNull BiConsumer<ResourceLocation, LootTable.Builder> consumer) {
+                for (HashMap.Entry<ResourceLocation, Supplier<LootTable.Builder>> entry : requests.entrySet()) {
+                    consumer.accept(entry.getKey(), entry.getValue().get());
+                }
             }
-        }*/
+        }
     }
 
-/*
-    public static class ModTextureProvider implements DataProvider {
+    public static class ModAdvancementProvider extends ForgeAdvancementProvider {
 
-        public final Map<ResourceLocation, Texture> generatedTextures = new HashMap<>();
+        public static Advancement ROOT;
+        public static ResourceLocation ROOT_LOCATION = new ResourceLocation(RobotEmployeeUtils.MODID, "root");
 
-        public ModTextureProvider(PackOutput output, String folder, Function<ResourceLocation, T> factory, ) {
-            Preconditions.checkNotNull(output);
-            this.output = output;
-            Preconditions.checkNotNull(folder);
-            this.folder = folder;
-            Preconditions.checkNotNull(factory);
-            this.factory = factory;
-            Preconditions.checkNotNull(existingFileHelper);
-            this.existingFileHelper = existingFileHelper;
+        public static final ArrayList<Consumer<Consumer<Advancement>>> requests = new ArrayList<>();
+
+        protected static final HashMap<ResourceLocation, Advancement> advancements = new HashMap<>();
+
+        // Here's how you use this.
+        // Call queueRequest() with a lambda where you create an advancement
+        // and use the save() method on the provided consumer.
+        // Then call record() on the advancement so that it can be used
+        // as a parent for another advancement. This is necessary because
+        // minecraft is silly
+
+        public static void queueRequest(Consumer<Consumer<Advancement>> request) {
+            //LOGGER.info("Queueing request for advancement");
+            requests.add(request);
         }
 
-        @Override @NotNull
-        public CompletableFuture<?> run(CachedOutput cache) {
-            return generateAll(cache);
+        public static void record(Advancement advancement) {
+            advancements.put(advancement.getId(), advancement);
         }
 
-        @Override @NotNull
-        public String getName() {
-            return "Texture Provider";
+        public static ResourceLocation simpleItemObtainedAdvancement(String id, Supplier<Item> supplier, Component desc) {
+            return simpleItemObtainedAdvancement(id, supplier, desc, null);
         }
 
-        protected CompletableFuture<?> generateAll(CachedOutput cache) {
-            CompletableFuture<?>[] futures = new CompletableFuture<?>[this.generatedTextures.size()];
-            int i = 0;
+        public static ResourceLocation simpleItemObtainedAdvancement(String id, Supplier<Item> supplier, Component desc, @Nullable ResourceLocation parent) {
+            ResourceLocation loc = new ResourceLocation(RobotEmployeeUtils.MODID, id);
 
-            for (Texture texture : this.generatedTextures.values()) {
-                Path target = getPath(texture);
-                futures[i++] = DataProvider.saveStable(cache, texture.toJson(), target);
+            Datagen.ModAdvancementProvider.queueRequest((consumer) -> {
+                Item item = supplier.get();
+
+                Component title = Component.literal("Obtained ").append(Component.translatable(item.getDescriptionId() + ".desc"));
+
+                //LOGGER.info("Root is " + ROOT + " and rootloc is " + ROOT_LOCATION);
+
+                if (parent == null) {
+                    record(Datagen.ModAdvancementProvider.createNormalAdvancement(id, supplier, title, desc)
+                            .addCriterion("has_item", InventoryChangeTrigger.TriggerInstance.hasItems(supplier.get()))
+                            .save(consumer, loc.toString()));
+                } else {
+                    record(Datagen.ModAdvancementProvider.createNormalAdvancement(id, supplier, title, desc, parent)
+                            .addCriterion("has_item", InventoryChangeTrigger.TriggerInstance.hasItems(supplier.get()))
+                            .save(consumer, loc.toString()));
+                }
+            });
+
+            LOGGER.info("Queued simple item obtainment advancement with id " + id);
+            return loc;
+        }
+
+        public static Advancement.Builder createNormalAdvancement(String id, Supplier<Item> icon, Component title, Component desc) {
+            //ResourceLocation loc = new ResourceLocation(RobotEmployeeUtils.MODID, id);
+            return createNormalAdvancement(id, icon, title, desc, ROOT_LOCATION);
+        }
+
+
+        public static Advancement.Builder createNormalAdvancement(String id, Supplier<Item> icon, Component title, Component desc, ResourceLocation parent) {
+            //ResourceLocation loc = new ResourceLocation(RobotEmployeeUtils.MODID, id);
+
+            return Advancement.Builder.advancement()
+                    .display(
+                            icon.get(),
+                            title,
+                            desc,
+                            null,
+                            FrameType.TASK,
+                            true,
+                            true,
+                            false
+                    ).parent(advancements.get(parent));
+        }
+
+
+        /**
+         * Constructs an advancement provider using the generators to write the
+         * advancements to a file.
+         *
+         * @param output             the target directory of the data generator
+         * @param registries         a future of a lookup for registries and their objects
+         * @param existingFileHelper a helper used to find whether a file exists
+         */
+        public ModAdvancementProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> registries, ExistingFileHelper existingFileHelper) {
+            super(output, registries, existingFileHelper, List.of(new ModAdvancementsProcessor()));
+        }
+
+        protected static class ModAdvancementsProcessor implements AdvancementGenerator {
+
+            @Override
+            public void generate(HolderLookup.@NotNull Provider registries, @NotNull Consumer<Advancement> saver, @NotNull ExistingFileHelper existingFileHelper) {
+                LOGGER.info("Generating advancements... There are " + requests.size() + " requests");
+                ROOT = Advancement.Builder.advancement()
+                        .display(
+                                ModItems.BLINDING_STEW.get(),
+                                Component.literal("H.D.S.C."),
+                                Component.literal("Acronym! Acronym! Acronym! acronuym"),
+                                new ResourceLocation(RobotEmployeeUtils.MODID, "textures/misc/irkwall.png"),
+                                FrameType.TASK,
+                                false,
+                                false,
+                                false
+                        )
+                        .addCriterion("joined_game", PlayerTrigger.TriggerInstance.located(LocationPredicate.ANY))
+                        .save(saver, ROOT_LOCATION.toString());
+                record(ROOT);
+
+
+                for (Consumer<Consumer<Advancement>> request : requests) request.accept(saver);
             }
-
-            return CompletableFuture.allOf(futures);
-        }
-
-        protected Path getPath(Texture texture) {
-            ResourceLocation loc = texture.getLocation();
-            return this.output.getOutputFolder(PackOutput.Target.RESOURCE_PACK).resolve(loc.getNamespace()).resolve("models").resolve(loc.getPath() + ".json");
-        }
-
-        public static class Texture {
-            ResourceLocation loc;
-            BufferedImage image;
-            public Texture(ResourceLocation loc) {
-                this.loc = loc;
-            }
-
-            public ResourceLocation getLocation() { return loc; }
-            public BufferedImage get() { return image; }
         }
     }
-    */
 
 }

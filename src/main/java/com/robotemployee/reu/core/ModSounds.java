@@ -25,7 +25,7 @@ public class ModSounds {
 
     public static final RegistryObject<SoundEvent> GIANT_ROBOTS_DISC = registerDiscSound("giant_robots");
 
-    public static final RegistryObject<SoundEvent> ARMORED_CORE_20TH_DISC = registerDiscSound("armored_core_20th");
+    public static final RegistryObject<SoundEvent> MEMORIES_DISC = registerDiscSound("armored_core_20th");
 
     public static final RegistryObject<SoundEvent> SO_BE_IT_DISC = registerDiscSound("so_be_it");
 

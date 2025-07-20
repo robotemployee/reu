@@ -76,21 +76,21 @@ public class ModItems {
             .build();
 
     // Obtainable
-    public static final RegistryObject<Item> MUSIC_DISC_FINLEY = createDiscItem("birdbrain", ModSounds.BIRDBRAIN_DISC, 5140); // 5140
+    public static final RegistryObject<Item> MUSIC_DISC_BIRDBRAIN = createDiscItem("birdbrain", ModSounds.BIRDBRAIN_DISC, 5140); // 5140
     // Not obtainable
-    public static final RegistryObject<Item> MUSIC_DISC_SOPHIA = createDiscItem("hatred_jackulation", ModSounds.HATRED_JACKULATION_DISC, 8400);
+    public static final RegistryObject<Item> MUSIC_DISC_HATRED = createDiscItem("hatred_jackulation", ModSounds.HATRED_JACKULATION_DISC, 8400);
     // Not obtainable
-    public static final RegistryObject<Item> MUSIC_DISC_BRYCE = createDiscItem("california_girls", ModSounds.CALIFORNIA_GIRLS_DISC, 4720);
+    public static final RegistryObject<Item> MUSIC_DISC_CALIFORNIA = createDiscItem("california_girls", ModSounds.CALIFORNIA_GIRLS_DISC, 4720);
     // Not obtainable
-    public static final RegistryObject<Item> MUSIC_DISC_CALLAHAN = createDiscItem("triple_baka", ModSounds.TRIPLE_BAKA_DISC, 4780);
+    public static final RegistryObject<Item> MUSIC_DISC_TRIPLE_BAKA = createDiscItem("triple_baka", ModSounds.TRIPLE_BAKA_DISC, 4780);
     // Not obtainable
-    public static final RegistryObject<Item> MUSIC_DISC_JASON = createDiscItem("clairo", ModSounds.CLAIRO_DISC, 4000);
+    public static final RegistryObject<Item> MUSIC_DISC_CLAIRO = createDiscItem("clairo", ModSounds.CLAIRO_DISC, 4000);
     // Not obtainable
-    public static final RegistryObject<Item> MUSIC_DISC_TRISTAN = createDiscItem("giant_robots", ModSounds.GIANT_ROBOTS_DISC, 4540);
+    public static final RegistryObject<Item> MUSIC_DISC_GIANT_ROBOTS = createDiscItem("giant_robots", ModSounds.GIANT_ROBOTS_DISC, 4540);
     // Not obtainable
-    public static final RegistryObject<Item> MUSIC_DISC_SALTY = createDiscItem("armored_core_20th", ModSounds.ARMORED_CORE_20TH_DISC, 6600);
+    public static final RegistryObject<Item> MUSIC_DISC_MEMORIES = createDiscItem("armored_core_20th", ModSounds.MEMORIES_DISC, 6600);
     // Not obtainable
-    public static final RegistryObject<Item> MUSIC_DISC_ALEX = createDiscItem("so_be_it", ModSounds.SO_BE_IT_DISC, 4060);
+    public static final RegistryObject<Item> MUSIC_DISC_SO_BE_IT = createDiscItem("so_be_it", ModSounds.SO_BE_IT_DISC, 4060);
     // Not obtainable
     public static final RegistryObject<Item> MUSIC_DISC_HEART_OF_GLASS = createDiscItem("heart_of_glass", ModSounds.HEART_OF_GLASS_DISC, 4680);
 

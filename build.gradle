@@ -201,6 +201,15 @@ dependencies {
     implementation fg.deobf("maven.modrinth:citadel:${citadel_version}")
     //implementation fg.deobf("curse.maven:born-in-chaos-686437:6474407")
 
+    // Rechiseled
+    implementation fg.deobf("maven.modrinth:rechiseled:${rechiseled_version}")
+
+    // Rechiseled dependencies
+    implementation fg.deobf("maven.modrinth:supermartijn642s-core-lib:${supermartijn642s_core_lib_version}")
+    implementation fg.deobf("maven.modrinth:supermartijn642s-config-lib:${supermartijn642s_config_lib_version}")
+    implementation fg.deobf("maven.modrinth:fusion-connected-textures:${fusion_connected_textures_version}")
+
+
     // Geckolib dependency
     implementation fg.deobf("software.bernie.geckolib:geckolib-forge-${minecraft_version}:${geckolib_version}")
     implementation("com.eliotlash.mclib:mclib:20")
