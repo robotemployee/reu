@@ -2,7 +2,7 @@ package com.robotemployee.reu.mixin.sculkhorde;
 
 import com.github.sculkhorde.common.entity.infection.CursorEntity;
 import com.github.sculkhorde.systems.cursor_system.CursorSystem;
-import com.robotemployee.reu.compat.SculkHordeCompat;
+import com.robotemployee.reu.extra.SculkHordeCompat;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

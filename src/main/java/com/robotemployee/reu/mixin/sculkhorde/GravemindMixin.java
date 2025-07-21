@@ -2,7 +2,7 @@ package com.robotemployee.reu.mixin.sculkhorde;
 
 import com.github.sculkhorde.systems.gravemind_system.Gravemind;
 import com.github.sculkhorde.systems.gravemind_system.entity_factory.ReinforcementRequest;
-import com.robotemployee.reu.compat.SculkHordeCompat;
+import com.robotemployee.reu.extra.SculkHordeCompat;
 import net.minecraft.core.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

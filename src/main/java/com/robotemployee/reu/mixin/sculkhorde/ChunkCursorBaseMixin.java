@@ -1,7 +1,7 @@
 package com.robotemployee.reu.mixin.sculkhorde;
 
 import com.github.sculkhorde.systems.chunk_cursor_system.ChunkCursorBase;
-import com.robotemployee.reu.compat.SculkHordeCompat;
+import com.robotemployee.reu.extra.SculkHordeCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import org.objectweb.asm.Opcodes;

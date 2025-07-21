@@ -1,7 +1,7 @@
 package com.robotemployee.reu.mixin.sculkhorde;
 
 import com.github.sculkhorde.core.ModSavedData;
-import com.robotemployee.reu.compat.SculkHordeCompat;
+import com.robotemployee.reu.extra.SculkHordeCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import org.spongepowered.asm.mixin.Mixin;

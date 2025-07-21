@@ -6,7 +6,7 @@ import com.github.sculkhorde.systems.HitSquadDispatcherSystem;
 import com.github.sculkhorde.util.BlockAlgorithms;
 import com.github.sculkhorde.util.EntityAlgorithms;
 import com.github.sculkhorde.util.PlayerProfileHandler;
-import com.robotemployee.reu.compat.SculkHordeCompat;
+import com.robotemployee.reu.extra.SculkHordeCompat;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;

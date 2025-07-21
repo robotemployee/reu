@@ -1,7 +1,7 @@
 package com.robotemployee.reu.mixin.sculkhorde;
 
 import com.github.sculkhorde.systems.infestation_systems.block_infestation_system.BlockInfestationSystem;
-import com.robotemployee.reu.compat.SculkHordeCompat;
+import com.robotemployee.reu.extra.SculkHordeCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;

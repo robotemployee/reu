@@ -5,7 +5,7 @@ import com.github.sculkhorde.core.SculkHorde;
 import com.github.sculkhorde.systems.raid_system.RaidData;
 import com.github.sculkhorde.util.BlockAlgorithms;
 import com.github.sculkhorde.util.BlockSearcher;
-import com.robotemployee.reu.compat.SculkHordeCompat;
+import com.robotemployee.reu.extra.SculkHordeCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Blocks;
 import org.spongepowered.asm.mixin.Mixin;

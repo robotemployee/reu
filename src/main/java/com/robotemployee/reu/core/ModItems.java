@@ -62,7 +62,9 @@ public class ModItems {
                                     .effect(() -> new MobEffectInstance(MobEffects.BLINDNESS, 24000), 1f)
                                     .nutrition(4)
                                     .build()
-                            )))
+                            )
+                            .rarity(Rarity.RARE)
+            ))
             .build();
 
     public static final RegistryObject<Item> FRYING_PAN = new ItemBuilder()
@@ -75,24 +77,18 @@ public class ModItems {
             .noDatagen()
             .build();
 
-    // Obtainable
     public static final RegistryObject<Item> MUSIC_DISC_BIRDBRAIN = createDiscItem("birdbrain", ModSounds.BIRDBRAIN_DISC, 5140); // 5140
-    // Not obtainable
     public static final RegistryObject<Item> MUSIC_DISC_HATRED = createDiscItem("hatred_jackulation", ModSounds.HATRED_JACKULATION_DISC, 8400);
-    // Not obtainable
     public static final RegistryObject<Item> MUSIC_DISC_CALIFORNIA = createDiscItem("california_girls", ModSounds.CALIFORNIA_GIRLS_DISC, 4720);
-    // Not obtainable
     public static final RegistryObject<Item> MUSIC_DISC_TRIPLE_BAKA = createDiscItem("triple_baka", ModSounds.TRIPLE_BAKA_DISC, 4780);
-    // Not obtainable
     public static final RegistryObject<Item> MUSIC_DISC_CLAIRO = createDiscItem("clairo", ModSounds.CLAIRO_DISC, 4000);
-    // Not obtainable
     public static final RegistryObject<Item> MUSIC_DISC_GIANT_ROBOTS = createDiscItem("giant_robots", ModSounds.GIANT_ROBOTS_DISC, 4540);
-    // Not obtainable
-    public static final RegistryObject<Item> MUSIC_DISC_MEMORIES = createDiscItem("armored_core_20th", ModSounds.MEMORIES_DISC, 6600);
-    // Not obtainable
+    public static final RegistryObject<Item> MUSIC_DISC_MECHANIZED_MEMORIES = createDiscItem("mechanized_memories", ModSounds.MECHANIZED_MEMORIES_DISC, 6600);
     public static final RegistryObject<Item> MUSIC_DISC_SO_BE_IT = createDiscItem("so_be_it", ModSounds.SO_BE_IT_DISC, 4060);
-    // Not obtainable
     public static final RegistryObject<Item> MUSIC_DISC_HEART_OF_GLASS = createDiscItem("heart_of_glass", ModSounds.HEART_OF_GLASS_DISC, 4680);
+    public static final RegistryObject<Item> MUSIC_DISC_KOKOROTOLUNANOFUKAKAI = createDiscItem("kokorotolunanofukakai", ModSounds.KOKOROTOLUNANOFUKAKAI_DISC, 5500);
+    public static final RegistryObject<Item> MUSIC_DISC_ORANGE_BLOSSOMS = createDiscItem("orange_blossoms",  ModSounds.ORANGE_BLOSSOMS_DISC, 4000);
+
 
     // note that the resulting item id will have "music_disc_" appended to the start of the itemId input
     public static RegistryObject<Item> createDiscItem(String itemId, Supplier<SoundEvent> sound, int ticks) {
@@ -109,6 +105,7 @@ public class ModItems {
                                 new Item.Properties()
                                         .rarity(Rarity.RARE)
                                         .stacksTo(1)
+                                        .fireResistant()
                                 ,
                                 ticks
                         );

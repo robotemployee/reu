@@ -1,7 +1,7 @@
 package com.robotemployee.reu.mixin.sculkhorde;
 
 import com.github.sculkhorde.common.entity.SculkPhantomEntity;
-import com.robotemployee.reu.compat.SculkHordeCompat;
+import com.robotemployee.reu.extra.SculkHordeCompat;
 import net.minecraft.core.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

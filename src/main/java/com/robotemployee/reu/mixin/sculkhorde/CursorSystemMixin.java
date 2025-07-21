@@ -2,7 +2,7 @@ package com.robotemployee.reu.mixin.sculkhorde;
 
 import com.github.sculkhorde.systems.cursor_system.CursorSystem;
 import com.github.sculkhorde.systems.cursor_system.VirtualSurfaceInfestorCursor;
-import com.robotemployee.reu.compat.SculkHordeCompat;
+import com.robotemployee.reu.extra.SculkHordeCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;

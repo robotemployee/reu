@@ -338,7 +338,7 @@ public class Datagen {
             Datagen.ModAdvancementProvider.queueRequest((consumer) -> {
                 Item item = supplier.get();
 
-                Component title = Component.literal("Obtained ").append(Component.translatable(item.getDescriptionId() + ".desc"));
+                Component title = Component.translatable(item.getDescriptionId() + ".desc");
 
                 //LOGGER.info("Root is " + ROOT + " and rootloc is " + ROOT_LOCATION);
 

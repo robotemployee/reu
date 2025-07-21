@@ -1,28 +1,25 @@
 package com.robotemployee.reu.core;
 
 import com.mojang.logging.LogUtils;
-import com.robotemployee.reu.compat.*;
-import com.robotemployee.reu.core.registry_help.datagen.Datagen;
+import com.robotemployee.reu.extra.*;
 import com.robotemployee.reu.item.ReconstructorItem;
 import net.minecraft.client.renderer.item.ItemProperties;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterColorHandlersEvent;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.item.Item;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
@@ -69,12 +66,13 @@ public class RobotEmployeeUtils
 
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
-        // same for sculk horde compat
+        // same for eeeverything else that wants to hook into events
         MinecraftForge.EVENT_BUS.register(SculkHordeCompat.class);
         MinecraftForge.EVENT_BUS.register(BornInChaosCompat.class);
         MinecraftForge.EVENT_BUS.register(BaseGame.class);
         MinecraftForge.EVENT_BUS.register(FriendsAndFoesCompat.class);
         MinecraftForge.EVENT_BUS.register(AlexsCavesCompat.class);
+        MinecraftForge.EVENT_BUS.register(MusicDiscObtainment.class);
 
         //MinecraftForge.EVENT_BUS.register(Datagen.class);
         MinecraftForge.EVENT_BUS.register(ClientModEvents.class);
@@ -83,8 +81,8 @@ public class RobotEmployeeUtils
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 
-    private void commonSetup(final FMLCommonSetupEvent event)
-    {
+
+    private void commonSetup(final FMLCommonSetupEvent event) {
     }
 
     @SubscribeEvent

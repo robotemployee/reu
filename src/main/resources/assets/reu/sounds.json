@@ -53,11 +53,11 @@
       }
     ]
   },
-  "music_disc.armored_core_20th": {
+  "music_disc.mechanized_memories": {
     "category": "record",
     "sounds": [
       {
-        "name": "reu:music_disc/armored_core_20th",
+        "name": "reu:music_disc/mechanized_memories",
         "stream": true
       }
     ]
@@ -76,6 +76,24 @@
     "sounds": [
       {
         "name": "reu:music_disc/heart_of_glass",
+        "stream": true
+      }
+    ]
+  },
+  "music_disc.kokorotolunanofukakai": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "reu:music_disc/kokorotolunanofukakai",
+        "stream": true
+      }
+    ]
+  },
+  "music_disc.orange_blossoms": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "reu:music_disc/orange_blossoms",
         "stream": true
       }
     ]

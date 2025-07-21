@@ -25,14 +25,20 @@
   "item.reu.music_disc_giant_robots": "Music Disc",
   "item.reu.music_disc_giant_robots.desc": "The Giant Robots Are Doing Something - Tristan McCammond",
 
-  "item.reu.music_disc_armored_core_20th": "Music Disc",
-  "item.reu.music_disc_armored_core_20th.desc": "Mechanized Memories - in the end - Keiichiro Segawa & Masaru Tateyama",
+  "item.reu.music_disc_mechanized_memories": "Music Disc",
+  "item.reu.music_disc_mechanized_memories.desc": "Mechanized Memories - Keiichiro Segawa & Masaru Tateyama",
 
   "item.reu.music_disc_so_be_it": "Music Disc",
   "item.reu.music_disc_so_be_it.desc": "So Be It - Clipse",
 
   "item.reu.music_disc_heart_of_glass": "Music Disc",
   "item.reu.music_disc_heart_of_glass.desc": "Heart Of Glass - Blondie",
+
+  "item.reu.music_disc_kokorotolunanofukakai": "Music Disc",
+  "item.reu.music_disc_kokorotolunanofukakai.desc": "心という名の不可解 - Ado",
+
+  "item.reu.music_disc_orange_blossoms": "Music Disc",
+  "item.reu.music_disc_orange_blossoms.desc": "Orange Blossoms - Goldford",
 
   "creativetab.reu_tab": "RE Utilities"
 }
