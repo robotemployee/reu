@@ -1,6 +1,8 @@
 package com.robotemployee.reu.capability;
 
 import com.mojang.logging.LogUtils;
+import com.robotemployee.reu.core.RobotEmployeeUtils;
+import com.robotemployee.reu.extra.MusicDiscObtainment;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -25,6 +27,8 @@ import java.util.HashSet;
 public class FlowerCounterCapability implements ICapabilityProvider, INBTSerializable<CompoundTag> {
 
     static Logger LOGGER = LogUtils.getLogger();
+
+    public static final ResourceLocation ID = new ResourceLocation(RobotEmployeeUtils.MODID, "flower_count");
 
     public FlowerCounter flowerHandler;
 
@@ -72,8 +76,13 @@ public class FlowerCounterCapability implements ICapabilityProvider, INBTSeriali
             return consumedFlowers.size();
         }
 
+        public String getMultiline() {
+            StringBuilder result = new StringBuilder();
+            for (ResourceLocation loc : consumedFlowers) result.append(loc.toString()).append("\n");
+            return result.toString();
+        }
+
         public boolean hasEaten(ItemStack flower) {
-            if (!flower.is(ItemTags.FLOWERS)) return false;
             ResourceLocation loc = ForgeRegistries.ITEMS.getKey(flower.getItem());
             return consumedFlowers.contains(loc);
         }
@@ -86,6 +95,14 @@ public class FlowerCounterCapability implements ICapabilityProvider, INBTSeriali
             if (flower.is(ItemTags.FLOWERS)) return true;
             //if (flower.getItem() instanceof BlockItem blockItem && blockItem.getBlock().is(BlockTags.FLOWERS)) return true;
             return false;
+        }
+
+        public int getRemaining() {
+            return MusicDiscObtainment.FLOWERS_NEEDED - consumedFlowers.size();
+        }
+
+        public boolean isBlossoming() {
+            return consumedFlowers.size() >= MusicDiscObtainment.FLOWERS_NEEDED;
         }
 
         @Override

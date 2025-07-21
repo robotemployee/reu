@@ -49,11 +49,16 @@ public class ModAdvancements {
         return newborn;
     }
 
-    public static AdvancementProgress getAdvancementProgress(@NotNull ServerLevel level, @NotNull ServerPlayer player, ResourceLocation advancementLoc) {
-        Advancement advancement = level.getServer().getAdvancements().getAdvancement(advancementLoc);
+    public static AdvancementProgress getAdvancementProgress(@NotNull ServerLevel level, @NotNull ServerPlayer player, ResourceLocation loc) {
+        Advancement advancement = level.getServer().getAdvancements().getAdvancement(loc);
         assert advancement != null;
         return player.getAdvancements().getOrStartProgress(advancement);
     }
+
+    public static boolean isAdvancementComplete(@NotNull ServerLevel level, @NotNull ServerPlayer player, ResourceLocation loc) {
+        return getAdvancementProgress(level, player, loc).isDone();
+    }
+
 
 
 }
