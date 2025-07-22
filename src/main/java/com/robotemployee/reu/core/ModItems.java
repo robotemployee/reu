@@ -88,6 +88,7 @@ public class ModItems {
     public static final RegistryObject<Item> MUSIC_DISC_HEART_OF_GLASS = createDiscItem("heart_of_glass", ModSounds.HEART_OF_GLASS_DISC, 4680);
     public static final RegistryObject<Item> MUSIC_DISC_KOKOROTOLUNANOFUKAKAI = createDiscItem("kokorotolunanofukakai", ModSounds.KOKOROTOLUNANOFUKAKAI_DISC, 5500);
     public static final RegistryObject<Item> MUSIC_DISC_ORANGE_BLOSSOMS = createDiscItem("orange_blossoms",  ModSounds.ORANGE_BLOSSOMS_DISC, 4000);
+    public static final RegistryObject<Item> MUSIC_DISC_PROVIDENCE = createDiscItem("providence", ModSounds.PROVIDENCE_DISC, 3800);
 
 
     // note that the resulting item id will have "music_disc_" appended to the start of the itemId input

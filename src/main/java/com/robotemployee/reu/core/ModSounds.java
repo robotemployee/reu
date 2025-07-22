@@ -24,16 +24,22 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> HEART_OF_GLASS_DISC = registerDiscSound("heart_of_glass");
     public static final RegistryObject<SoundEvent> KOKOROTOLUNANOFUKAKAI_DISC = registerDiscSound("kokorotolunanofukakai");
     public static final RegistryObject<SoundEvent> ORANGE_BLOSSOMS_DISC = registerDiscSound("orange_blossoms");
+    public static final RegistryObject<SoundEvent> PROVIDENCE_DISC = registerDiscSound("providence");
+
+    public static final RegistryObject<SoundEvent> MEH_CHEERING = registerNormalSound("player.meh_cheering");
+    public static final RegistryObject<SoundEvent> GOOD_CHEERING = registerNormalSound("player.good_cheering");
+    public static final RegistryObject<SoundEvent> EPIC_CHEERING = registerNormalSound("player.epic_cheering");
 
     public static RegistryObject<SoundEvent> registerDiscSound(String location) {
+        return registerNormalSound("music_disc." + location);
+    }
 
-        String finalLocation = "music_disc." + location;
-
+    public static RegistryObject<SoundEvent> registerNormalSound(String location) {
         LOGGER.info(String.format("Registering sound %s", location));
         return SOUNDS.register(
                 location,
                 () -> SoundEvent.createVariableRangeEvent(
-                        new ResourceLocation(RobotEmployeeUtils.MODID, finalLocation)
+                        new ResourceLocation(RobotEmployeeUtils.MODID,location)
                 )
         );
     }

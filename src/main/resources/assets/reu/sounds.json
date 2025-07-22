@@ -97,5 +97,40 @@
         "stream": true
       }
     ]
+  },
+  "music_disc.providence": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "reu:music_disc/providence",
+        "stream": true
+      }
+    ]
+  },
+
+
+  "player.meh_cheering": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "reu:player/meh_cheering"
+      }
+    ]
+  },
+  "player.good_cheering": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "reu:player/good_cheering"
+      }
+    ]
+  },
+  "player.epic_cheering": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "reu:player/epic_cheering"
+      }
+    ]
   }
 }

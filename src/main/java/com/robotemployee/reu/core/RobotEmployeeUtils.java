@@ -3,11 +3,12 @@ package com.robotemployee.reu.core;
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.extra.*;
 import com.robotemployee.reu.item.ReconstructorItem;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
@@ -19,7 +20,6 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
@@ -61,6 +61,7 @@ public class RobotEmployeeUtils
         ModFluidTypes.FLUID_TYPES.register(modEventBus);
         ModFluids.FLUIDS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
+        ModAdvancements.register();
 
         ModCreativeModeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
@@ -83,6 +84,7 @@ public class RobotEmployeeUtils
 
 
     private void commonSetup(final FMLCommonSetupEvent event) {
+        ServerboundPreciseArrowPacket.register();
     }
 
     @SubscribeEvent
@@ -114,13 +116,27 @@ public class RobotEmployeeUtils
 
         @SubscribeEvent
         public static void onToolTip(ItemTooltipEvent event) {
-            if (event.getItemStack().getItem() == ModItems.BLINDING_STEW.get()) {
+            ItemStack stack = event.getItemStack();
+            Item item = stack.getItem();
+            if (item == ModItems.BLINDING_STEW.get()) {
                 Component translatable = Component.translatable("item.reu.one_day_blinding_stew.tooltip");
                 List<Component> lines = Arrays.stream(translatable.getString().split("\n"))
                         .map(Component::literal)
                         .collect(Collectors.toList());
 
                 event.getToolTip().addAll(1, lines);
+                return;
+            }
+
+            if (item == ModItems.MUSIC_DISC_KOKOROTOLUNANOFUKAKAI.get()) {
+                boolean showShotData = Screen.hasShiftDown();
+                List<Component> tooltip = MusicDiscObtainment.ArrowShotStatistics.getTooltip(stack, showShotData);
+                if (tooltip != null) {
+                    event.getToolTip().addAll(tooltip);
+                } else {
+                    event.getToolTip().add(Component.empty());
+                    event.getToolTip().add(Component.literal("§7(No shot information.)"));
+                }
             }
         }
     }

@@ -7,6 +7,7 @@ import com.robotemployee.reu.core.RobotEmployeeUtils;
 import net.minecraft.ResourceLocationException;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.FrameType;
+import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.advancements.critereon.LocationPredicate;
 import net.minecraft.advancements.critereon.PlayerTrigger;
@@ -156,8 +157,6 @@ public class Datagen {
 
         gen.addProvider(event.includeServer(), ModLootTableProvider.create(gen.getPackOutput()));
 
-        // loading this into the JVM and stuff and jazz
-        ModAdvancements.register();
         gen.addProvider(event.includeServer(), new ModAdvancementProvider(gen.getPackOutput(), event.getLookupProvider(), event.getExistingFileHelper()));
     }
 
@@ -328,6 +327,19 @@ public class Datagen {
             advancements.put(advancement.getId(), advancement);
         }
 
+        public static ResourceLocation simpleAdvancement(String id, Supplier<Item> icon, Component title, Component desc, @Nullable ResourceLocation parent) {
+            ResourceLocation loc = new ResourceLocation(RobotEmployeeUtils.MODID, id);
+            Datagen.ModAdvancementProvider.queueRequest((consumer) -> {
+
+                //LOGGER.info("Root is " + ROOT + " and rootloc is " + ROOT_LOCATION);
+
+                record(Datagen.ModAdvancementProvider.createNormalAdvancement(id, icon, title, desc, parent)
+                        .addCriterion("award_through_code", new ImpossibleTrigger.TriggerInstance())
+                        .save(consumer, loc.toString()));
+            });
+            return loc;
+        }
+
         public static ResourceLocation simpleItemObtainedAdvancement(String id, Supplier<Item> supplier, Component desc) {
             return simpleItemObtainedAdvancement(id, supplier, desc, null);
         }
@@ -342,29 +354,20 @@ public class Datagen {
 
                 //LOGGER.info("Root is " + ROOT + " and rootloc is " + ROOT_LOCATION);
 
-                if (parent == null) {
-                    record(Datagen.ModAdvancementProvider.createNormalAdvancement(id, supplier, title, desc)
-                            .addCriterion("has_item", InventoryChangeTrigger.TriggerInstance.hasItems(supplier.get()))
-                            .save(consumer, loc.toString()));
-                } else {
-                    record(Datagen.ModAdvancementProvider.createNormalAdvancement(id, supplier, title, desc, parent)
-                            .addCriterion("has_item", InventoryChangeTrigger.TriggerInstance.hasItems(supplier.get()))
-                            .save(consumer, loc.toString()));
-                }
+                record(Datagen.ModAdvancementProvider.createNormalAdvancement(id, supplier, title, desc, parent)
+                        .addCriterion("has_item", InventoryChangeTrigger.TriggerInstance.hasItems(supplier.get()))
+                        .save(consumer, loc.toString()));
+
             });
 
             LOGGER.info("Queued simple item obtainment advancement with id " + id);
             return loc;
         }
 
-        public static Advancement.Builder createNormalAdvancement(String id, Supplier<Item> icon, Component title, Component desc) {
-            //ResourceLocation loc = new ResourceLocation(RobotEmployeeUtils.MODID, id);
-            return createNormalAdvancement(id, icon, title, desc, ROOT_LOCATION);
-        }
 
-
-        public static Advancement.Builder createNormalAdvancement(String id, Supplier<Item> icon, Component title, Component desc, ResourceLocation parent) {
+        public static Advancement.Builder createNormalAdvancement(String id, Supplier<Item> icon, Component title, Component desc, @Nullable ResourceLocation parent) {
             //ResourceLocation loc = new ResourceLocation(RobotEmployeeUtils.MODID, id);
+            if (parent == null) parent = ROOT_LOCATION;
 
             return Advancement.Builder.advancement()
                     .display(
