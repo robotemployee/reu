@@ -1,6 +1,6 @@
 package com.robotemployee.reu.mixin.create;
 
-import com.robotemployee.reu.core.ModItems;
+import com.robotemployee.reu.core.registry.ModItems;
 import com.robotemployee.reu.item.FryingPanItem;
 import com.simibubi.create.content.kinetics.press.PressingRecipe;
 import com.simibubi.create.foundation.recipe.RecipeApplier;

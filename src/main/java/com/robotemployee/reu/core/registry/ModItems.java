@@ -1,7 +1,8 @@
-package com.robotemployee.reu.core;
+package com.robotemployee.reu.core.registry;
 
 import com.mojang.logging.LogUtils;
-import com.robotemployee.reu.core.registry_help.builder.ItemBuilder;
+import com.robotemployee.reu.core.RobotEmployeeUtils;
+import com.robotemployee.reu.core.registry.help.builder.ItemBuilder;
 import com.robotemployee.reu.item.FryingPanItem;
 import com.robotemployee.reu.item.ReconstructorItem;
 import com.robotemployee.reu.item.SculkReconstructorItem;
@@ -10,6 +11,7 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.item.BowlFoodItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.RecordItem;
@@ -53,17 +55,19 @@ public class ModItems {
             .build();
 
 
-    public static final RegistryObject<Item> BLINDING_STEW = new ItemBuilder()
+    public static final RegistryObject<Item> ONE_DAY_BLINDING_STEW = new ItemBuilder()
             .withName("one_day_blinding_stew")
-            .withSupplier(() -> new Item(
+            .withSupplier(() -> new BowlFoodItem(
                     new Item.Properties()
-                            .food((new FoodProperties.Builder())
+                            .food(new FoodProperties.Builder()
                                     .alwaysEat()
-                                    .effect(() -> new MobEffectInstance(MobEffects.BLINDNESS, 24000), 1f)
-                                    .nutrition(4)
+                                    .effect(() -> new MobEffectInstance(MobEffects.BLINDNESS, 24000,0, false, false, false), 1)
+                                    .nutrition(6)
+                                    .saturationMod(0.5f)
                                     .build()
                             )
                             .rarity(Rarity.RARE)
+                            .stacksTo(1)
             ))
             .build();
 
@@ -76,6 +80,23 @@ public class ModItems {
             ))
             .noDatagen()
             .build();
+
+    public static final RegistryObject<Item> AMPHIBOLE = createSimpleItem("amphibole");
+    public static final RegistryObject<Item> ASBESTOS_DUST = createSimpleItem("asbestos_dust");
+    public static final RegistryObject<Item> WHEAT_ASBESTOS_MIX = createSimpleItem("wheat_asbestos_mix");
+    public static final RegistryObject<Item> ASBESDOUGH = createSimpleItem("asbesdough");
+    public static final RegistryObject<Item> INTERESTING_BREAD = createSimpleFoodItem("interesting_bread",
+            (new FoodProperties.Builder())
+                    .nutrition(7)
+                    .saturationMod(0.5f)
+                    .alwaysEat()
+                    .build()
+            );
+
+    public static final RegistryObject<Item> MIRACLE_PILL = createSimpleFoodItem("miracle_pill",
+            (new FoodProperties.Builder())
+                    .alwaysEat().build()
+    );
 
     public static final RegistryObject<Item> MUSIC_DISC_BIRDBRAIN = createDiscItem("birdbrain", ModSounds.BIRDBRAIN_DISC, 5140); // 5140
     public static final RegistryObject<Item> MUSIC_DISC_HATRED = createDiscItem("hatred_jackulation", ModSounds.HATRED_JACKULATION_DISC, 8400);
@@ -90,6 +111,24 @@ public class ModItems {
     public static final RegistryObject<Item> MUSIC_DISC_ORANGE_BLOSSOMS = createDiscItem("orange_blossoms",  ModSounds.ORANGE_BLOSSOMS_DISC, 4000);
     public static final RegistryObject<Item> MUSIC_DISC_PROVIDENCE = createDiscItem("providence", ModSounds.PROVIDENCE_DISC, 3800);
 
+
+    public static RegistryObject<Item> createSimpleItem(String id) {
+        return new ItemBuilder()
+                .withName(id)
+                .withSupplier(() -> new Item(
+                        new Item.Properties()
+                ))
+                .build();
+    }
+
+    public static RegistryObject<Item> createSimpleFoodItem(String id, FoodProperties properties) {
+        return new ItemBuilder()
+                .withName(id)
+                .withSupplier(() -> new Item(
+                        new Item.Properties().food(properties)
+                ))
+                .build();
+    }
 
     // note that the resulting item id will have "music_disc_" appended to the start of the itemId input
     public static RegistryObject<Item> createDiscItem(String itemId, Supplier<SoundEvent> sound, int ticks) {

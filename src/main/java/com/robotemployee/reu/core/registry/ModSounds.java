@@ -1,6 +1,7 @@
-package com.robotemployee.reu.core;
+package com.robotemployee.reu.core.registry;
 
 import com.mojang.logging.LogUtils;
+import com.robotemployee.reu.core.RobotEmployeeUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraftforge.registries.DeferredRegister;

@@ -1,6 +1,5 @@
-package com.robotemployee.reu.core.registry_help.datagen;
+package com.robotemployee.reu.core.registry.help.datagen;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;

@@ -1,8 +1,8 @@
-package com.robotemployee.reu.core.registry_help.builder;
+package com.robotemployee.reu.core.registry.help.builder;
 
-import com.robotemployee.reu.core.ModCreativeModeTabs;
-import com.robotemployee.reu.core.ModItems;
-import com.robotemployee.reu.core.registry_help.datagen.Datagen;
+import com.robotemployee.reu.core.registry.ModCreativeModeTabs;
+import com.robotemployee.reu.core.registry.ModItems;
+import com.robotemployee.reu.core.registry.help.datagen.Datagen;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.registries.RegistryObject;

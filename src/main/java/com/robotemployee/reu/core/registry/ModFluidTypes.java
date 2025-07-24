@@ -1,5 +1,6 @@
-package com.robotemployee.reu.core;
+package com.robotemployee.reu.core.registry;
 
+import com.robotemployee.reu.core.RobotEmployeeUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BiomeColors;
 import net.minecraft.core.BlockPos;

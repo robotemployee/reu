@@ -1,19 +1,13 @@
-package com.robotemployee.reu.core;
+package com.robotemployee.reu.core.registry;
 
-import com.robotemployee.reu.core.registry_help.builder.FluidBuilder;
-import com.robotemployee.reu.core.registry_help.entry.FluidRegistryEntry;
-import net.minecraft.world.item.BottleItem;
+import com.robotemployee.reu.core.RobotEmployeeUtils;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.ForgeFlowingFluid;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 public class ModFluids {
 

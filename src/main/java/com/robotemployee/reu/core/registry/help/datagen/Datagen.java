@@ -1,8 +1,7 @@
-package com.robotemployee.reu.core.registry_help.datagen;
+package com.robotemployee.reu.core.registry.help.datagen;
 
 import com.mojang.logging.LogUtils;
-import com.robotemployee.reu.core.ModAdvancements;
-import com.robotemployee.reu.core.ModItems;
+import com.robotemployee.reu.core.registry.ModItems;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import net.minecraft.ResourceLocationException;
 import net.minecraft.advancements.Advancement;
@@ -402,7 +401,7 @@ public class Datagen {
                 LOGGER.info("Generating advancements... There are " + requests.size() + " requests");
                 ROOT = Advancement.Builder.advancement()
                         .display(
-                                ModItems.BLINDING_STEW.get(),
+                                ModItems.ONE_DAY_BLINDING_STEW.get(),
                                 Component.literal("H.D.S.C."),
                                 Component.literal("Acronym! Acronym! Acronym! acronuym"),
                                 new ResourceLocation(RobotEmployeeUtils.MODID, "textures/misc/irkwall.png"),

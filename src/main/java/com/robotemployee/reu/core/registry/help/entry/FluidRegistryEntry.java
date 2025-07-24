@@ -1,11 +1,9 @@
-package com.robotemployee.reu.core.registry_help.entry;
+package com.robotemployee.reu.core.registry.help.entry;
 
-import com.robotemployee.reu.core.registry_help.builder.FluidBuilder;
+import com.robotemployee.reu.core.registry.help.builder.FluidBuilder;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.ForgeFlowingFluid;
 import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
 

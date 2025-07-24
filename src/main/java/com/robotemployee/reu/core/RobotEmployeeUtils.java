@@ -1,6 +1,7 @@
 package com.robotemployee.reu.core;
 
 import com.mojang.logging.LogUtils;
+import com.robotemployee.reu.core.registry.*;
 import com.robotemployee.reu.extra.*;
 import com.robotemployee.reu.item.ReconstructorItem;
 import net.minecraft.client.gui.screens.Screen;
@@ -54,14 +55,17 @@ public class RobotEmployeeUtils
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
 
-        // Register the Deferred Register to the mod event bus so items get registered
+        ModMobEffects.EFFECTS.register(modEventBus);
         ModSounds.SOUNDS.register(modEventBus);
         ModBlocks.BLOCKS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModFluidTypes.FLUID_TYPES.register(modEventBus);
         ModFluids.FLUIDS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
+
+        // the rest of these don't care as much about the ordering
         ModAdvancements.register();
+        ModDamageTypes.idk();
 
         ModCreativeModeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
@@ -118,7 +122,7 @@ public class RobotEmployeeUtils
         public static void onToolTip(ItemTooltipEvent event) {
             ItemStack stack = event.getItemStack();
             Item item = stack.getItem();
-            if (item == ModItems.BLINDING_STEW.get()) {
+            if (item == ModItems.ONE_DAY_BLINDING_STEW.get()) {
                 Component translatable = Component.translatable("item.reu.one_day_blinding_stew.tooltip");
                 List<Component> lines = Arrays.stream(translatable.getString().split("\n"))
                         .map(Component::literal)
@@ -135,8 +139,13 @@ public class RobotEmployeeUtils
                     event.getToolTip().addAll(tooltip);
                 } else {
                     event.getToolTip().add(Component.empty());
-                    event.getToolTip().add(Component.literal("§7(No shot information.)"));
+                    event.getToolTip().add(Component.literal("§8(No shot information.)"));
                 }
+                return;
+            }
+
+            if (item == ModItems.MIRACLE_PILL.get()) {
+                event.getToolTip().add(Component.literal("§3Creative-only tummy ache removal."));
             }
         }
     }

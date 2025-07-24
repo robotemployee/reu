@@ -1,19 +1,16 @@
-package com.robotemployee.reu.core.registry_help.builder;
+package com.robotemployee.reu.core.registry.help.builder;
 
 import com.mojang.logging.LogUtils;
-import com.robotemployee.reu.core.ModBlocks;
-import com.robotemployee.reu.core.ModFluids;
-import com.robotemployee.reu.core.ModItems;
+import com.robotemployee.reu.core.registry.ModFluids;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
-import com.robotemployee.reu.core.registry_help.entry.BlockRegistryEntry;
-import com.robotemployee.reu.core.registry_help.entry.FluidRegistryEntry;
-import com.robotemployee.reu.core.registry_help.datagen.FluidDatagen;
-import com.robotemployee.reu.core.registry_help.generics.FilledBottleItem;
+import com.robotemployee.reu.core.registry.help.entry.BlockRegistryEntry;
+import com.robotemployee.reu.core.registry.help.entry.FluidRegistryEntry;
+import com.robotemployee.reu.core.registry.help.datagen.FluidDatagen;
+import com.robotemployee.reu.core.registry.help.generics.FilledBottleItem;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
