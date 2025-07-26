@@ -38,7 +38,7 @@ public class ModAdvancements {
     public static final ResourceLocation OBTAINED_ORANGE_BLOSSOMS_DISC = createDiscAdvancement("obtained_orange_blossoms_disc", ModItems.MUSIC_DISC_ORANGE_BLOSSOMS, Component.literal("WHY ARE ORANGE BLOSSOMS NOT ORANGE? Anyways, sorry for putting you through whatever draconian mechanic I'll make to obtain this disc"));
     public static final ResourceLocation OBTAINED_PROVIDENCE_DISC = createDiscAdvancement("obtained_providence_disc", ModItems.MUSIC_DISC_PROVIDENCE, Component.literal("Repent, then, and turn to God, so that your sins may be wiped out, that times of refreshing may come from the Lord. Or don't, I guess"));
 
-    public static final ResourceLocation VICTORY_ROYALE = Datagen.ModAdvancementProvider.simpleAdvancement("victory_royale", () -> Items.BOW, Component.literal("Victory Royale"), Component.literal("Earn a rank of S from the challenge for Phillip's disc"), null);
+    public static final ResourceLocation VICTORY_ROYALE = Datagen.ModAdvancementProvider.simpleAdvancement("victory_royale", () -> Items.BOW, Component.literal("Fuck You in Particular"), Component.literal("Earn a rank of S from the challenge for Phillip's disc"), null);
 
     private static ResourceLocation lastDiscLoc = null;
 
@@ -58,7 +58,7 @@ public class ModAdvancements {
     }
 
     public static void completeAdvancement(@NotNull ServerLevel level, @NotNull ServerPlayer player, ResourceLocation loc) {
-        LOGGER.info("completing advancement " + loc + " for " + player.getName());
+        //LOGGER.info("completing advancement " + loc + " for " + player.getName());
         Advancement advancement = level.getServer().getAdvancements().getAdvancement(loc);
         assert advancement != null;
         AdvancementProgress progress = player.getAdvancements().getOrStartProgress(advancement);
@@ -69,7 +69,7 @@ public class ModAdvancements {
     }
 
     public static boolean isAdvancementComplete(@NotNull ServerLevel level, @NotNull ServerPlayer player, ResourceLocation loc) {
-        LOGGER.info("Querying whether " + loc.toString() + " is complete");
+        //LOGGER.info("Querying whether " + loc.toString() + " is complete");
         return getAdvancementProgress(level, player, loc).isDone();
     }
 

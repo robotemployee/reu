@@ -25,8 +25,9 @@ public class ServerboundPreciseArrowPacket {
     final float y;
     final float z;
     final Date date;
+    final int messageIndex;
 
-    public ServerboundPreciseArrowPacket(UUID arrow, UUID player, long firedAt, Vec3 position, Date date) {
+    public ServerboundPreciseArrowPacket(UUID arrow, UUID player, long firedAt, Vec3 position, Date date, int messageIndex) {
         this.arrow = arrow;
         this.player = player;
         this.tick = firedAt;
@@ -34,6 +35,7 @@ public class ServerboundPreciseArrowPacket {
         this.y = (float)position.y;
         this.z = (float)position.z;
         this.date = date;
+        this.messageIndex = messageIndex;
     }
 
     public ServerboundPreciseArrowPacket(FriendlyByteBuf buf) {
@@ -44,6 +46,7 @@ public class ServerboundPreciseArrowPacket {
         this.y = buf.readFloat();
         this.z = buf.readFloat();
         this.date = buf.readDate();
+        this.messageIndex = buf.readInt();
     }
 
     public void save(FriendlyByteBuf buf) {
@@ -54,6 +57,7 @@ public class ServerboundPreciseArrowPacket {
         buf.writeFloat(y);
         buf.writeFloat(z);
         buf.writeDate(date);
+        buf.writeInt(messageIndex);
     }
 
     public void handle(Supplier<NetworkEvent.Context> supplier) {
@@ -62,7 +66,7 @@ public class ServerboundPreciseArrowPacket {
         context.enqueueWork(() -> {
             //ServerPlayer sender = context.getSender();
             //if (sender == null || sender.getUUID() != this.player) return;
-            MusicDiscObtainment.PRECISE_ARROWS.put(this.arrow, new MusicDiscObtainment.ArrowShotStatistics(this.tick, new Vec3(x, y, z), date));
+            MusicDiscObtainment.PRECISE_ARROWS.put(this.arrow, new MusicDiscObtainment.ArrowShotStatistics(this.tick, new Vec3(x, y, z), date, messageIndex));
             //LOGGER.info("Epic arrow packet recieved by server!!! Amount of epic arrows: " + MusicDiscObtainment.PRECISE_ARROWS.size());
         });
         context.setPacketHandled(true);

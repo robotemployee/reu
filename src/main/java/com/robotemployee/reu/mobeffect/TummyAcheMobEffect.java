@@ -1,12 +1,13 @@
 package com.robotemployee.reu.mobeffect;
 
-import com.github.alexthe666.alexsmobs.effect.AMEffectRegistry;
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.registry.ModDamageTypes;
 import com.robotemployee.reu.core.registry.ModMobEffects;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -33,19 +34,19 @@ public class TummyAcheMobEffect extends MobEffect {
     protected static final float CHANCE_TO_WEAKEN = 0.02f;
     protected static final float CHANCE_TO_SLOW = 0.05f;
     protected static final long TICKS_TILL_SYMPTOMS = 2400; // two minutes //1200;
-    protected static final long TICKS_TILL_MAX_SEVERITY = 24000; // 20 minutes
+    protected static final long TICKS_TILL_MAX_SEVERITY = 36000; // 30 minutes
     protected static final long LIFETIME = TICKS_TILL_SYMPTOMS + TICKS_TILL_MAX_SEVERITY;
     protected static final float CHANCE_TO_AILMENT_ON_TICK = 0.2f; // increases with severity
     protected static final float CHANCE_TO_KILL = 0.001f; // multiplied by severity squared
 
-    public static final int TICKS_ACCELERATED_ON_BREAD = (int)(TICKS_TILL_MAX_SEVERITY / 12);
+    public static final int TICKS_ACCELERATED_ON_BREAD = (int)(TICKS_TILL_MAX_SEVERITY / 64);
     public static final int TICKS_DECELERATED_ON_STEW = -(int)(TICKS_TILL_MAX_SEVERITY / 3);
     public static final int MAX_DECELERATION = -(int)(TICKS_TILL_MAX_SEVERITY + (0.8 * TICKS_TILL_SYMPTOMS));
     private static final float SEVERITY_TO_HURT_VICTIM = 0.5f;
 
-    public static final int COMMON_BREAD_BOONS_DURATION = 9600; // 8 minutes
-    public static final int UNCOMMON_BREAD_BOONS_DURATION = 4800; // 4 minutes
-    public static final int RARE_BREAD_BOONS_DURATION = 2400; // 2 minutes
+    public static final int BREAD_BOON_LONG_DURATION = 9600; // 8 minutes
+    public static final int BREAD_BOON_MEDIUM_DURATION = 4800; // 4 minutes
+    public static final int BREAD_BOON_SHORT_DURATION = 2400; // 2 minutes
 
     protected static final String ROOT_PATH = "Asbestosis";
     protected static final String TIMESTAMP_PATH = "Time";
@@ -72,22 +73,23 @@ public class TummyAcheMobEffect extends MobEffect {
 
         if (reallyBadSeverity) {
             victim.sendSystemMessage(Component.literal("§3It doesn't make you feel good anymore."));
-            victim.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 160, 0));
+            victim.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200, 0));
             victim.removeEffect(MobEffects.DAMAGE_RESISTANCE);
             victim.removeEffect(MobEffects.DIG_SPEED);
             victim.removeEffect(MobEffects.DAMAGE_BOOST);
             victim.removeEffect(MobEffects.REGENERATION);
         } else {
-            victim.heal(6);
+            victim.heal(16);
         }
-        victim.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, COMMON_BREAD_BOONS_DURATION, 0));
-        victim.addEffect(new MobEffectInstance(MobEffects.REGENERATION, COMMON_BREAD_BOONS_DURATION, 0));
-        victim.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, doUncommonEffects ? COMMON_BREAD_BOONS_DURATION : UNCOMMON_BREAD_BOONS_DURATION, 0));
+
+        victim.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, BREAD_BOON_LONG_DURATION, 1));
+        //victim.addEffect(new MobEffectInstance(MobEffects.REGENERATION, BREAD_BOON_LONG_DURATION, 0));
+        victim.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, BREAD_BOON_SHORT_DURATION, 0));
         if (!doUncommonEffects) return;
         if (!doRareEffects) return;
-        victim.addEffect(new MobEffectInstance(MobEffects.DIG_SPEED, RARE_BREAD_BOONS_DURATION, 2));
-        victim.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, RARE_BREAD_BOONS_DURATION, 0));
-        victim.addEffect(new MobEffectInstance(AMEffectRegistry.KNOCKBACK_RESISTANCE.get(), RARE_BREAD_BOONS_DURATION, 0));
+        victim.addEffect(new MobEffectInstance(MobEffects.DIG_SPEED, BREAD_BOON_SHORT_DURATION, 2));
+        //victim.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, BREAD_BOON_SHORT_DURATION, 0));
+        //victim.addEffect(new MobEffectInstance(AMEffectRegistry.KNOCKBACK_RESISTANCE.get(), BREAD_BOON_SHORT_DURATION, 0));
     }
 
     @Override
@@ -105,39 +107,70 @@ public class TummyAcheMobEffect extends MobEffect {
         //LOGGER.info("This code is executing");
         Level level = victim.level();
         long tick = level.getGameTime();
-        if (tick % INTERVAL != OFFSET) return;
         if (level.isClientSide()) return;
+
+        // every tick
+        if (victim instanceof ServerPlayer player) suffocateVictimExertion(player);
+
+        if (tick % INTERVAL != OFFSET) return;
 
         CompoundTag info = getInfoFrom(victim);
         if (info.isEmpty()) activateInfo(victim);
-        suffocateVictim(victim);
-        // one minute -> you get a random ailment
-        long time = getTime(victim, info, tick);
-        //LOGGER.info("time applied for: " + time);
-        if (time < TICKS_TILL_SYMPTOMS) return;
-        //LOGGER.info("applying ailment");
+        long time = getTime(victim, info, tick) + info.getLong(TIME_ADVANCE_PATH);
         float severity = getSeverity(time, info);
-        //LOGGER.info("Time:" + time + " Severity:" + severity);
+
+        suffocateVictimUnderwater(victim);
+
+        if (time < TICKS_TILL_SYMPTOMS) return;
         tickInflictAilment(victim, severity);
     }
 
-    public static void suffocateVictim(LivingEntity victim) {
+    public static void suffocateVictimExertion(ServerPlayer player) {
+        Level level = player.level();
+        //RandomSource random = level.getRandom();
+        boolean sprinting = player.isSprinting();
+        boolean using = player.isUsingItem();
+        boolean falling = player.fallDistance > 0.1;
+        boolean full = player.getAirSupply() == player.getMaxAirSupply();
+
+        //boolean isInThinAir = (level.dimension() != Level.NETHER && level.dimension() != Level.END);
+        boolean canBreathe = canBreathe(player);
+        boolean excited = (using || !player.onGround()) && !full;
+        boolean exerting = sprinting;
+
+        boolean preventAirSupplyRegain = canBreathe && exerting;
+        //LOGGER.info("preventing:" + preventAirSupplyRegain + canBreathe + exerting);
+        if (preventAirSupplyRegain) player.setAirSupply(player.getAirSupply() - 4);
+        else return;
+        if (exerting) player.setAirSupply(player.getAirSupply() - 1);
+        //else if (using) victim.setAirSupply(victim.getAirSupply() - 3);
+    }
+
+    public static void suffocateVictimUnderwater(LivingEntity victim) {
+        if (canBreathe(victim)) return;
         int air = victim.getAirSupply();
         int max = victim.getMaxAirSupply();
         // tripled air consumption
         if (air < max) victim.setAirSupply(air - 2 * INTERVAL);
         float airFraction = air / (float)max;
 
-        if (air <= 0 && !victim.hasEffect(MobEffects.BLINDNESS)) victim.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 400));
-        else if (airFraction < 0.7 && !victim.hasEffect(MobEffects.DARKNESS)) victim.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 400));
+        //if (air <= 0 && !victim.hasEffect(MobEffects.BLINDNESS)) victim.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 400));
+        if (airFraction < 0.7 && !victim.hasEffect(MobEffects.DARKNESS)) victim.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 400));
+    }
+
+    private static boolean canBreathe(LivingEntity victim) {
+        Level level = victim.level();
+        BlockPos eye = BlockPos.containing(victim.getEyePosition());
+        return !level.getBlockState(eye).isSuffocating(level, eye);
     }
 
     public static void tickInflictAilment(LivingEntity victim, float severity) {
         Level level = victim.level();
         long time = level.getGameTime();
 
-        //LOGGER.info(String.valueOf(time % (8 * INTERVAL)));
+        //LOGGER.info(String.valueOf(time % (INTERVALS_TO_AILMENT * INTERVAL)));
         if (time % (INTERVALS_TO_AILMENT * INTERVAL) != OFFSET) return;
+        //LOGGER.info("We! are! here!");
         victim.level().playSound(null, victim.blockPosition(), SoundEvents.WARDEN_HEARTBEAT, SoundSource.PLAYERS, 1.6f, 0.8f);
 
         inflictAilment(victim, severity);
@@ -150,29 +183,28 @@ public class TummyAcheMobEffect extends MobEffect {
 
         if (random.nextFloat() + severity < CHANCE_TO_AILMENT_ON_TICK) return;
 
-        if ((victim instanceof Player player && !player.isCreative()) && random.nextFloat() < CHANCE_TO_KILL + 0.05 * Math.pow(severity, 4)) {
+        if (severity > 0.6 && (victim instanceof Player player && !player.isCreative()) && random.nextFloat() < CHANCE_TO_KILL + 0.05 * Math.pow(severity, 4)) {
             obliterateVictim(victim, severity);
             return;
         }
 
         ArrayList<MobEffect> effects = new ArrayList<>();
 
-        if (random.nextFloat() < CHANCE_TO_BLIND + severity) {
-            victim.removeEffect(MobEffects.DIG_SPEED);
-            effects.add(severity > 0.7 ? MobEffects.BLINDNESS : MobEffects.DARKNESS);
+        if (severity > 0.25 && random.nextFloat() < CHANCE_TO_BLIND * (1 + severity)) {
+            effects.add(severity > 0.95 ? MobEffects.BLINDNESS : MobEffects.DARKNESS);
         }
-        if (random.nextFloat() < CHANCE_TO_WEAKEN + 0.3 * severity) victim.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 20 + (int)(20 * severity), 0));
-        if (random.nextFloat() < CHANCE_TO_SLOW + severity) effects.add(MobEffects.MOVEMENT_SLOWDOWN);
+        if (random.nextFloat() < CHANCE_TO_WEAKEN * (1 + 0.3 * severity)) victim.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 20 + (int)(20 * severity), 0));
+        if (random.nextFloat() < CHANCE_TO_SLOW * (1 + severity)) effects.add(MobEffects.MOVEMENT_SLOWDOWN);
 
 
-        if (severity > 0.5) {
+        if (severity > 0.25) {
             victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 10 + (int)Math.floor((10 * severity)), 3));
         }
 
         for (MobEffect effect : effects) victim.addEffect(
                 new MobEffectInstance(
                         effect,
-                        80 + (int)(140 * Math.pow(severity, 2)),
+                        80 + (int)(180 * Math.pow(severity, 2)),
                         (int)(2 * Math.pow(severity, 1.5)),
                         false, false, true
                 ));
@@ -287,7 +319,7 @@ public class TummyAcheMobEffect extends MobEffect {
 
     public static void hurtVictim(LivingEntity victim, float severity) {
         RandomSource random = victim.level().getRandom();
-        float damage = (0.05f + (0.4f * severity)) * victim.getMaxHealth() +  (victim.hasEffect(MobEffects.BLINDNESS) ? 6 : 0);
+        float damage = (0.05f + (0.2f * (float)Math.pow(severity, 4))) * victim.getMaxHealth() + (victim.hasEffect(MobEffects.BLINDNESS) ? 6 : 0);
         if (damage < 2) return; //|| random.nextFloat() < severity - 0.15
         if (victim.hasEffect(MobEffects.REGENERATION) && damage > 4) victim.removeEffect(MobEffects.REGENERATION);
         if (severity < SEVERITY_TO_HURT_VICTIM) return;
@@ -307,6 +339,7 @@ public class TummyAcheMobEffect extends MobEffect {
     }
 
     public static void cure(LivingEntity victim) {
+        if (!victim.hasEffect(ModMobEffects.TUMMY_ACHE.get())) return;
         victim.sendSystemMessage(Component.literal("§3Your tummy ache is gone! ☺"));
         victim.removeEffect(ModMobEffects.TUMMY_ACHE.get());
         TummyAcheMobEffect.deactivateInfo(victim);

@@ -88,7 +88,7 @@ public class ModItems {
     public static final RegistryObject<Item> INTERESTING_BREAD = createSimpleFoodItem("interesting_bread",
             (new FoodProperties.Builder())
                     .nutrition(7)
-                    .saturationMod(0.5f)
+                    .saturationMod(1)
                     .alwaysEat()
                     .build()
             );

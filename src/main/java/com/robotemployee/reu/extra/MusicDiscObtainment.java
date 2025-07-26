@@ -2,7 +2,9 @@ package com.robotemployee.reu.extra;
 
 import com.github.alexmodguy.alexscaves.server.entity.living.NucleeperEntity;
 import com.github.alexthe666.alexsmobs.effect.AMEffectRegistry;
+import com.github.alexthe666.alexsmobs.entity.AMEntityRegistry;
 import com.github.alexthe666.alexsmobs.entity.EntityGrizzlyBear;
+import com.github.alexthe666.alexsmobs.entity.ai.GroundPathNavigatorWide;
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.capability.FlowerCounterCapability;
 import com.robotemployee.reu.capability.FlowerCounterCapability.FlowerCounter;
@@ -32,6 +34,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
+import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -42,13 +45,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.*;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
@@ -82,7 +84,7 @@ public class MusicDiscObtainment {
         if (lobotomyCheck(event)) return;
         if (bearAttacked(event)) return;
         if (ironGolemDamageCheck(event)) return;
-
+        if (asbestosSuffocateOnAttack(event)) return;
     }
 
     @SubscribeEvent
@@ -153,8 +155,9 @@ public class MusicDiscObtainment {
     // when you crit another player with a chisel, there is a chance to get Triple Baka
     public static boolean lobotomyCheck(LivingAttackEvent event) {
         LivingEntity victim = event.getEntity();
+        Level level = victim.level();
 
-        if (victim.level().isClientSide()) return false;
+        if (level.isClientSide()) return false;
 
         DamageSource source = event.getSource();
         if (!source.is(DamageTypes.PLAYER_ATTACK)) return false;
@@ -162,53 +165,69 @@ public class MusicDiscObtainment {
         Entity attacker = source.getEntity();
         if (attacker == null) attacker = source.getDirectEntity();
 
+
+
         // code to grant Triple Baka in reward for giving a lobotomy
-        if (
-                victim instanceof Player &&
-                        attacker instanceof ServerPlayer player &&
-                        player.getMainHandItem().getItem() instanceof ChiselItem &&
-                        isCritting(player)
-        ) {
-            victim.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 160, 0));
-            victim.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 160, 1));
-            victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 160, 1));
+        if (!(victim instanceof Chicken)) return false;
+        if (!(attacker instanceof ServerPlayer player)) return false;
+        ItemStack stack = player.getMainHandItem();
+        if (!(stack.getItem() instanceof ChiselItem)) return false;
+        if (!isCritting(player)) return false;
 
-            Level level = player.level();
-            RandomSource random = level.getRandom();
-            // 50% chance to break the item
+        victim.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 160, 0));
+        victim.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 160, 1));
+        victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 160, 1));
 
-            float chanceToGetDisc = 0.15F;
-            float chanceToBreak = 0.5F;
+        RandomSource random = level.getRandom();
+        // 50% chance to break the item
 
-            // if the disc is granted, it wil break anyway.
-            boolean shouldGrantDisc = random.nextFloat() < chanceToGetDisc;
-            boolean shouldBreak = (shouldGrantDisc || random.nextFloat() < chanceToBreak);
+        float chanceToGetDisc = 0.15F;
+        float chanceToBreak = 0.5F;
 
-            if (shouldGrantDisc) {
-                ItemEntity newborn = new ItemEntity(
-                        level,
-                        victim.getX(),
-                        victim.getY(),
-                        victim.getZ(),
-                        new ItemStack(ModItems.MUSIC_DISC_TRIPLE_BAKA.get())
-                );
-                level.addFreshEntity(newborn);
-                player.playSound(SoundEvents.TOTEM_USE);
-            }
+        // if the disc is granted, it wil break anyway.
+        boolean shouldGrantDisc = random.nextFloat() < chanceToGetDisc;
+        boolean shouldBreak = (shouldGrantDisc || random.nextFloat() < chanceToBreak);
 
-            if (shouldBreak) {
-                player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-                player.playSound(SoundEvents.ITEM_BREAK);
-                return true;
-            }
-            player.playSound(SoundEvents.TURTLE_EGG_BREAK, 1, 2);
+        if (shouldGrantDisc) {
+            ItemEntity newborn = new ItemEntity(
+                    level,
+                    victim.getX(),
+                    victim.getY(),
+                    victim.getZ(),
+                    new ItemStack(ModItems.MUSIC_DISC_TRIPLE_BAKA.get())
+            );
+            level.addFreshEntity(newborn);
+            level.playSound(null, victim.getX(), victim.getY(), victim.getZ(), SoundEvents.TOTEM_USE, SoundSource.PLAYERS, 1, 1);
+        }
+
+        if (shouldBreak) {
+            level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1, 1);
+
+            ItemParticleOption particleOption = new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(stack.getItem()));
+
+            ((ServerLevel)level).sendParticles(
+                    particleOption,
+                    player.getX(),
+                    player.getY() + 0.5 * player.getEyeHeight(),
+                    player.getZ(),
+                    16,
+                    0.3, 0.3, 0.3,
+                    0
+            );
+
+            player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+
             return true;
         }
-        return false;
+
+        level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.TURTLE_EGG_BREAK, SoundSource.PLAYERS, 1, 1);
+        return true;
     }
 
     public static final float LEAP_FORCE_SCALE = 0.5f;
     public static final float LEAP_FORCE_ADD_Y = 1;
+    public static final double LEAP_FORCE_MAX = 8;
+    public static final float CHANCE_TO_KNOCKBACK_RESIST = 0.25f;
 
     public static boolean bearAttacked(LivingAttackEvent event) {
         LivingEntity victim = event.getEntity();
@@ -228,7 +247,8 @@ public class MusicDiscObtainment {
 
         float health = (victim.getHealth() / victim.getMaxHealth());
 
-        if (!(victim instanceof EntityGrizzlyBear) && health < 0.5) return false;
+        if (!(victim instanceof EntityGrizzlyBear) || health > 0.5) return false;
+
         // if the player is killing a grizzly bear without having obtained Clairo
         /*
         if (!player.getMainHandItem().isEmpty() && !ModAdvancements.isAdvancementComplete((ServerLevel) level, (ServerPlayer) player, ModAdvancements.OBTAINED_CLAIRO_DISC)) {
@@ -241,18 +261,50 @@ public class MusicDiscObtainment {
         if (!victim.hasEffect(MobEffects.DAMAGE_BOOST))
             player.sendSystemMessage(Component.literal("§3The bear is enraged."));
 
+        final int KNOCKBACK_RESIST_DURATION = 20;
+        MobEffectInstance knockbackResist = victim.getEffect(AMEffectRegistry.KNOCKBACK_RESISTANCE.get());
+        if (knockbackResist != null && knockbackResist.getDuration() > KNOCKBACK_RESIST_DURATION) {
+            victim.removeEffect(AMEffectRegistry.KNOCKBACK_RESISTANCE.get());
+        }
+
         RandomSource random = level.getRandom();
-        float chanceToLeap = 0.1f * (1 + 2 * (1 - (health * 2)));
-        if (random.nextFloat() < chanceToLeap) {
+        float chanceToLeap = 0.1f * (1 + 4 * (1 - (health * 2))); //+ (victim.hasEffect(AMEffectRegistry.KNOCKBACK_RESISTANCE.get()) ? 0.3f: 0)
+        if (!followingTheRules || random.nextFloat() < chanceToLeap) {
             Vec3 diff = victim.position().vectorTo(player.position());
-            Vec3 force = diff.add(new Vec3(0, LEAP_FORCE_ADD_Y, 0)).scale(LEAP_FORCE_SCALE);
+
+            double x = diff.x;
+            double y = Math.min(2, diff.y * 0.3) + LEAP_FORCE_ADD_Y;
+            double z = diff.z;
+
+            Vec3 initialForce = new Vec3(x, y, z).scale(LEAP_FORCE_SCALE);
+
+            Vec3 force = initialForce.scale(Math.min(1, LEAP_FORCE_MAX / initialForce.length()));
             victim.addDeltaMovement(force);
+            victim.addEffect(new MobEffectInstance(AMEffectRegistry.KNOCKBACK_RESISTANCE.get(), 20, 0));
+            victim.heal(2);
         }
 
         victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 200, 0));
         victim.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 200, 0));
-        victim.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 0));
-        victim.addEffect(new MobEffectInstance(AMEffectRegistry.KNOCKBACK_RESISTANCE.get(), 200, 0));
+        victim.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 1));
+
+        if (health < 0.25) victim.addEffect(new MobEffectInstance(MobEffects.JUMP, 200, 1));
+
+        if (health < 0.15) {
+            victim.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 2));
+            victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 200, 2));
+        }
+        //victim.heal(Math.min(1, event.getAmount() - 4));
+        // regen lowers your damage by too much
+        //victim.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 200, 0));
+        // knockback resistance is just too much with the new leap mechanic
+        // maybe not with a short duration and being removed on leap?? i tried with no resist and it was boring
+
+        /*
+        if (victim.hasEffect(AMEffectRegistry.KNOCKBACK_RESISTANCE.get()) && random.nextBoolean()) victim.removeEffect(AMEffectRegistry.KNOCKBACK_RESISTANCE.get());
+        else victim.addEffect(new MobEffectInstance(AMEffectRegistry.KNOCKBACK_RESISTANCE.get(), 20, 0));
+         */
+        //if (random.nextFloat() < CHANCE_TO_KNOCKBACK_RESIST) victim.addEffect(new MobEffectInstance(AMEffectRegistry.KNOCKBACK_RESISTANCE.get(), 20, 0));
 
         victim.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
         victim.removeEffect(MobEffects.WEAKNESS);
@@ -293,12 +345,36 @@ public class MusicDiscObtainment {
         return true;
     }
 
+    public static boolean asbestosSuffocateOnAttack(LivingAttackEvent event) {
+        LivingEntity victim = event.getEntity();
+
+        Level level = victim.level();
+
+        if (level.isClientSide()) return false;
+
+        DamageSource source = event.getSource();
+        if (!source.is(DamageTypes.PLAYER_ATTACK)) return false;
+
+        Entity attacker = source.getEntity();
+        if (!(attacker instanceof Player)) attacker = source.getDirectEntity();
+        if (!(attacker instanceof Player player)) return false;
+
+        if (!player.hasEffect(ModMobEffects.TUMMY_ACHE.get())) return false;
+        int airRemoved = Math.max((int)Math.floor(event.getAmount()), 60);
+        player.setAirSupply(player.getAirSupply() - airRemoved);
+        return true;
+    }
+
     // When a chicken dies to a lightning strike, you get birdbrain
+    // 8% chance
+    float CHICKEN_CHANCE_TO_DROP = 0.08f;
     public static boolean chickenDeathCheck(LivingDeathEvent event) {
         LivingEntity victim = event.getEntity();
         if (!event.getSource().is(DamageTypes.LIGHTNING_BOLT)) return false;
         Level level = victim.level();
         if (level.isClientSide()) return false;
+        RandomSource random = level.getRandom();
+        if (random.nextFloat() < 0.08f) return false;
 
         ItemEntity newborn = new ItemEntity(
                 level,
@@ -333,9 +409,24 @@ public class MusicDiscObtainment {
         float playerMaxHealth = player.getMaxHealth();
         float distance = victim.distanceTo(attacker);
 
-        Mob mob = (Mob)victim;
-        PathNavigation nav = mob.getNavigation();
-        //LOGGER.info("player position: " + attacker.blockPosition());
+        // i,,,,
+        // is there worse code?
+        // have i ever seen worse code?
+        // maybe.
+        // but this is still erm. erm. erm.
+        // if i didn't do this the path would be null randomly. so
+
+        Mob copiumFakeShitMob = AMEntityRegistry.GRIZZLY_BEAR.get().create(level);
+        assert copiumFakeShitMob != null;
+        copiumFakeShitMob.setPos(victim.getPosition(0f));
+        PathNavigation nav = new GroundPathNavigatorWide(copiumFakeShitMob, level) {
+            @Override
+            protected boolean canUpdatePath() {
+                return true;
+            }
+
+        };
+
         Path path = nav.createPath(attacker.blockPosition(), ALLOWED_BEAR_DISTANCE + 5);
 
         BlockHitResult footResult = level.clip(new ClipContext(
@@ -359,29 +450,51 @@ public class MusicDiscObtainment {
         BlockState footBlock = level.getBlockState(footResult.getBlockPos());
 
         boolean badFootBlock = footBlock.is(BlockTags.FENCES) || footBlock.is(BlockTags.FENCE_GATES);
-        /*LOGGER.info("Booleans: " + (path == null) +
-                (!path.canReach()) +
-                (player.getY() - victim.getY() > 1.9) +
-                (!path.getTarget().closerToCenterThan(player.position(), 1.2)) +
-                (footResult.getType() == HitResult.Type.BLOCK && badFootBlock) +
-                (eyeResult.getType() == HitResult.Type.BLOCK));
-         */
 
-        boolean unreachable = (path == null) ||
-                (!path.canReach()) ||
-                (player.getY() - victim.getY() > 1.9) ||
-                (!path.getTarget().closerToCenterThan(player.position(), 1.2)) || //Math.sqrt(path.getTarget().distToCenterSqr(player.position())) < 3;
-                (footResult.getType() == HitResult.Type.BLOCK && badFootBlock) ||
-                (eyeResult.getType() == HitResult.Type.BLOCK);
+        // simple algorithm to find the block position corresponding to the air above the ground below us
+        // this is important because if we directly check the player's y-position
+        BlockPos airAboveGroundPos = player.blockPosition();
+        int depth = 4;
+        for (int i = 0; i < depth; i++) {
+            BlockPos pos = airAboveGroundPos.below();
+            BlockState examined = level.getBlockState(pos);
+            boolean hasCollision = !examined.getCollisionShape(level, pos).isEmpty();
+            boolean air = examined.isAir();
+
+            if (air || !hasCollision) airAboveGroundPos = airAboveGroundPos.below();
+            else break;
+        }
+
+        //level.g
+
+        // preliminary
+        boolean playerFlying = player.getAbilities().flying;
+        boolean pathNull = path == null;
+        boolean pathHasNodes = !pathNull && path.getNodeCount() > 0;
+        // these are all summarized into unreachable
+        boolean pathCantReach = !pathNull && !path.canReach();
+        boolean pathTargetTooFar = !pathNull && !path.getTarget().closerToCenterThan(player.position(), 0.5);
+        boolean pathEndNodeVerticalTooFar = pathHasNodes && airAboveGroundPos.getY() - path.getEndNode().asBlockPos().getY() > 1;
+        // no longer dependent on path existing
+        boolean footObscured = footResult.getType() == HitResult.Type.BLOCK && badFootBlock;
+        boolean eyeObscured = eyeResult.getType() == HitResult.Type.BLOCK;
+
+        boolean unreachable = playerFlying || pathCantReach || pathTargetTooFar || pathEndNodeVerticalTooFar || footObscured || eyeObscured;
 
         //|| path.getTarget().equals(player.blockPosition())
 
-        /*
         if (path == null) {
-            LOGGER.info("Path is null");
-        } else LOGGER.info(String.format("Path information... dist:%s reachable:%s nodecount:%s targetpos:%s", path.getDistToTarget(), path.canReach(), path.getClosedSet().length, path.getTarget()));
-         */
-
+            LOGGER.info("Path is null.");
+        } else {
+            LOGGER.info("Booleans: " + pathNull + pathHasNodes + pathCantReach + pathTargetTooFar + pathEndNodeVerticalTooFar + footObscured + eyeObscured);
+            LOGGER.info("player position: " + attacker.blockPosition());
+            LOGGER.info("stepheight: " + copiumFakeShitMob.getStepHeight());
+            LOGGER.info("nodecount:" + path.getNodeCount());
+            for (int i=0; i < path.getNodeCount(); i++) {
+                LOGGER.info("Node: " + path.getNodePos(i));
+            }
+            LOGGER.info("End node: " + path.getEndNode().asBlockPos());
+        }
 
         boolean isInCobweb = false;
 
@@ -399,6 +512,7 @@ public class MusicDiscObtainment {
         boolean tooMuchArmor = player.getArmorValue() > ALLOWED_BEAR_ARMOR;
         boolean tooFar = distance > ALLOWED_BEAR_DISTANCE;
         boolean friendly = ((TamableAnimal)victim).getOwnerUUID() == player.getUUID();
+        boolean tooMuchReach = player.getEntityReach() > 6.5;
         boolean hampered = victim.isFreezing() ||
                 victim.isInWaterOrBubble() ||
                 victim.isInLava() ||
@@ -412,6 +526,7 @@ public class MusicDiscObtainment {
         if (tooMuchArmor) complaints.add(String.format("you had %s armor points", player.getArmorValue()));
         if (tooFar) complaints.add(String.format("the distance was %.0fm", distance));
         if (friendly) complaints.add("the bear was tamed");
+        if (tooMuchReach) complaints.add("you could reach really far");
         if (hampered) complaints.add("the bear was impeded");
         if (unreachable) complaints.add("the bear could not reach you");
 
@@ -455,6 +570,9 @@ public class MusicDiscObtainment {
         // we've gotten our complaints out of the way
         // but do not reward the disc if it was unfair
         if (wasUnfair) return true;
+
+        // secret way to cure tummy ache
+        if (player.isCrouching()) TummyAcheMobEffect.cure(player);
 
         ItemEntity newborn = new ItemEntity(
                 level,
@@ -567,7 +685,7 @@ public class MusicDiscObtainment {
         }
 
         if (innerPeace.getCount() == 1) {
-            player.sendSystemMessage(Component.literal("§3Welcome to your flower quest. Whether you're returning or starting anew, I trust that inner peace will be with you when you are ready.\n\n Consume 19 more unique flowers, and it will be yours."));
+            player.sendSystemMessage(Component.literal("§3Welcome to your flower quest. Whether you're returning or starting anew, I trust that inner peace will be with you when you are ready.\n\n Consume " + (FLOWERS_NEEDED - 1) + " more unique flowers, and it will be yours."));
         }
 
         // the flower has been added by counter.addFlower()
@@ -616,7 +734,11 @@ public class MusicDiscObtainment {
         return true;
     }
 
+    // chance is vastly increased when food count is low
+    // but not too low.
     public static final float CHANCE_TO_NUCLEEPER_BARTER = 0.03f;
+    public static final int COUNT_INCREASE_CHANCE_START = 20;
+    public static final int COUNT_INCREASE_CHANCE_END = 16;
     public static final Supplier<Item> NUCLEEPER_FOOD = () -> Items.GLOWSTONE_DUST;
 
     public static void feedNucleeperCheck(PlayerInteractEvent.EntityInteract event) {
@@ -644,7 +766,9 @@ public class MusicDiscObtainment {
 
         float chanceMultiplier = Mth.clamp(1 - (distance - 5) / 6, 0.1f, 1);
 
-        float chance = CHANCE_TO_NUCLEEPER_BARTER * chanceMultiplier;
+        int count = food.getCount();
+
+        float chance = CHANCE_TO_NUCLEEPER_BARTER * chanceMultiplier + ((distance < 3 && count < COUNT_INCREASE_CHANCE_START && count > COUNT_INCREASE_CHANCE_END) ? 0.5f : 0);
 
         target.playSound(SoundEvents.HORSE_EAT);
         food.shrink(1);
@@ -675,9 +799,12 @@ public class MusicDiscObtainment {
             return;
         }
 
+        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 80, 0, false, false, false));
+
         // The player has won the lottery.
 
         target.playSound(SoundEvents.TOTEM_USE);
+        target.playSound(SoundEvents.WOLF_AMBIENT);
 
         player.getCooldowns().addCooldown(food.getItem(), 40);
 
@@ -688,6 +815,11 @@ public class MusicDiscObtainment {
                 target.getZ(),
                 new ItemStack(ModItems.MUSIC_DISC_SO_BE_IT.get())
         );
+
+        Vec3 direction = target.getEyePosition().vectorTo(player.getPosition(0)).normalize();
+        Vec3 force = new Vec3(direction.x, 1 + direction.y * 0.2, direction.z).scale(2);
+        newborn.addDeltaMovement(force);
+
         newborn.setInvulnerable(true);
         level.addFreshEntity(newborn);
     }
@@ -707,11 +839,13 @@ public class MusicDiscObtainment {
 
         TummyAcheMobEffect.bestowInterestingBreadBoons(entity, severity);
 
+        RandomSource random = level.getRandom();
+
 
         if (entity.hasEffect(ModMobEffects.TUMMY_ACHE.get())) {
-            boolean doALot = level.getRandom().nextFloat() < 0.2;
-            if (severity > 0.5) TummyAcheMobEffect.inflictAilment(entity, severity);
-            CompoundTag newInfo = TummyAcheMobEffect.advanceTime(info, entity, TummyAcheMobEffect.TICKS_ACCELERATED_ON_BREAD * (doALot ? 3 : 1));
+            boolean doALot = random.nextFloat() < 0.2;
+            if (severity > 0.5 && random.nextFloat() < Math.pow(severity, 2)) TummyAcheMobEffect.inflictAilment(entity, severity);
+            CompoundTag newInfo = TummyAcheMobEffect.advanceTime(info, entity, TummyAcheMobEffect.TICKS_ACCELERATED_ON_BREAD * (doALot ? 8 : 1));
             float newSeverity = TummyAcheMobEffect.getSeverity(entity, newInfo);
             entity.sendSystemMessage(Component.literal(String.format((doALot ? "§3Your condition accelerates a lot." : "§3Your condition accelerates.") + (newSeverity > 0 ? " §8(%.2f)" : ""), newSeverity)));
 
@@ -758,28 +892,33 @@ public class MusicDiscObtainment {
     // MODIFIED SERVERSIDE ONLY
     // UUID is of course the arrow. The Long is the time that it was fired
     public static final HashMap<UUID, ArrowShotStatistics> PRECISE_ARROWS = new HashMap<>();
-    // MODIFIED CLIENTSIDE ONLY
-    public static final HashMap<UUID, Deque<Float>> PLAYER_SPIN_TRACKER = new HashMap<>();
+    // ONLY MODIFIED ON CLIENT
+    public static final Deque<Float> SPIN_TRACKER = new ArrayDeque<>();
+    // the rest of these are fine tho
     public static final int TICKS_TRACKED = 20;
     public static final int ROTATION_FOR_EPICNESS = 270;
     public static final int MIN_ARROW_H_DISTANCE = 5;
-    public static final double NEEDED_FALLEN_BLOCKS = 1.2;
+    public static final double NEEDED_FALLEN_BLOCKS = 0.2; //1.2
     public static final int POINTS_PER_RANK = 8;
+    public static final int RANK_FOR_S = 10;
 
     public static class ArrowShotStatistics {
         public final long tick;
         public final Vec3 position;
         public final Date date;
+        public final int messageIndex;
 
         private static final String ROOT_PATH = "ShotStatistics";
         private static final String TICK_PATH = "Tick";
         private static final String DATE_PATH = "Date";
+        private static final String MESSAGE_INDEX_PATH = "Message";
 
 
-        public ArrowShotStatistics(long time, Vec3 position, Date date) {
+        public ArrowShotStatistics(long time, Vec3 position, Date date, int messageIndex) {
             this.tick = time;
             this.position = position;
             this.date = date;
+            this.messageIndex = messageIndex;
         }
 
         public ArrowShotStatistics(ItemStack stack) {
@@ -788,6 +927,7 @@ public class MusicDiscObtainment {
                 tick = 0;
                 position = Vec3.ZERO;
                 date = Date.from(Instant.EPOCH);
+                messageIndex = 0;
                 return;
             }
             CompoundTag tag = bigTag.getCompound(ROOT_PATH);
@@ -795,6 +935,7 @@ public class MusicDiscObtainment {
 
             this.tick = tag.getLong(TICK_PATH);
             this.date = Date.from(Instant.ofEpochMilli(tag.getLong(DATE_PATH)));
+            this.messageIndex = tag.getInt(MESSAGE_INDEX_PATH);
         }
 
         public CompoundTag save() {
@@ -805,6 +946,7 @@ public class MusicDiscObtainment {
             tag.putDouble("Z", position.z);
             tag.putLong(TICK_PATH, tick);
             tag.putLong(DATE_PATH, date.getTime());
+            tag.putInt(MESSAGE_INDEX_PATH, messageIndex);
 
             return tag;
         }
@@ -856,6 +998,8 @@ public class MusicDiscObtainment {
             float distance = (float)stats.position.distanceTo(new Vec3(hitX, hitY, hitZ));
             float velocity = tag.getFloat(HIT_VELOCITY_PATH);
 
+            String message = ARROW_FIRED_MESSAGES[stats.messageIndex];
+
             ArrayList<Component> result = new ArrayList<>();
 
             result.add(Component.empty());
@@ -866,6 +1010,8 @@ public class MusicDiscObtainment {
             } else {
                 result.add(Component.literal("§3Viewing shot data . . ."));
             }
+
+            result.add(Component.literal(String.format("§7// %s", message)));
             result.add(Component.literal(String.format("§7The date was %s.", coolDate)));
             result.add(Component.literal(String.format("§7%s 360'd a %s.", coolGuy, victim)));
             result.add(Component.literal(String.format("§7Fired from (%.0f, %.0f, %.0f)", stats.position.x, stats.position.y, stats.position.z)));
@@ -880,27 +1026,45 @@ public class MusicDiscObtainment {
         }
     }
 
+    public static int airTicksTrackable = 0;
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         Player player = Minecraft.getInstance().player;
         if (player == null) return;
 
+        // only the ticks where you were in air will count for a 360
+        trackAirTime(player);
+        // just updating the deque
+        track360(player);
+    }
+
+    public static void trackAirTime(Player player) {
+        if (player.onGround()) airTicksTrackable = 0;
+        else airTicksTrackable = Math.min(airTicksTrackable + 1, TICKS_TRACKED);
+    }
+
+    public static void track360(Player player) {
         // progress towards doing a 360 is only tracked if you aren't on the ground
         // what kinda logic is that. we need a constantly updated tracker
         //if (player.onGround()) return;
 
-        if (!player.getMainHandItem().is(Items.BOW)) return;
 
-        Deque<Float> tracker = PLAYER_SPIN_TRACKER.computeIfAbsent(player.getUUID(), uuid -> new LinkedList<>());
+        //Deque<Float> tracker = PLAYER_SPIN_TRACKER.computeIfAbsent(player.getUUID(), uuid -> new LinkedList<>());
 
-        tracker.addFirst(player.getYHeadRot());
-        while (tracker.size() > TICKS_TRACKED) tracker.removeLast();
+        if (player.onGround()) {
+            SPIN_TRACKER.clear();
+            return;
+        }
+        SPIN_TRACKER.addFirst(player.getYHeadRot());
+        while (SPIN_TRACKER.size() > TICKS_TRACKED) SPIN_TRACKER.removeLast();
+        //LOGGER.info("Tracking spin: " + SPIN_TRACKER);
     }
 
     @SubscribeEvent
     public static void onLogOut(PlayerEvent.PlayerLoggedOutEvent event) {
-        PLAYER_SPIN_TRACKER.remove(event.getEntity().getUUID());
+        // i don't know what i was thinking but im too scared to remove this ?
+        SPIN_TRACKER.clear();
     }
 
     @SubscribeEvent
@@ -923,18 +1087,15 @@ public class MusicDiscObtainment {
         PRECISE_ARROWS.remove(projectile.getUUID());
     }
 
-    public static boolean isEpicAndCoolSpin(Player player) {
-        Deque<Float> tracker = PLAYER_SPIN_TRACKER.get(player.getUUID());
-        if (tracker == null) {
-            //LOGGER.info("Booo silly! tracker was null");
-            return false;
-        }
+    public static boolean isEpicAndCoolSpin() {
 
-        float basis = tracker.getLast();
+        float basis = SPIN_TRACKER.getLast();
 
         float totalSpin = 0;
 
-        for (Float rawSpin : tracker) {
+        int i = -5;
+        for (Float rawSpin : SPIN_TRACKER) {
+            if (++i > airTicksTrackable) break;
             float spin = rawSpin - basis;
             totalSpin += spin;
             //LOGGER.info("Total spin: " + totalSpin);
@@ -954,16 +1115,28 @@ public class MusicDiscObtainment {
         if (!(culprit instanceof Arrow arrow)) return false;
         //LOGGER.info("wow. that sure looks like an arrow");
 
-        Entity origin = arrow.getOwner();
-        if (!(origin instanceof Player player)) return true;
+        if (!(arrow.getOwner() instanceof Player player)) return false;
+
+        boolean selfAttack = victim.getUUID() == player.getUUID();
 
         //LOGGER.info("shot by a player");
 
-        if (player.isCrouching()) return true;
+        if (player.isCrouching()) return false;
+
+        ArrowShotStatistics stats = PRECISE_ARROWS.get(arrow.getUUID());
+
+        if (stats == null) return false;
+        Vec3 diff = player.position().vectorTo(victim.position());
+        double horizontalDistance = new Vector2d(player.getX() - victim.getX(), player.getZ() - victim.getZ()).length();
+
+        if (!selfAttack && horizontalDistance < MIN_ARROW_H_DISTANCE) {
+            victim.playSound(SoundEvents.ITEM_BREAK, 2, 1);
+            return false;
+        }
 
         //LOGGER.info("they're not crouching");
 
-        if (!PRECISE_ARROWS.containsKey(arrow.getUUID())) return false;
+
 
         //LOGGER.info("the arrow was epic");
 
@@ -973,9 +1146,13 @@ public class MusicDiscObtainment {
 
         int minDamage = (manslaughter) ? 20 : 10;
 
-        float damageAdded = (manslaughter) ? 3 : 2;
+        float damageAdded = (manslaughter) ? 1 : 0;
 
-        float damage = Math.max((event.getAmount() + damageAdded) * 2, minDamage);
+        float airCoef = Math.min(1, (level.getGameTime() - stats.tick) / 100f);
+
+        float damageMultiplier = 2 + 3 * airCoef;
+
+        float damage = Math.max((Math.max(4, event.getAmount()) + damageAdded) * damageMultiplier, minDamage);
 
         event.setAmount(damage);
         //LOGGER.info("the damage: " + damage);
@@ -989,6 +1166,110 @@ public class MusicDiscObtainment {
         return true;
     }
 
+    public static final String[] ARROW_FIRED_MESSAGES = {
+            "Safe travels.",
+            "Bon voyage.",
+            "Sent.",
+            "And away it goes.",
+            "See you.",
+            "Off to the hills.",
+            "Far and away.",
+            "Until next.",
+            "Bye.",
+            "Ciao.",
+            "Hey there.",
+            "Farewell.",
+            "早上好中国",
+            "现在我有",
+            "冰淇淋",
+            "You murderer.",
+            "How astute.",
+            "Away with you.",
+            "太マラ",
+            "Good morning China.",
+            "Smooth.",
+            "Hour after hour.",
+            "Don't look.",
+            "No hands.",
+            "For whom it may concern.",
+            "Fuck you in particular.",
+            "Read.",
+            "Watch this.",
+            "Respect your elders.",
+            "Play rain world.",
+            "Begone.",
+            "Leave me.",
+            "Break a leg.",
+            "Forgive me.",
+            "I insist.",
+            "You're dead to me.",
+            "For the record.",
+            "Meow.",
+            "Avoid at all costs.",
+            "Identify yourself.",
+            "Butter.",
+            "Dirt.",
+            "Again.",
+            "I ejaculate fire.",
+            "Big penis.",
+            "You know what you did.",
+            "Seduce me.",
+            "Red spy in base.",
+            "Don't touch Sasha.",
+            "Listen here.",
+            "Remember me.",
+            "Stop repeating me.",
+            "Look away.",
+            "Drink water.",
+            "Go to the bathroom.",
+            "You're shitting yourself.",
+            "How the mighty have fallen.",
+            "How the mighty have fallen.",
+            "Touch grass.",
+            "Job application.",
+            "Do not touch.",
+            "Destroyer of worlds.",
+            "Nuclear.",
+            "Oops.",
+            "Sorry.",
+            "My mistake.",
+            "No second chances.",
+            "Dropped this.",
+            "Wide open.",
+            "Strike.",
+            "God is coming.",
+            "Don't miss.",
+            "Don't fail me now.",
+            "I thought I hired goons.",
+            "Don't quote me on this.",
+            "Survive.",
+            "Pull aside.",
+            "Stay down.",
+            "Quickly, now.",
+            "Quiet.",
+            "Forever and always.",
+            "Protect the pilot.",
+            "9/11.",
+            "So long.",
+            "Smite them.",
+            "Cope and seethe.",
+            "Cry about it.",
+            "Don't kill me.",
+            "Mushroom.",
+            "Good.",
+            "Keep it rolling.",
+            "Caught on camera.",
+            "En route.",
+            "Out for delivery.",
+            "Something cool.",
+            "Impress me.",
+            "Did I do that?",
+            "On the way.",
+            "For you.",
+            //"You're on my nerves.",
+            "Secret message."
+    }; // there are. over . 50. of these messages. dear god.
+
     public static void fallingArrowFiredCheck(EntityJoinLevelEvent event) {
         Entity entity = event.getEntity();
         Level level = event.getLevel();
@@ -1001,7 +1282,7 @@ public class MusicDiscObtainment {
         //LOGGER.info("An arrow just got fired by a player");
 
         if (player.getDeltaMovement().y > -0.1) return;
-        if (!isEpicAndCoolSpin(player)) return;
+        if (!isEpicAndCoolSpin()) return;
 
         if (!player.getMainHandItem().is(Items.BOW)) {
             player.sendSystemMessage(Component.literal("§3You must be using a Bow."));
@@ -1025,9 +1306,18 @@ public class MusicDiscObtainment {
             return;
         }
 
+        //player.playSound(SoundEvents.PLAYER_ATTACK_KNOCKBACK, 0.5f, 1.3f);
+        player.playSound(SoundEvents.IRON_GOLEM_HURT, 0.65f, 2);
+        //player.playSound(SoundEvents.FIREWORK_ROCKET_LAUNCH, 0.5f, 1.5f);
+        int messageIndex = level.getRandom().nextInt(ARROW_FIRED_MESSAGES.length);
+        String message = ARROW_FIRED_MESSAGES[messageIndex];
+
+        player.displayClientMessage(Component.literal(String.format("§3/ %s \\", message)), true);
+        //player.displayClientMessage(Component.literal(String.format("§3%s", message)), false);
+
         //LOGGER.info("A really cool arrow just got fired");
         Date date = Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant());
-        ServerboundPreciseArrowPacket.INSTANCE.sendToServer(new ServerboundPreciseArrowPacket(arrow.getUUID(), player.getUUID(), arrow.tickCount, player.position(), date));
+        ServerboundPreciseArrowPacket.INSTANCE.sendToServer(new ServerboundPreciseArrowPacket(arrow.getUUID(), player.getUUID(), arrow.tickCount, player.position(), date, messageIndex));
     }
 
     public static boolean preciseArrowDeathCheck(LivingDeathEvent event) {
@@ -1037,6 +1327,7 @@ public class MusicDiscObtainment {
 
         if (!(attacker instanceof Arrow arrow)) return false;
         if (!(arrow.getOwner() instanceof Player player)) return false;
+        boolean selfAttack = attacker.getUUID() == victim.getUUID();
 
         //LOGGER.info("Arrow fired by player killed something");
 
@@ -1054,7 +1345,7 @@ public class MusicDiscObtainment {
 
         double horizontalDistance = new Vector2d(player.getX() - victim.getX(), player.getZ() - victim.getZ()).length();
 
-        if (horizontalDistance < MIN_ARROW_H_DISTANCE) {
+        if (!selfAttack && horizontalDistance < MIN_ARROW_H_DISTANCE) {
             player.sendSystemMessage(Component.literal(String.format("§3Target was too close - must be at least §b" + MIN_ARROW_H_DISTANCE + "§3 blocks away horizontally. The target was %.1fm to you", horizontalDistance)));
             return true;
         }
@@ -1066,35 +1357,35 @@ public class MusicDiscObtainment {
         // The player has hit a "precise" arrow.
 
         double pointsFromDistance = horizontalDistance;
-        double pointsFromVelocity = 5 * (airspeed - 2);
-        double pointsFromAirtime = airtime * 2;
+        double pointsFromVelocity = Math.max(0, 5 * (airspeed - 2));
+        double pointsFromAirtime = Math.min(60, airtime * 2);
         int points = (int)Math.round(pointsFromDistance + pointsFromVelocity + pointsFromAirtime);
 
         player.sendSystemMessage(Component.literal(String.format(
                 "§3Congratulations.\n\n" +
                         "Horizontal distance to the target: §b%.1fm\n" +
                         "§3Arrow velocity: §b%.1fm/s.\n" +
-                        "§3Flight duration: §b%.1fs §3(%s ticks)\n",
+                        "§3Flight duration: §b%.1fs §3(%s ticks) §8. . %.1f + %.1f + %.1f\n",
                 horizontalDistance,
                 airspeed,
                 (airtime) / 20f,
-                airtime
+                airtime,
+                pointsFromDistance, pointsFromVelocity, pointsFromAirtime
                 )));
 
 
         int rank = points / POINTS_PER_RANK;
         String rankSymbol = rankSymbol(rank);
 
-        player.sendSystemMessage(Component.literal(String.format("§b%s points §3- %s\n§7(%.1f + %.1f + %.1f)",
+        player.sendSystemMessage(Component.literal(String.format("§b%s points §3- %s",
                 points,
-                rankSymbol,
-                pointsFromDistance, pointsFromVelocity, pointsFromAirtime
+                rankSymbol
         )));
 
         SoundEvent cheer;
         if (rank < 4) {
             cheer = ModSounds.MEH_CHEERING.get();
-        } else if (rank < 7) {
+        } else if (rank < RANK_FOR_S) {
             cheer = ModSounds.GOOD_CHEERING.get();
         } else {
             for (ServerPlayer p : level.getServer().getPlayerList().getPlayers()) {
@@ -1108,6 +1399,9 @@ public class MusicDiscObtainment {
             }
             ModAdvancements.completeAdvancement((ServerLevel)level, (ServerPlayer)player, ModAdvancements.VICTORY_ROYALE);
             cheer = ModSounds.EPIC_CHEERING.get();
+            Entity newborn = EntityType.LIGHTNING_BOLT.create(level);
+            newborn.setPos(victim.getPosition(0));
+            level.addFreshEntity(newborn);
         }
 
         level.playSound(null, player.getX(), player.getY(), player.getZ(), cheer, SoundSource.PLAYERS, 1, 1);
@@ -1162,6 +1456,7 @@ public class MusicDiscObtainment {
                 victim.getZ(),
                 disc
         );
+        newborn.setInvulnerable(true);
 
         level.addFreshEntity(newborn);
         return true;
@@ -1175,14 +1470,17 @@ public class MusicDiscObtainment {
             case 1,2 -> rankSymbol.append("§2§lD");
             case 3 -> rankSymbol.append("§3§lC");
             case 4 -> rankSymbol.append("§a§lB");
-            case 5,6 -> rankSymbol.append("§d§lA");
             default -> {
-                rankSymbol.append("§6\uD83D\uDD25 §e§lS§6");
-                int godCount = (rank - 7) / 2;
-                // thanks jetbrains /pos. i guess? i mean this looks neat
-                rankSymbol.append("+".repeat(Math.max(0, godCount)));
-                rankSymbol.append(" \uD83D\uDD25");
-                // basically it adds a "+" for every 6 points above 30 you get
+                if (rank < RANK_FOR_S) {
+                    rankSymbol.append("§d§lA");
+                } else {
+                    rankSymbol.append("§6\uD83D\uDD25 §e§lS§6");
+                    int godCount = (rank - 7) / 2;
+                    // thanks jetbrains /pos. i guess? i mean this looks neat
+                    rankSymbol.append("+".repeat(Math.max(0, godCount)));
+                    rankSymbol.append(" \uD83D\uDD25");
+                    // basically it adds a "+" for every 6 points above 30 you get
+                }
             }
         }
         return rankSymbol.toString();
