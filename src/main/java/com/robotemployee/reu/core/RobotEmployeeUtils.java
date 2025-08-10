@@ -3,6 +3,8 @@ package com.robotemployee.reu.core;
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.registry.*;
 import com.robotemployee.reu.extra.*;
+import com.robotemployee.reu.extra.music_disc_obtainment.ClientOnlyDiscEvents;
+import com.robotemployee.reu.extra.music_disc_obtainment.GenericDiscEvents;
 import com.robotemployee.reu.item.ReconstructorItem;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.item.ItemProperties;
@@ -10,12 +12,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -77,10 +82,15 @@ public class RobotEmployeeUtils
         MinecraftForge.EVENT_BUS.register(BaseGame.class);
         MinecraftForge.EVENT_BUS.register(FriendsAndFoesCompat.class);
         MinecraftForge.EVENT_BUS.register(AlexsCavesCompat.class);
-        MinecraftForge.EVENT_BUS.register(MusicDiscObtainment.class);
+        MinecraftForge.EVENT_BUS.register(GenericDiscEvents.class);
+
+        // only for the client :)
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+            MinecraftForge.EVENT_BUS.register(ClientOnlyDiscEvents.class);
+            MinecraftForge.EVENT_BUS.register(ClientModEvents.class);
+        });
 
         //MinecraftForge.EVENT_BUS.register(Datagen.class);
-        MinecraftForge.EVENT_BUS.register(ClientModEvents.class);
 
         // Register our mod's ForgeConfigSpec so that Forge can create and load the config file for us
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
@@ -134,7 +144,7 @@ public class RobotEmployeeUtils
 
             if (item == ModItems.MUSIC_DISC_KOKOROTOLUNANOFUKAKAI.get()) {
                 boolean showShotData = Screen.hasShiftDown();
-                List<Component> tooltip = MusicDiscObtainment.ArrowShotStatistics.getTooltip(stack, showShotData);
+                List<Component> tooltip = GenericDiscEvents.ArrowShotStatistics.getTooltip(stack, showShotData);
                 if (tooltip != null) {
                     event.getToolTip().addAll(tooltip);
                 } else {

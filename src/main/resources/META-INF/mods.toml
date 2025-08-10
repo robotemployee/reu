@@ -62,13 +62,38 @@ description='''${mod_description}'''
     versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
-# Create dependency
+
+# Create
 [[dependencies.${mod_id}]]
     modId="create"
-    mandatory=false
-    versionRange="[6.0.4,6.1.0)"
+    mandatory=true
+    versionRange="[6.0.4,)"
     ordering="NONE"
     side="BOTH"
+
+# Alex's Caves
+[[dependencies.${mod_id}]]
+modId="alexscaves"
+mandatory=true
+versionRange="[2.0.2,)"
+ordering="NONE"
+side="BOTH"
+
+# Alex's Mobs
+[[dependencies.${mod_id}]]
+modId="alexsmobs"
+mandatory=true
+versionRange="[1.22.9,)"
+ordering="NONE"
+side="BOTH"
+
+# Rechiseled
+[[dependencies.${mod_id}]]
+modId="rechiseled"
+mandatory=true
+versionRange="[1.1.6,)"
+ordering="NONE"
+side="BOTH"
 
 # Features are specific properties of the game environment, that you may want to declare you require. This example declares
 # that your mod requires GL version 3.2 or higher. Other features will be added. They are side aware so declaring this won't

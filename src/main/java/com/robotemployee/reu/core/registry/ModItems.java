@@ -104,7 +104,7 @@ public class ModItems {
     public static final RegistryObject<Item> MUSIC_DISC_TRIPLE_BAKA = createDiscItem("triple_baka", ModSounds.TRIPLE_BAKA_DISC, 4780);
     public static final RegistryObject<Item> MUSIC_DISC_CLAIRO = createDiscItem("clairo", ModSounds.CLAIRO_DISC, 4000);
     public static final RegistryObject<Item> MUSIC_DISC_GIANT_ROBOTS = createDiscItem("giant_robots", ModSounds.GIANT_ROBOTS_DISC, 4540);
-    public static final RegistryObject<Item> MUSIC_DISC_MECHANIZED_MEMORIES = createDiscItem("mechanized_memories", ModSounds.MECHANIZED_MEMORIES_DISC, 6600);
+    public static final RegistryObject<Item> MUSIC_DISC_STEEL_HAZE = createDiscItem("steel_haze", ModSounds.STEEL_HAZE_DISC, 4400);
     public static final RegistryObject<Item> MUSIC_DISC_SO_BE_IT = createDiscItem("so_be_it", ModSounds.SO_BE_IT_DISC, 4060);
     public static final RegistryObject<Item> MUSIC_DISC_HEART_OF_GLASS = createDiscItem("heart_of_glass", ModSounds.HEART_OF_GLASS_DISC, 4680);
     public static final RegistryObject<Item> MUSIC_DISC_KOKOROTOLUNANOFUKAKAI = createDiscItem("kokorotolunanofukakai", ModSounds.KOKOROTOLUNANOFUKAKAI_DISC, 5500);

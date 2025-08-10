@@ -53,11 +53,11 @@
       }
     ]
   },
-  "music_disc.mechanized_memories": {
+  "music_disc.steel_haze": {
     "category": "record",
     "sounds": [
       {
-        "name": "reu:music_disc/mechanized_memories",
+        "name": "reu:music_disc/steel_haze",
         "stream": true
       }
     ]

@@ -6,6 +6,7 @@ import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
@@ -31,35 +32,34 @@ public class ModAdvancements {
     public static final ResourceLocation OBTAINED_TRIPLE_BAKA = createDiscAdvancement("obtained_triple_baka_disc", ModItems.MUSIC_DISC_TRIPLE_BAKA, Component.literal("DON'T STOP READING, DON'T STOP READING. please wake up please wake up please wake up please wake up please. please. i miss you please."));
     public static final ResourceLocation OBTAINED_CLAIRO_DISC = createDiscAdvancement("obtained_clairo_disc", ModItems.MUSIC_DISC_CLAIRO, Component.literal("har har harhar har har harhar harhar, har har harhar, har har harhar"));
     public static final ResourceLocation OBTAINED_GIANT_ROBOTS_DISC = createDiscAdvancement("obtained_giant_robots_disc", ModItems.MUSIC_DISC_GIANT_ROBOTS, Component.literal("I spent an hour and a half looking at a screenshot of Optimus Prime doing the default dance for this."));
-    public static final ResourceLocation OBTAINED_MEMORIES_DISC = createDiscAdvancement("obtained_mechanized_memories_disc", ModItems.MUSIC_DISC_MECHANIZED_MEMORIES, Component.literal("We need more depression robot games! I demand it!"));
+    public static final ResourceLocation OBTAINED_STEEL_HAZE_DISC = createDiscAdvancement("obtained_mechanized_memories_disc", ModItems.MUSIC_DISC_STEEL_HAZE, Component.literal("We need more depression robot games! I demand it!"));
     public static final ResourceLocation OBTAINED_SO_BE_IT_DISC = createDiscAdvancement("obtained_so_be_it_disc", ModItems.MUSIC_DISC_SO_BE_IT, Component.literal("I would love to talk about the cinematography of the music video but that's a lot of words!"));
     public static final ResourceLocation OBTAINED_HEART_OF_GLASS_DISC = createDiscAdvancement("obtained_heart_of_glass_disc", ModItems.MUSIC_DISC_HEART_OF_GLASS, Component.literal("Well, this is odd. Writing a message for my own disc. Hi. Ironically, the hope is that you have killed yourself in minecraft"));
     public static final ResourceLocation OBTAINED_KOKOROTOLUNANOFUKAKAI_DISC = createDiscAdvancement("obtained_kokorotolunanofukakai_disc", ModItems.MUSIC_DISC_KOKOROTOLUNANOFUKAKAI, Component.literal("Chat, say it with me! Kokorotolunanofukakaikokorotolunanofukakaikokorotolunanofukakai ... Chat, am I muted? Alright, I'll say it again"));
     public static final ResourceLocation OBTAINED_ORANGE_BLOSSOMS_DISC = createDiscAdvancement("obtained_orange_blossoms_disc", ModItems.MUSIC_DISC_ORANGE_BLOSSOMS, Component.literal("WHY ARE ORANGE BLOSSOMS NOT ORANGE? Anyways, sorry for putting you through whatever draconian mechanic I'll make to obtain this disc"));
     public static final ResourceLocation OBTAINED_PROVIDENCE_DISC = createDiscAdvancement("obtained_providence_disc", ModItems.MUSIC_DISC_PROVIDENCE, Component.literal("Repent, then, and turn to God, so that your sins may be wiped out, that times of refreshing may come from the Lord. Or don't, I guess"));
 
+    // Granted via code when you get a rank of S or better in phillip's disc challenge
     public static final ResourceLocation VICTORY_ROYALE = Datagen.ModAdvancementProvider.simpleAdvancement("victory_royale", () -> Items.BOW, Component.literal("Fuck You in Particular"), Component.literal("Earn a rank of S from the challenge for Phillip's disc"), null);
 
     private static ResourceLocation lastDiscLoc = null;
 
     public static ResourceLocation createDiscAdvancement(String id, Supplier<Item> supplier, Component desc) {
         //LOGGER.info("Creating disc advancement with ID " + id);
-        ResourceLocation newborn = (lastDiscLoc == null) ?
-                Datagen.ModAdvancementProvider.simpleItemObtainedAdvancement(id, supplier, desc) :
-                Datagen.ModAdvancementProvider.simpleItemObtainedAdvancement(id, supplier, desc, lastDiscLoc);
+        ResourceLocation newborn = Datagen.ModAdvancementProvider.simpleItemObtainedAdvancement(id, supplier, desc, lastDiscLoc);
         lastDiscLoc = newborn;
         return newborn;
     }
 
-    public static AdvancementProgress getAdvancementProgress(@NotNull ServerLevel level, @NotNull ServerPlayer player, ResourceLocation loc) {
-        Advancement advancement = level.getServer().getAdvancements().getAdvancement(loc);
+    public static AdvancementProgress getAdvancementProgress(@NotNull ServerPlayer player, ResourceLocation loc) {
+        Advancement advancement = player.getServer().getAdvancements().getAdvancement(loc);
         assert advancement != null;
         return player.getAdvancements().getOrStartProgress(advancement);
     }
 
-    public static void completeAdvancement(@NotNull ServerLevel level, @NotNull ServerPlayer player, ResourceLocation loc) {
+    public static void completeAdvancement(@NotNull ServerPlayer player, ResourceLocation loc) {
         //LOGGER.info("completing advancement " + loc + " for " + player.getName());
-        Advancement advancement = level.getServer().getAdvancements().getAdvancement(loc);
+        Advancement advancement = player.getServer().getAdvancements().getAdvancement(loc);
         assert advancement != null;
         AdvancementProgress progress = player.getAdvancements().getOrStartProgress(advancement);
 
@@ -68,9 +68,9 @@ public class ModAdvancements {
         }
     }
 
-    public static boolean isAdvancementComplete(@NotNull ServerLevel level, @NotNull ServerPlayer player, ResourceLocation loc) {
+    public static boolean isAdvancementComplete(@NotNull ServerPlayer player, ResourceLocation loc) {
         //LOGGER.info("Querying whether " + loc.toString() + " is complete");
-        return getAdvancementProgress(level, player, loc).isDone();
+        return getAdvancementProgress(player, loc).isDone();
     }
 
 

@@ -7,7 +7,9 @@
     "defaultRequire": 1
   },
   "mixins": [
+    "base.NoteBlockMixin",
     "create.RecipeApplierMixin",
+    "mimi.TileEffectEmitterMixin",
     "sculkhorde.BlockInfestationSystemMixin",
     "sculkhorde.ChunkCursorBaseMixin",
     "sculkhorde.ChunkCursorHelperMixin",

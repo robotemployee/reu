@@ -20,7 +20,7 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> TRIPLE_BAKA_DISC = registerDiscSound("triple_baka");
     public static final RegistryObject<SoundEvent> CLAIRO_DISC = registerDiscSound("clairo");
     public static final RegistryObject<SoundEvent> GIANT_ROBOTS_DISC = registerDiscSound("giant_robots");
-    public static final RegistryObject<SoundEvent> MECHANIZED_MEMORIES_DISC = registerDiscSound("mechanized_memories");
+    public static final RegistryObject<SoundEvent> STEEL_HAZE_DISC = registerDiscSound("steel_haze");
     public static final RegistryObject<SoundEvent> SO_BE_IT_DISC = registerDiscSound("so_be_it");
     public static final RegistryObject<SoundEvent> HEART_OF_GLASS_DISC = registerDiscSound("heart_of_glass");
     public static final RegistryObject<SoundEvent> KOKOROTOLUNANOFUKAKAI_DISC = registerDiscSound("kokorotolunanofukakai");

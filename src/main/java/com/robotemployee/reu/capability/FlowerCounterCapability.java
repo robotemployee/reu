@@ -2,7 +2,7 @@ package com.robotemployee.reu.capability;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
-import com.robotemployee.reu.extra.MusicDiscObtainment;
+import com.robotemployee.reu.extra.music_disc_obtainment.GenericDiscEvents;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -32,7 +32,8 @@ public class FlowerCounterCapability implements ICapabilityProvider, INBTSeriali
 
     public FlowerCounter flowerHandler;
 
-    private final LazyOptional<FlowerCounter> CAP = LazyOptional.of(this::getFlowerHandler);
+    private final LazyOptional<FlowerCounter> CAPABILITY_OPTIONAL = LazyOptional.of(this::getFlowerHandler);
+    public static final Capability<FlowerCounter> CAPABILITY = CapabilityManager.get(new CapabilityToken<FlowerCounter>() {});
 
     public FlowerCounter getFlowerHandler() {
         if (flowerHandler == null) flowerHandler = new FlowerCounter();
@@ -51,10 +52,8 @@ public class FlowerCounterCapability implements ICapabilityProvider, INBTSeriali
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        return (cap == CAPABILITY) ? CAP.cast() : LazyOptional.empty();
+        return (cap == CAPABILITY) ? CAPABILITY_OPTIONAL.cast() : LazyOptional.empty();
     }
-
-    public static final Capability<FlowerCounter> CAPABILITY = CapabilityManager.get(new CapabilityToken<FlowerCounter>() {});
 
     public static class FlowerCounter implements INBTSerializable<CompoundTag> {
         public static final String CONSUMED_PATH = "ConsumedFlowers";
@@ -98,11 +97,11 @@ public class FlowerCounterCapability implements ICapabilityProvider, INBTSeriali
         }
 
         public int getRemaining() {
-            return MusicDiscObtainment.FLOWERS_NEEDED - consumedFlowers.size();
+            return GenericDiscEvents.FLOWERS_NEEDED - consumedFlowers.size();
         }
 
         public boolean isBlossoming() {
-            return consumedFlowers.size() >= MusicDiscObtainment.FLOWERS_NEEDED;
+            return consumedFlowers.size() >= GenericDiscEvents.FLOWERS_NEEDED;
         }
 
         @Override
