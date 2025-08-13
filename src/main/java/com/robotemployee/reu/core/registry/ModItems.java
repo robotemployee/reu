@@ -86,7 +86,7 @@ public class ModItems {
     public static final RegistryObject<Item> WHEAT_ASBESTOS_MIX = createSimpleItem("wheat_asbestos_mix");
     public static final RegistryObject<Item> ASBESDOUGH = createSimpleItem("asbesdough");
     public static final RegistryObject<Item> INTERESTING_BREAD = createSimpleFoodItem("interesting_bread",
-            (new FoodProperties.Builder())
+            new FoodProperties.Builder()
                     .nutrition(7)
                     .saturationMod(1)
                     .alwaysEat()
@@ -94,7 +94,7 @@ public class ModItems {
             );
 
     public static final RegistryObject<Item> MIRACLE_PILL = createSimpleFoodItem("miracle_pill",
-            (new FoodProperties.Builder())
+            new FoodProperties.Builder()
                     .alwaysEat().build()
     );
 
