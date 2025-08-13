@@ -26,6 +26,7 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> KOKOROTOLUNANOFUKAKAI_DISC = registerDiscSound("kokorotolunanofukakai");
     public static final RegistryObject<SoundEvent> ORANGE_BLOSSOMS_DISC = registerDiscSound("orange_blossoms");
     public static final RegistryObject<SoundEvent> PROVIDENCE_DISC = registerDiscSound("providence");
+    public static final RegistryObject<SoundEvent> I_WISH_DISC = registerDiscSound("i_wish");
 
     public static final RegistryObject<SoundEvent> MEH_CHEERING = registerNormalSound("player.meh_cheering");
     public static final RegistryObject<SoundEvent> GOOD_CHEERING = registerNormalSound("player.good_cheering");

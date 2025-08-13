@@ -41,9 +41,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.item.*;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -474,7 +472,7 @@ public class GenericDiscEvents {
         boolean pathHasNodes = !pathNull && path.getNodeCount() > 0;
         // these are all summarized into unreachable
         boolean pathCantReach = !pathNull && !path.canReach();
-        boolean pathTargetTooFar = !pathNull && !path.getTarget().closerToCenterThan(player.position(), 0.5);
+        boolean pathTargetTooFar = !pathNull && !path.getTarget().closerToCenterThan(player.position(), 1);
         boolean pathEndNodeVerticalTooFar = pathHasNodes && airAboveGroundPos.getY() - path.getEndNode().asBlockPos().getY() > 1;
         // no longer dependent on path existing
         boolean footObscured = footResult.getType() == HitResult.Type.BLOCK && badFootBlock;
@@ -497,6 +495,7 @@ public class GenericDiscEvents {
             LOGGER.info("End node: " + path.getEndNode().asBlockPos());
         }
 
+        // Code to check if the bear is in a cobweb
         boolean isInCobweb = false;
 
         AABB checkedBlocks = victim.getBoundingBox().inflate(0.01);
@@ -508,9 +507,22 @@ public class GenericDiscEvents {
                 break;
             }
 
+        boolean enchantedArmor = false;
+        boolean armorNotDiamondOrEmpty = false;
+        for (ItemStack armor : player.getArmorSlots()) {
+            if (armor.isEnchanted()) {
+                enchantedArmor = true;
+                if (armorNotDiamondOrEmpty) break;
+            }
+
+            if (!armor.isEmpty() && !(armor.getItem() instanceof ArmorItem armorItem && armorItem.getMaterial().equals(ArmorMaterials.DIAMOND))) {
+                armorNotDiamondOrEmpty = true;
+                if (enchantedArmor) break;
+            }
+        }
 
         boolean tooMuchHealth = playerMaxHealth > ALLOWED_BEAR_MAX_HP;
-        boolean tooMuchArmor = player.getArmorValue() > ALLOWED_BEAR_ARMOR;
+        //boolean tooMuchArmor = player.getArmorValue() > ALLOWED_BEAR_ARMOR;
         boolean tooFar = distance > ALLOWED_BEAR_DISTANCE;
         boolean friendly = ((TamableAnimal)victim).getOwnerUUID() == player.getUUID();
         boolean tooMuchReach = player.getEntityReach() > 6.5;
@@ -524,7 +536,8 @@ public class GenericDiscEvents {
         ArrayList<String> complaints = new ArrayList<>();
 
         if (tooMuchHealth) complaints.add(String.format("you had %.0f extra hearts", playerMaxHealth));
-        if (tooMuchArmor) complaints.add(String.format("you had %s armor points", player.getArmorValue()));
+        if (armorNotDiamondOrEmpty) complaints.add("you wore armor that wasn't diamond");
+        if (enchantedArmor) complaints.add("your armor was enchanted");
         if (tooFar) complaints.add(String.format("the distance was %.0fm", distance));
         if (friendly) complaints.add("the bear was tamed");
         if (tooMuchReach) complaints.add("you could reach really far");
@@ -628,7 +641,8 @@ public class GenericDiscEvents {
         return entity.getDeltaMovement().y < 0 && entity.fallDistance > 0;
     }
 
-    public static final int FLOWERS_NEEDED = 15;
+    public static final int FLOWERS_NEEDED = 25;
+    public static final int ANGLE_FOR_EAT_FLOWER = 30;
 
     public static final String[] IN_BETWEEN_MESSAGES = {
             "Your progress, I'm sure, is coming as it should. %s",
@@ -637,7 +651,7 @@ public class GenericDiscEvents {
             "Eventually, you will finish your quest. Eventually. %s",
             "Is it bitter? %s",
             "Wash on, wash off. Wash on, wash off. %s",
-            "The unexpected is ine%svitable. Live with it.",
+            "The unexpected is ine%svitable.",
             "don't be afraid to change form! %s",
             "Are you near the end? Or have you just begun? %s",
             "Are you enjoying this? Do you care? %s",
@@ -651,6 +665,11 @@ public class GenericDiscEvents {
             "Is there anywhere you should be? %s",
             "You should be getting experience points for this. %s",
             "There are more. %s",
+            "How many more will there be? %s",
+            "You aren't learning anything. %s",
+            "We're having a one-way conversation. %s",
+            "Regardless. %s",
+            "Refrigerator. Huge, huge refrigerator. Refrigerator. %s",
             "This is the last message. %s"
     };
 
@@ -665,6 +684,11 @@ public class GenericDiscEvents {
 
         if (!player.isCrouching()) {
             player.sendSystemMessage(Component.literal("§3To consume this flower, you must crouch first."));
+            return true;
+        }
+
+        if (player.getViewXRot(0) > -ANGLE_FOR_EAT_FLOWER) {
+            player.sendSystemMessage(Component.literal("§3Look up."));
             return true;
         }
 
@@ -690,7 +714,7 @@ public class GenericDiscEvents {
         }
 
         if (innerPeace.getCount() == 1) {
-            player.sendSystemMessage(Component.literal("§3Welcome to your flower quest. Whether you're returning or starting anew, I trust that inner peace will be with you when you are ready.\n\n Consume " + (FLOWERS_NEEDED - 1) + " more unique flowers, and it will be yours."));
+            player.sendSystemMessage(Component.literal("§3Welcome to your flower quest. Whether you're returning or starting anew, I trust that inner peace will be with you when you are ready.\n\nIn just " + needed + " more unique flowers, the Blossom will be yours."));
         }
 
         // the flower has been added by counter.addFlower()
@@ -724,7 +748,7 @@ public class GenericDiscEvents {
                 0
         );
 
-        flower.shrink(1);
+        if (!player.getAbilities().instabuild) flower.shrink(1);
         player.getFoodData().eat(1, 0.1f);
 
         //LOGGER.info(String.valueOf(player.isSilent()));
@@ -1462,8 +1486,9 @@ public class GenericDiscEvents {
         return true;
     }
 
-    public static int ALTITUDE_FOR_ICARUS = 250;
-    public static int ANGLE_FOR_ICARUS = 70;
+    public static final int ALTITUDE_FOR_ICARUS = 250;
+    public static final int ANGLE_FOR_ICARUS = 70;
+    public static final int DURABILITY_FOR_ICARUS = 15;
     public static String GLIDER = "immersiveengineering:glider";
 
     public static boolean icarusCheck(TickEvent.PlayerTickEvent event) {
@@ -1491,7 +1516,7 @@ public class GenericDiscEvents {
         if (!loc.toString().equals(GLIDER)) return false;
 
         //LOGGER.info("damage: " + (glider.getMaxDamage() - glider.getDamageValue() > 10));
-        if (glider.getMaxDamage() - glider.getDamageValue() > 10) return false;
+        if (glider.getMaxDamage() - glider.getDamageValue() > 15) return false;
 
         //LOGGER.info("and it was damaged enough");
 

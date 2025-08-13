@@ -66,7 +66,7 @@ description='''${mod_description}'''
 # Create
 [[dependencies.${mod_id}]]
     modId="create"
-    mandatory=true
+    mandatory=false
     versionRange="[6.0.4,)"
     ordering="NONE"
     side="BOTH"
@@ -74,7 +74,7 @@ description='''${mod_description}'''
 # Alex's Caves
 [[dependencies.${mod_id}]]
 modId="alexscaves"
-mandatory=true
+mandatory=false
 versionRange="[2.0.2,)"
 ordering="NONE"
 side="BOTH"
@@ -82,7 +82,7 @@ side="BOTH"
 # Alex's Mobs
 [[dependencies.${mod_id}]]
 modId="alexsmobs"
-mandatory=true
+mandatory=false
 versionRange="[1.22.9,)"
 ordering="NONE"
 side="BOTH"
@@ -90,7 +90,7 @@ side="BOTH"
 # Rechiseled
 [[dependencies.${mod_id}]]
 modId="rechiseled"
-mandatory=true
+mandatory=false
 versionRange="[1.1.6,)"
 ordering="NONE"
 side="BOTH"

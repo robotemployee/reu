@@ -176,6 +176,7 @@ repositories {
         }
     }
 
+    // Geckolib
     maven {
         name = 'GeckoLib'
         url 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
@@ -184,6 +185,16 @@ repositories {
             includeGroup("com.eliotlash.mclib")
         }
     }
+
+    // Accessories stuff
+    /*
+    repositories {
+        maven { url 'https://maven.wispforest.io/releases' }
+        maven { url 'https://maven.su5ed.dev/releases' }
+        maven { url 'https://maven.fabricmc.net' }
+        maven { url 'https://maven.shedaniel.me/' }
+    }
+     */
 }
 
 dependencies {
@@ -206,7 +217,11 @@ dependencies {
     implementation fg.deobf("maven.modrinth:supermartijn642s-config-lib:${supermartijn642s_config_lib_version}")
     implementation fg.deobf("maven.modrinth:fusion-connected-textures:${fusion_connected_textures_version}")
 
-
+    // Accessories
+    //implementation fg.deobf("maven.modrinth:accessories:${accessories_version}")
+    //implementation fg.deobf("io.wispforest:accessories-common:${accessories_version}")
+    //implementation fg.deobf("io.wispforest:accessories-neoforge:${accessories_version}")
+    //compileOnly fg.deobf("io.wispforest:accessories-common:${accessories_version}-mojmap")
 
     // Geckolib dependency
     implementation fg.deobf("software.bernie.geckolib:geckolib-forge-${minecraft_version}:${geckolib_version}")
@@ -240,14 +255,6 @@ dependencies {
     compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
     compileOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}"))
     runtimeOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}"))
-
-    /*implementation(fg.deobf("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false })
-    implementation(fg.deobf("net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}"))
-    compileOnly(fg.deobf("dev.engine-room.flywheel:flywheel-forge-api-${minecraft_version}:${flywheel_version}"))
-    runtimeOnly(fg.deobf("dev.engine-room.flywheel:flywheel-forge-${minecraft_version}:${flywheel_version}"))
-    implementation(fg.deobf("com.tterrag.registrate:Registrate:${registrate_version}"))
-    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.4.1"))
-    implementation("io.github.llamalad7:mixinextras-forge:0.4.1")*/
 
     // Example mod dependency with JEI - using fg.deobf() ensures the dependency is remapped to your development mappings
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime

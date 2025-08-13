@@ -1,7 +1,7 @@
-// 1.20.1	2025-08-09T17:10:17.8209065	Item Models: reu
+// 1.20.1	2025-08-12T01:08:34.5944731	Item Models: reu
 c3730fa5e3250d2d8e416a8b8186c6c6c05e3bc6 assets/reu/models/item/amphibole.json
 d0b9dbed294c1bc3f75e75c2b202cc8429829690 assets/reu/models/item/asbesdough.json
-ac219a5ab850c7b332d7daeace1056e3963fce16 assets/reu/models/item/asbestos_dust.json
+e28c8905b59c0f0326a90379702cda52ccf0a40d assets/reu/models/item/asbestos.json
 5e4d42f36a985ef0035c0de0c29bcab566b0af03 assets/reu/models/item/interesting_bread.json
 40bdd893b98f05e79a57aa81072452fc912657ed assets/reu/models/item/miracle_pill.json
 4e8fefa73888eb2390c47c4530503fafc86c39c6 assets/reu/models/item/music_disc_birdbrain.json
@@ -10,6 +10,7 @@ ac865b5140e220bf2b2ba04c7ae38b0ab7c876bc assets/reu/models/item/music_disc_calif
 9663e7f4bec5cb9df99ddc5c32bcb820089b51c9 assets/reu/models/item/music_disc_giant_robots.json
 d262dac9b8b7a9277854a8818f18e5a08ecd51ca assets/reu/models/item/music_disc_hatred_jackulation.json
 354a4db9d753038fc9ca68b4476711c2527e0188 assets/reu/models/item/music_disc_heart_of_glass.json
+77801105dd9beb8c81cbbfb4ab94ca0d2624c339 assets/reu/models/item/music_disc_i_wish.json
 0775614ddca5d551d0308c7c532328909b196296 assets/reu/models/item/music_disc_kokorotolunanofukakai.json
 28a4df2888ce2aef49fe1d508a0be84bfcfb7fab assets/reu/models/item/music_disc_orange_blossoms.json
 67d14a520de1cfc8265f4d54968bcb4a01397ba0 assets/reu/models/item/music_disc_providence.json

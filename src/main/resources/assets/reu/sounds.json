@@ -107,6 +107,15 @@
       }
     ]
   },
+  "music_disc.i_wish": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "reu:music_disc/i_wish",
+        "stream": true
+      }
+    ]
+  },
 
 
   "player.meh_cheering": {

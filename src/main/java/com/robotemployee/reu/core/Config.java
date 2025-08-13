@@ -1,19 +1,12 @@
 package com.robotemployee.reu.core;
 
-import com.mojang.logging.LogUtils;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.joml.Vector2i;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 // An example config class. This is not required, but it's a good idea to have one to keep your config organized.
 // Demonstrates how to use Forge's config APIs
@@ -36,7 +29,15 @@ public class Config
             .define("magicNumberIntroduction", "The magic number is... ");
      */
 
+    private static final ForgeConfigSpec.ConfigValue<Double> MIMI_VOLUME = BUILDER
+            .comment("Client stuff!!")
+            .comment("MIMI volume multiplier. Increase to increase volume, decrease to decrease it.")
+            .comment("There is an upper limit to the volume, and it is shallow - only increase it if you've turned down jukeboxes / note blocks for some reason.")
+            .comment("Default: 1")
+            .define("MIMIVolume", 1d);
+
     private static final ForgeConfigSpec.ConfigValue<Boolean> ENABLE_SCULK_BORDERS = BUILDER
+            .comment("Server stuff!!!")
             .comment("Whether to prevent the Sculk Horde from existing outside of a safe area.\nWill also lock them in the Overworld.")
             .define("enableSculkBorders", true);
     private static final ForgeConfigSpec.ConfigValue<String> SCULK_BORDERS = BUILDER
@@ -51,6 +52,12 @@ public class Config
      */
 
     static final ForgeConfigSpec SPEC = BUILDER.build();
+
+    private static double MIMIVolume;
+
+    public static double getMIMIVolume() {
+        return MIMIVolume;
+    }
 
     /*public static boolean logDirtBlock;
     public static int magicNumber;
@@ -70,6 +77,9 @@ public class Config
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event)
     {
+
+        MIMIVolume = MIMI_VOLUME.get();
+
         /*
         logDirtBlock = LOG_DIRT_BLOCK.get();
         magicNumber = MAGIC_NUMBER.get();

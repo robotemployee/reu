@@ -9,7 +9,9 @@
   "mixins": [
     "base.NoteBlockMixin",
     "create.RecipeApplierMixin",
-    "mimi.TileEffectEmitterMixin",
+    "mimi.MIMIChannelMixin",
+    "mimi.MIMISynthUtilsMixin",
+    "mimi.NoteEventMixin",
     "sculkhorde.BlockInfestationSystemMixin",
     "sculkhorde.ChunkCursorBaseMixin",
     "sculkhorde.ChunkCursorHelperMixin",

@@ -82,7 +82,7 @@ public class ModItems {
             .build();
 
     public static final RegistryObject<Item> AMPHIBOLE = createSimpleItem("amphibole");
-    public static final RegistryObject<Item> ASBESTOS_DUST = createSimpleItem("asbestos_dust");
+    public static final RegistryObject<Item> ASBESTOS = createSimpleItem("asbestos");
     public static final RegistryObject<Item> WHEAT_ASBESTOS_MIX = createSimpleItem("wheat_asbestos_mix");
     public static final RegistryObject<Item> ASBESDOUGH = createSimpleItem("asbesdough");
     public static final RegistryObject<Item> INTERESTING_BREAD = createSimpleFoodItem("interesting_bread",
@@ -110,6 +110,7 @@ public class ModItems {
     public static final RegistryObject<Item> MUSIC_DISC_KOKOROTOLUNANOFUKAKAI = createDiscItem("kokorotolunanofukakai", ModSounds.KOKOROTOLUNANOFUKAKAI_DISC, 5500);
     public static final RegistryObject<Item> MUSIC_DISC_ORANGE_BLOSSOMS = createDiscItem("orange_blossoms",  ModSounds.ORANGE_BLOSSOMS_DISC, 4000);
     public static final RegistryObject<Item> MUSIC_DISC_PROVIDENCE = createDiscItem("providence", ModSounds.PROVIDENCE_DISC, 3800);
+    public static final RegistryObject<Item> MUSIC_DISC_I_WISH = createDiscItem("i_wish", ModSounds.I_WISH_DISC, 5200);
 
 
     public static RegistryObject<Item> createSimpleItem(String id) {

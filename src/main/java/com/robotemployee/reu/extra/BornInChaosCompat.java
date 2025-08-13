@@ -23,6 +23,12 @@ public class BornInChaosCompat {
     // note that i don't know how to get born in chaos as a maven thingy on here.
     // as such, we will be using. dreadful ways to check entities
 
+    public static final String NIGHTMARE_STALKER = "born_in_chaos_v1:nightmare_stalker";
+    public static final String LIFESTEALER = "born_in_chaos_v1:lifestealer";
+    public static final String LIFESTEALER_TRUE_FORM = "born_in_chaos_v1:lifestealer_true_form";
+
+    public static final int RANGE = 64; // how close is "nearby"
+
     static Logger LOGGER = LogUtils.getLogger();
 
     @SubscribeEvent
@@ -43,12 +49,6 @@ public class BornInChaosCompat {
         }
     }
 
-
-    public static final String NIGHTMARE_STALKER = "born_in_chaos_v1:nightmare_stalker";
-    public static final String LIFESTEALER = "born_in_chaos_v1:lifestealer";
-    public static final String LIFESTEALER_TRUE_FORM = "born_in_chaos_v1:lifestealer_true_form";
-
-    public static final int RANGE = 64; // how close is "nearby"
 
     @SubscribeEvent
     public static void onMobSpawn(MobSpawnEvent event) {

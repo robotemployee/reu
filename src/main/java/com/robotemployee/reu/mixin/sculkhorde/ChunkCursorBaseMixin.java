@@ -16,8 +16,13 @@ public class ChunkCursorBaseMixin {
 
     // "Lcom/github/sculkhorde/systems/chunk_cursor_system/ChunkCursorBase;disableObstruction:Z"
     // ewoudje and my introduction to mixins
-    @Redirect(method = "*", at = @At(value = "FIELD", target = "Lcom/github/sculkhorde/systems/chunk_cursor_system/ChunkCursorBase;disableObstruction:Z", opcode = Opcodes.GETFIELD), remap = SculkHordeCompat.remapNormalSculkHorde)
-    public boolean disableObstruction(ChunkCursorBase chunkCursorBase) {
+    @Redirect(method = "*", at = @At(
+            value = "FIELD",
+            target = "Lcom/github/sculkhorde/systems/chunk_cursor_system/ChunkCursorBase;disableObstruction:Z",
+            opcode = Opcodes.GETFIELD),
+            remap = SculkHordeCompat.remapNormalSculkHorde
+    )
+    public boolean disableObstruction(ChunkCursorBase<?> chunkCursorBase) {
         return false;
     }
 

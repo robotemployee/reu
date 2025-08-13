@@ -1,5 +1,6 @@
 package com.robotemployee.reu.mixin.base;
 
+import com.robotemployee.reu.extra.BaseGame;
 import net.minecraft.world.level.block.NoteBlock;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -16,6 +17,6 @@ public class NoteBlockMixin {
             index = 6
     )
     private float modifyNoteBlockVolume(float originalVolume) {
-        return 10.0f;
+        return BaseGame.NOTE_BLOCK_VOLUME;
     }
 }

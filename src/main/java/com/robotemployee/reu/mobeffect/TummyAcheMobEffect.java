@@ -39,7 +39,7 @@ public class TummyAcheMobEffect extends MobEffect {
     protected static final float CHANCE_TO_AILMENT_ON_TICK = 0.2f; // increases with severity
     protected static final float CHANCE_TO_KILL = 0.001f; // multiplied by severity squared
 
-    public static final int TICKS_ACCELERATED_ON_BREAD = (int)(TICKS_TILL_MAX_SEVERITY / 64);
+    public static final int TICKS_ACCELERATED_ON_BREAD = (int)(TICKS_TILL_MAX_SEVERITY / 32);
     public static final int TICKS_DECELERATED_ON_STEW = -(int)(TICKS_TILL_MAX_SEVERITY / 3);
     public static final int MAX_DECELERATION = -(int)(TICKS_TILL_MAX_SEVERITY + (0.8 * TICKS_TILL_SYMPTOMS));
     private static final float SEVERITY_TO_HURT_VICTIM = 0.5f;

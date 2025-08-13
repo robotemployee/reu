@@ -7,7 +7,7 @@
 
   "item.reu.frying_pan": "I'm peased to meet you",
   "item.reu.amphibole": "Amphibole",
-  "item.reu.asbestos_dust": "Asbestos",
+  "item.reu.asbestos": "Asbestos",
   "item.reu.wheat_asbestos_mix": "Wheat-Asbestos Mix",
   "item.reu.asbesdough": "Asbesdough",
   "item.reu.interesting_bread": "Interesting Bread",
@@ -31,8 +31,8 @@
   "item.reu.music_disc_giant_robots": "Music Disc",
   "item.reu.music_disc_giant_robots.desc": "The Giant Robots Are Doing Something - Tristan McCammond",
 
-  "item.reu.music_disc_mechanized_memories": "Music Disc",
-  "item.reu.music_disc_mechanized_memories.desc": "Mechanized Memories - Keiichiro Segawa & Masaru Tateyama",
+  "item.reu.music_disc_steel_haze": "Music Disc",
+  "item.reu.music_disc_steel_haze.desc": "Steel Haze (Rusted Pride) - 星野康太",
 
   "item.reu.music_disc_so_be_it": "Music Disc",
   "item.reu.music_disc_so_be_it.desc": "So Be It - Clipse",
@@ -48,6 +48,10 @@
 
   "item.reu.music_disc_providence": "Music Disc",
   "item.reu.music_disc_providence.desc": "Providence - Poor Man's Poison",
+
+  "item.reu.music_disc_i_wish": "Music Disc",
+  "item.reu.music_disc_i_wish.desc": "I Wish - Skee-Lo",
+
   "effect.reu.tummy_ache": "Tummy Ache ☹",
   "effect.reu.tummy_ache.description": "The feeling is permanent.",
 

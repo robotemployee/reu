@@ -3,7 +3,7 @@ package com.robotemployee.reu.core;
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.registry.*;
 import com.robotemployee.reu.extra.*;
-import com.robotemployee.reu.extra.music_disc_obtainment.ClientOnlyDiscEvents;
+import com.robotemployee.reu.extra.music_disc_obtainment.ClientDiscEvents;
 import com.robotemployee.reu.extra.music_disc_obtainment.GenericDiscEvents;
 import com.robotemployee.reu.item.ReconstructorItem;
 import net.minecraft.client.gui.screens.Screen;
@@ -13,7 +13,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
@@ -78,7 +77,7 @@ public class RobotEmployeeUtils
         MinecraftForge.EVENT_BUS.register(this);
         // same for eeeverything else that wants to hook into events
         MinecraftForge.EVENT_BUS.register(SculkHordeCompat.class);
-        MinecraftForge.EVENT_BUS.register(BornInChaosCompat.class);
+        //MinecraftForge.EVENT_BUS.register(BornInChaosCompat.class); // born in chaos is being removed from the pack
         MinecraftForge.EVENT_BUS.register(BaseGame.class);
         MinecraftForge.EVENT_BUS.register(FriendsAndFoesCompat.class);
         MinecraftForge.EVENT_BUS.register(AlexsCavesCompat.class);
@@ -86,7 +85,7 @@ public class RobotEmployeeUtils
 
         // only for the client :)
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-            MinecraftForge.EVENT_BUS.register(ClientOnlyDiscEvents.class);
+            MinecraftForge.EVENT_BUS.register(ClientDiscEvents.class);
             MinecraftForge.EVENT_BUS.register(ClientModEvents.class);
         });
 
