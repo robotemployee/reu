@@ -5,11 +5,10 @@ import com.robotemployee.reu.extra.BaseGame;
 import io.github.tofodroid.mods.mimi.common.api.event.note.NoteEvent;
 import org.objectweb.asm.Opcodes;
 import org.slf4j.Logger;
-import org.spongepowered.asm.mixin.*;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(NoteEvent.class)
 public class NoteEventMixin {

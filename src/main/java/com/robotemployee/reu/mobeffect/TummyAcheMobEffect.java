@@ -1,13 +1,11 @@
 package com.robotemployee.reu.mobeffect;
 
 import com.mojang.logging.LogUtils;
+import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.core.registry.ModDamageTypes;
 import com.robotemployee.reu.core.registry.ModMobEffects;
-import com.robotemployee.reu.core.RobotEmployeeUtils;
-import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;

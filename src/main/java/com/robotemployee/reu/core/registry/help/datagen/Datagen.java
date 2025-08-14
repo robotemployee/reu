@@ -1,9 +1,8 @@
 package com.robotemployee.reu.core.registry.help.datagen;
 
 import com.mojang.logging.LogUtils;
-import com.robotemployee.reu.core.registry.ModItems;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
-import com.simibubi.create.AllTags;
+import com.robotemployee.reu.core.registry.ModItems;
 import net.minecraft.ResourceLocationException;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.FrameType;
@@ -49,7 +48,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
