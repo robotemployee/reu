@@ -16,6 +16,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.energy.IEnergyStorage;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -40,15 +42,17 @@ public class SculkReconstructorItem extends ReconstructorItem {
     }
 
     @Override
-    public void appendHoverText(@NotNull ItemStack itemStack, @Nullable Level level, @NotNull List<Component> componentList, @Nullable TooltipFlag tooltipFlag) {
-        int energy = getEnergy(itemStack);
-        int fluid = getFluidAmount(itemStack);
-        CompoundTag tag = itemStack.getTag();
+    public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> componentList, @Nullable TooltipFlag tooltipFlag) {
+        IEnergyStorage energy = getEnergyHandler(stack);
+        IFluidHandler fluid = getFluidHandler(stack);
+        if (energy == null || fluid == null) return;
+        int points = getPoints(energy, fluid);
+        CompoundTag tag = stack.getTag();
         boolean manualOnly = tag != null && tag.getBoolean("DisableAutoRepair");
 
-        componentList.add(Component.literal(String.format("§6(%.1f%%) %s%s", getPoints(itemStack) * 100 / (float)POINTS_REPAIRABLE, manualOnly?"§cOFF":"§aON",
+        componentList.add(Component.literal(String.format("§6(%.1f%%) %s%s", points * 100 / (float)POINTS_REPAIRABLE, manualOnly?"§cOFF":"§aON",
                 Screen.hasAltDown()?" §7<- (Points and auto-repair status)":"")));
-        componentList.add(Component.literal(String.format("§7= §3%d points", getPoints(itemStack))));
+        componentList.add(Component.literal(String.format("§7= §3%d points", points)));
         componentList.add(Component.empty());
         if (Screen.hasAltDown()) {
             componentList.add(Component.literal("§7Automatically repairs items in your inventory"));
@@ -59,8 +63,8 @@ public class SculkReconstructorItem extends ReconstructorItem {
             componentList.add(Component.literal("§7Expand with §r[§7Alt§r]§7 . . ."));
         }
         componentList.add(Component.empty());
-        componentList.add(Component.literal(String.format("§7%.1fkFE / %d", energy / (float)1000, ENERGY_CAPACITY / 1000)));
-        componentList.add(Component.literal(String.format("§7%.1fB / %d", fluid / (float)1000, FLUID_CAPACITY / 1000)));
+        componentList.add(Component.literal(String.format("§7%.1fkFE / %d", energy.getEnergyStored() / (float)1000, ENERGY_CAPACITY / 1000)));
+        componentList.add(Component.literal(String.format("§7%.1fB / %d", fluid.getFluidInTank(0).getAmount() / (float)1000, FLUID_CAPACITY / 1000)));
         componentList.add(Component.empty());
         componentList.add(Component.literal("§7§ocancer !!"));
     }
@@ -110,8 +114,9 @@ public class SculkReconstructorItem extends ReconstructorItem {
         if (repairedItem.is(itemStack.getItem())) repairedItem = player.getMainHandItem();
         // 1.189207 -> A
         level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.AMETHYST_BLOCK_HIT, SoundSource.PLAYERS, 1.0F, 0.840896F);
-        int energy = getEnergy(itemStack);
-        int fluid = getFluidAmount(itemStack);
+        IEnergyStorage energy = getEnergyHandler(itemStack);
+        IFluidHandler fluid = getFluidHandler(itemStack);
+        if (energy == null || fluid == null) return;
         // Problem cases
         if (repairedItem.isEmpty()) {
             if (level.isClientSide) player.displayClientMessage(Component.literal("§cRepairable item required in other hand"), true);
@@ -128,7 +133,7 @@ public class SculkReconstructorItem extends ReconstructorItem {
         }
         if (!hasResources(energy, fluid)) {
             if (level.isClientSide) {
-                player.displayClientMessage(Component.literal(fluid >= FLUID_COST ?"§cInsufficient FE":"Insufficient Healing Potion"), true);
+                player.displayClientMessage(Component.literal(fluid.getFluidInTank(0).getAmount() >= FLUID_COST ?"§cInsufficient FE":"Insufficient Healing Potion"), true);
             }
             return;
         }
@@ -146,7 +151,7 @@ public class SculkReconstructorItem extends ReconstructorItem {
          */
         //else {
         repairedItem.setDamageValue(repairedItem.getDamageValue() - repairAmount);
-        consumeFluidAndEnergy(itemStack, repairAmount);
+        consumeFluidAndEnergy(energy, fluid, repairAmount);
         //}
         level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1.0F, 2.0F / (level.getRandom().nextFloat() * 0.5F + 1.0F) + 0.2F);
         level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.WARDEN_HEARTBEAT, SoundSource.PLAYERS, 1.0F, 1.0F);

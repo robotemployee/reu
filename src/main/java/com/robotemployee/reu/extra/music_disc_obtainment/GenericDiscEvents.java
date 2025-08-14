@@ -6,10 +6,12 @@ import com.github.alexthe666.alexsmobs.entity.AMEntityRegistry;
 import com.github.alexthe666.alexsmobs.entity.EntityGrizzlyBear;
 import com.github.alexthe666.alexsmobs.entity.ai.GroundPathNavigatorWide;
 import com.mojang.logging.LogUtils;
+import com.robotemployee.reu.capability.BetrayalCapability;
 import com.robotemployee.reu.capability.FlowerCounterCapability;
 import com.robotemployee.reu.capability.FlowerCounterCapability.FlowerCounter;
-import com.robotemployee.reu.capability.BetrayalCapability;
-import com.robotemployee.reu.core.registry.*;
+import com.robotemployee.reu.core.registry.ModAdvancements;
+import com.robotemployee.reu.core.registry.ModItems;
+import com.robotemployee.reu.core.registry.ModSounds;
 import com.robotemployee.reu.mobeffect.TummyAcheMobEffect;
 import com.supermartijn642.rechiseled.ChiselItem;
 import net.minecraft.core.BlockPos;
@@ -47,7 +49,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
-import net.minecraft.world.phys.*;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
@@ -56,7 +61,6 @@ import net.minecraftforge.event.entity.ProjectileImpactEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -64,6 +68,8 @@ import net.minecraftforge.registries.ForgeRegistries;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
 import org.slf4j.Logger;
+import top.theillusivec4.curios.api.CuriosApi;
+import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
 
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -273,6 +279,7 @@ public class GenericDiscEvents {
         victim.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 200, 0));
         victim.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 1));
 
+        //if (health < 0.35) victim.addEffect(new MobEffectInstance(AMEffectRegistry.KNOCKBACK_RESISTANCE.get(), 200, 0));
         if (health < 0.25) victim.addEffect(new MobEffectInstance(MobEffects.JUMP, 200, 1));
 
         if (health < 0.15) {
@@ -285,10 +292,10 @@ public class GenericDiscEvents {
         // knockback resistance is just too much with the new leap mechanic
         // maybe not with a short duration and being removed on leap?? i tried with no resist and it was boring
 
-        /*
+
         if (victim.hasEffect(AMEffectRegistry.KNOCKBACK_RESISTANCE.get()) && random.nextBoolean()) victim.removeEffect(AMEffectRegistry.KNOCKBACK_RESISTANCE.get());
-        else victim.addEffect(new MobEffectInstance(AMEffectRegistry.KNOCKBACK_RESISTANCE.get(), 20, 0));
-         */
+        else victim.addEffect(new MobEffectInstance(AMEffectRegistry.KNOCKBACK_RESISTANCE.get(), 100, 0));
+
         //if (random.nextFloat() < CHANCE_TO_KNOCKBACK_RESIST) victim.addEffect(new MobEffectInstance(AMEffectRegistry.KNOCKBACK_RESISTANCE.get(), 20, 0));
 
         victim.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
@@ -490,6 +497,9 @@ public class GenericDiscEvents {
             }
         }
 
+        ICuriosItemHandler handler = CuriosApi.getCuriosInventory(player).resolve().get();
+
+        boolean hasCurios = handler.isEquipped(stack -> !stack.isEmpty());
         boolean tooMuchHealth = playerMaxHealth > ALLOWED_BEAR_MAX_HP;
         //boolean tooMuchArmor = player.getArmorValue() > ALLOWED_BEAR_ARMOR;
         boolean tooFar = distance > ALLOWED_BEAR_DISTANCE;
@@ -504,6 +514,7 @@ public class GenericDiscEvents {
 
         ArrayList<String> complaints = new ArrayList<>();
 
+        if (hasCurios) complaints.add("you were wearing extra accessories");
         if (tooMuchHealth) complaints.add(String.format("you had %.0f extra hearts", playerMaxHealth));
         if (armorNotDiamondOrEmpty) complaints.add("you wore armor that wasn't diamond");
         if (enchantedArmor) complaints.add("your armor was enchanted");

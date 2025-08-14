@@ -20,11 +20,12 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
+import net.minecraftforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import top.theillusivec4.curios.api.CuriosApi;
+import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -67,9 +68,11 @@ public class ReconstructorItem extends Item {
      */
 
     @Override
-    public int getBarWidth(@NotNull ItemStack itemStack) {
-        //return Math.round(13.0F * (getEnergy(itemStack) + getFluidAmount(itemStack)) / (float)(ENERGY_CAPACITY + FLUID_CAPACITY));
-        return Math.round(13.0F * getPoints(itemStack) / POINTS_REPAIRABLE);
+    public int getBarWidth(@NotNull ItemStack stack) {
+        IEnergyStorage energy = getEnergyHandler(stack);
+        IFluidHandler fluid = getFluidHandler(stack);
+        if (energy == null || fluid == null) return 0;
+        return Math.round(13.0F * getPoints(energy, fluid) / POINTS_REPAIRABLE);
     }
 
     @Override
@@ -86,15 +89,19 @@ public class ReconstructorItem extends Item {
     }
 
     @Override
-    public void appendHoverText(@NotNull ItemStack itemStack, @Nullable Level level, List<Component> componentList, @Nullable TooltipFlag tooltipFlag) {
-        int energy = getEnergy(itemStack);
-        int fluid = getFluidAmount(itemStack);
-        CompoundTag tag = itemStack.getTag();
-        boolean manualOnly = tag != null && tag.getBoolean(DISABLE_AUTO_REPAIR_TAG);
+    public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, List<Component> componentList, @Nullable TooltipFlag tooltipFlag) {
 
-        componentList.add(Component.literal(String.format("§6(%.1f%%) %s%s", getPoints(itemStack) * 100 / (float)POINTS_REPAIRABLE, manualOnly?"§cOFF":"§aON",
+        IEnergyStorage energy = getEnergyHandler(stack);
+        IFluidHandler fluid = getFluidHandler(stack);
+
+        CompoundTag tag = stack.getTag();
+        boolean manualOnly = tag != null && tag.getBoolean(DISABLE_AUTO_REPAIR_TAG);
+        if (energy == null || fluid == null) return;
+        int points = getPoints(energy, fluid);
+
+        componentList.add(Component.literal(String.format("§6(%.1f%%) %s%s", points * 100 / (float)POINTS_REPAIRABLE, manualOnly?"§cOFF":"§aON",
                 Screen.hasAltDown()?" §7<- (Points and auto-repair status)":"")));
-        componentList.add(Component.literal(String.format("§7= §3%d points", getPoints(itemStack))));
+        componentList.add(Component.literal(String.format("§7= §3%d points", points)));
         componentList.add(Component.empty());
         if (Screen.hasAltDown()) {
             componentList.add(Component.literal("§7Automatically repairs items in your inventory"));
@@ -104,8 +111,8 @@ public class ReconstructorItem extends Item {
             componentList.add(Component.literal("§7Expand with §r[§7Alt§r]§7 . . ."));
         }
         componentList.add(Component.empty());
-        componentList.add(Component.literal(String.format("§7%.1fkFE / %d", energy / (float)1000, ENERGY_CAPACITY / 1000)));
-        componentList.add(Component.literal(String.format("§7%.1fB / %d", fluid / (float)1000, FLUID_CAPACITY / 1000)));
+        componentList.add(Component.literal(String.format("§7%.1f / %dkFE", energy.getEnergyStored() / (float)1000, ENERGY_CAPACITY / 1000)));
+        componentList.add(Component.literal(String.format("§7%.1f / %dB", fluid.getFluidInTank(0).getAmount() / (float)1000, FLUID_CAPACITY / 1000)));
         componentList.add(Component.empty());
         componentList.add(Component.literal("§7§omiao"));
     }
@@ -148,7 +155,7 @@ public class ReconstructorItem extends Item {
         //("regular: " + getFluidAmount(itemStack));
         CompoundTag tag = itemStack.getOrCreateTag();
         if (tag.getBoolean(DISABLE_AUTO_REPAIR_TAG)) {
-            LOGGER.info("auto-repair is disabled!");
+            //LOGGER.info("auto-repair is disabled!");
             tag.putInt(LAST_AUTO_REPAIR_TAG, 0);
             itemStack.setTag(tag);
             return;
@@ -163,8 +170,11 @@ public class ReconstructorItem extends Item {
     }
     // Only used by the auto repair
     private boolean repairInventory(@NotNull Level level, @NotNull Player player, @NotNull ItemStack repairer) {
-        int energy = getEnergy(repairer);
-        int fluid = getFluidAmount(repairer);
+        IEnergyStorage energy = getEnergyHandler(repairer);
+        IFluidHandler fluid = getFluidHandler(repairer);
+
+        if (energy == null || fluid == null) return false;
+
         if (!hasResources(energy, fluid)) {
             CompoundTag tag = repairer.getOrCreateTag();
             tag.putInt(LAST_AUTO_REPAIR_TAG, 0);
@@ -178,8 +188,10 @@ public class ReconstructorItem extends Item {
         candidates.addAll(player.getInventory().armor);
         candidates.addAll(player.getInventory().offhand);
 
-        for (int i = 0; i < candidates.size(); ++i) {
-            ItemStack victim = candidates.get(i);
+        ICuriosItemHandler curios = CuriosApi.getCuriosInventory(player).resolve().get();
+        IItemHandlerModifiable modifiableHandler = curios.getEquippedCurios();
+
+        for (ItemStack victim : candidates) {
             if (victim.isRepairable() && victim.isDamaged()) {
                 if (!hasResources(energy, fluid)) break;
                 // man
@@ -190,16 +202,32 @@ public class ReconstructorItem extends Item {
                 }
                 victim.setDamageValue(victim.getDamageValue() - repairAmount);
                 totalRepaired += repairAmount;
-                //LOGGER.info(String.format("Sufficient energy, repairing %d points (Total: %d)", repairAmount, totalRepaired));
-            } //else { LOGGER.info(victim + "is not victim");}
+            }
         }
+
+        for (int i = 0; i < modifiableHandler.getSlots(); i++) {
+            ItemStack victim = modifiableHandler.getStackInSlot(i).copy();
+            if (victim.isRepairable() && victim.isDamaged()) {
+                if (!hasResources(energy, fluid)) break;
+                // man
+                int repairAmount = Math.min(getAdjustedRepairAmount(victim.getMaxDamage()), getPoints(energy, fluid));
+                if (repairAmount >= victim.getDamageValue()) {
+                    repairAmount = victim.getDamageValue();
+                    hasRepairedToFull = true;
+                }
+                victim.setDamageValue(victim.getDamageValue() - repairAmount);
+                totalRepaired += repairAmount;
+                modifiableHandler.setStackInSlot(i, victim);
+            }
+        }
+
         //player.sendSystemMessage(Component.literal(String.format("repaired %s items in inventory... %s FE %s mB", repairCount, energy, fluid)));
 
         if (!(totalRepaired > 0)) return false;
         CompoundTag tag = repairer.getOrCreateTag();
         tag.putInt(LAST_AUTO_REPAIR_TAG, totalRepaired);
         repairer.setTag(tag);
-        consumeFluidAndEnergy(repairer, totalRepaired);
+        consumeFluidAndEnergy(energy, fluid, totalRepaired);
         return true;
     }
 
@@ -215,55 +243,34 @@ public class ReconstructorItem extends Item {
         return Math.max(1, Math.min(PASSIVE_REPAIR_AMOUNT, (int)Math.floor(Math.sqrt(0.08F * maxDurability))));
     }
 
-    public int getFluidAmount(@NotNull ItemStack itemStack) {
-        return itemStack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM)
-                .map(fluidHandler -> ((FluidHandlerItemStack)fluidHandler).getFluid().getAmount())
-                .orElse(0);
+    @Nullable
+    public static IFluidHandler getFluidHandler(@NotNull ItemStack stack) {
+        return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).resolve().orElse(null);
     }
 
-    public int getEnergy(@NotNull ItemStack itemStack) {
-        return itemStack.getCapability(ForgeCapabilities.ENERGY)
-                .map(IEnergyStorage::getEnergyStored)
-                .orElse(0);
+    @Nullable
+    public static IEnergyStorage getEnergyHandler(@NotNull ItemStack stack) {
+        return stack.getCapability(ForgeCapabilities.ENERGY).resolve().orElse(null);
     }
 
     public int getPoints(int energy, int fluid) {
-        return (Math.min(energy / ENERGY_COST, fluid / FLUID_COST));
+        return Math.min(energy / ENERGY_COST, fluid / FLUID_COST);
     }
 
-    public int getPoints(@NotNull ItemStack itemStack) {
-        return (Math.min(getEnergy(itemStack) / ENERGY_COST, getFluidAmount(itemStack) / FLUID_COST));
+    public int getPoints(IEnergyStorage energy, IFluidHandler fluid) {
+        return getPoints(energy.getEnergyStored(), fluid.getFluidInTank(0).getAmount());
     }
 
     public boolean hasResources(int energy, int fluid) {
         return (energy >= ENERGY_COST && fluid >= FLUID_COST);
     }
-    public boolean hasResources(ItemStack itemStack) {
-        return (getEnergy(itemStack) >= ENERGY_COST && getFluidAmount(itemStack) >= FLUID_COST);
+    public boolean hasResources(IEnergyStorage energy, IFluidHandler fluid) {
+        return hasResources(energy.getEnergyStored(), fluid.getFluidInTank(0).getAmount());
     }
 
-    public void consumeFluidAndEnergy(@NotNull ItemStack itemStack, int amountRepaired) {
-        //("Consuming fluid and energy");
-        itemStack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM)
-                .map(fluidHandler -> {
-                    // shhhhhh.. shhhhhh
-                    if (fluidHandler instanceof FluidAndEnergyStorage.CustomFluidHandlerItemStack epicHandler) {
-                        FluidStack contained = epicHandler.getFluid().copy();
-                        contained.shrink(amountRepaired * FLUID_COST);
-                        epicHandler.setFluid(contained);
-                        return contained;
-                    }
-                    return fluidHandler.drain(amountRepaired * FLUID_COST, IFluidHandler.FluidAction.EXECUTE);
-                });
-        itemStack.getCapability(ForgeCapabilities.ENERGY)
-                .map(energyHandler -> {
-                    if (energyHandler instanceof FluidAndEnergyStorage.EnergyHandlerItemStack epicHandler) {
-                        int cost = amountRepaired * ENERGY_COST;
-                        epicHandler.setEnergy(epicHandler.getEnergyStored() - cost);
-                        return cost;
-                    }
-                    return energyHandler.extractEnergy(amountRepaired * ENERGY_COST, false);
-                });
+    public void consumeFluidAndEnergy(IEnergyStorage energy, IFluidHandler fluid, int amountRepaired) {
+        energy.extractEnergy(amountRepaired * ENERGY_COST, false);
+        fluid.drain(amountRepaired * FLUID_COST, IFluidHandler.FluidAction.EXECUTE);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.robotemployee.reu.extra;
 
+import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.registry.ModDamageTypes;
 import com.robotemployee.reu.core.registry.ModItems;
 import com.robotemployee.reu.core.registry.ModMobEffects;
@@ -29,6 +30,7 @@ import net.minecraftforge.event.entity.living.LivingBreatheEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.slf4j.Logger;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotResult;
 import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
@@ -36,6 +38,8 @@ import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
 import java.util.Optional;
 
 public class TummyAcheEvents {
+
+    static final Logger LOGGER = LogUtils.getLogger();
 
     @SubscribeEvent
     public static void onLivingAttack(LivingAttackEvent event) {
@@ -61,25 +65,28 @@ public class TummyAcheEvents {
     public static void onPlayerBreathe(LivingBreatheEvent event) {
         LivingEntity victim = event.getEntity();
         Level level = victim.level();
-        if (level.isClientSide()) return;
+        // note that this executes both client and serverside
         if (!victim.hasEffect(ModMobEffects.TUMMY_ACHE.get())) return;
         if (!(victim instanceof Player player)) return;
+
+        long time = level.getGameTime();
 
         BlockPos eyePos = BlockPos.containing(player.getEyePosition());
 
         // vastly increase the amount of air you use underwater / in the nether / etc
         // checking if the position is suffocating because we need to get past backtanks
         if (level.getBlockState(eyePos).isSuffocating(level, eyePos)) {
+            LOGGER.info("AAAAAAHHHHH!!!");
             // increase backtank air consumption if we have one on and are using it
             ICuriosItemHandler handler = CuriosApi.getCuriosInventory(player).resolve().get();
             Optional<SlotResult> backtankOptional = handler.findFirstCurio(s -> s.is(AllTags.AllItemTags.PRESSURIZED_AIR_SOURCES.tag));
             ItemStack chest = player.getItemBySlot(EquipmentSlot.CHEST);
             ItemStack curio = backtankOptional.map(SlotResult::stack).orElse(ItemStack.EMPTY);
-            ItemStack backtank = !chest.isEmpty() ? chest : curio;
+            ItemStack backtank = chest.is(AllTags.AllItemTags.PRESSURIZED_AIR_SOURCES.tag) ? chest : curio;
 
             if (backtank.is(AllTags.AllItemTags.PRESSURIZED_AIR_SOURCES.tag) && player.getItemBySlot(EquipmentSlot.HEAD).getItem() instanceof DivingHelmetItem) {
-                BacktankUtil.consumeAir(victim, backtank, AIR_USE_MULTIPLIER - 1);
-            } else {
+                if (!level.isClientSide()) BacktankUtil.consumeAir(victim, backtank, AIR_USE_MULTIPLIER - 1);
+            } else if (!event.canBreathe()) {
                 event.setConsumeAirAmount(event.getConsumeAirAmount() * 4);
             }
 
@@ -87,16 +94,16 @@ public class TummyAcheEvents {
             if (player.getAirSupply() / (float)player.getMaxAirSupply() < 0.1f) player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 240, 0, false, false, true));
         }
 
-        boolean sappingAir = player.isSprinting() || player.isUsingItem();
-        boolean stopRefill = sappingAir || player.isCrouching();
+        boolean sappingAir = !player.hasEffect(MobEffects.WATER_BREATHING) && ((player.isSprinting() && !player.isCrouching()) || player.isUsingItem());
+        boolean stopRefill = sappingAir;
 
         if (sappingAir) event.setCanBreathe(false);
         if (stopRefill) {
             event.setRefillAirAmount(0);
-            if (player.isSprinting()) event.setConsumeAirAmount(event.getConsumeAirAmount() + AIR_USE_ON_SPRINT);
+            if (player.isSprinting() && time % 2 == 1) event.setConsumeAirAmount(event.getConsumeAirAmount() + AIR_USE_ON_SPRINT);
             if (player.isUsingItem()) event.setConsumeAirAmount(event.getConsumeAirAmount() + AIR_USE_ON_USE);
 
-        } //else if (event.canBreathe()) event.setRefillAirAmount(event.getRefillAirAmount() / 2);
+        } else if (!player.isCrouching()) event.setRefillAirAmount(Math.max(1, event.getRefillAirAmount() / 3));
     }
 
     @SubscribeEvent
@@ -119,7 +126,7 @@ public class TummyAcheEvents {
         if (!(attacker instanceof Player player)) return false;
 
         if (!player.hasEffect(ModMobEffects.TUMMY_ACHE.get())) return false;
-        int airRemoved = Math.max((int)Math.floor(event.getAmount()), 60);
+        int airRemoved = Math.max((int)Math.floor(event.getAmount() / 2), 60);
         player.setAirSupply(player.getAirSupply() - airRemoved);
         return true;
     }
