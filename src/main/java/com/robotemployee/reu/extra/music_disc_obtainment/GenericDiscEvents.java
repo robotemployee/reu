@@ -80,7 +80,6 @@ public class GenericDiscEvents {
         if (lobotomyCheck(event)) return;
         if (bearSpecialAbilityCheck(event)) return;
         if (ironGolemEvisceratedCheck(event)) return;
-        if (asbestosSuffocateOnAttack(event)) return;
     }
 
     @SubscribeEvent
@@ -88,7 +87,6 @@ public class GenericDiscEvents {
         if (chickenLightningDeathCheck(event)) return;
         if (bearFairDeathCheck(event)) return;
         if (bearLifestealKillCheck(event)) return;
-        if (asbestosDeathCheck(event)) return;
         if (preciseArrowDeathCheck(event)) return;
         betrayalDeathCheck(event);
     }
@@ -105,16 +103,8 @@ public class GenericDiscEvents {
 
     @SubscribeEvent
     public static void onPlayerInteractEntity(PlayerInteractEvent.EntityInteract event) {
-
         if (feedNucleeperCheck(event)) return;
         tamedMobCheck(event);
-    }
-
-    @SubscribeEvent
-    public static void onPlayerFinishedUsingItem(LivingEntityUseItemEvent.Finish event) {
-        if (asbestosAccelerateCheck(event)) return;
-        if (asbestosDecelerateCheck(event)) return;
-        if (asbestosPillCheck(event)) return;
     }
 
     @SubscribeEvent
@@ -126,7 +116,6 @@ public class GenericDiscEvents {
     public static void onTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         if (icarusCheck(event)) return;
-        if (asbestosRenewCheck(event)) return;
     }
 
     @SubscribeEvent
@@ -339,26 +328,6 @@ public class GenericDiscEvents {
         newborn.setInvulnerable(true);
 
         level.addFreshEntity(newborn);
-        return true;
-    }
-
-    public static boolean asbestosSuffocateOnAttack(LivingAttackEvent event) {
-        LivingEntity victim = event.getEntity();
-
-        Level level = victim.level();
-
-        if (level.isClientSide()) return false;
-
-        DamageSource source = event.getSource();
-        if (!source.is(DamageTypes.PLAYER_ATTACK)) return false;
-
-        Entity attacker = source.getEntity();
-        if (!(attacker instanceof Player)) attacker = source.getDirectEntity();
-        if (!(attacker instanceof Player player)) return false;
-
-        if (!player.hasEffect(ModMobEffects.TUMMY_ACHE.get())) return false;
-        int airRemoved = Math.max((int)Math.floor(event.getAmount()), 60);
-        player.setAirSupply(player.getAirSupply() - airRemoved);
         return true;
     }
 
@@ -618,25 +587,6 @@ public class GenericDiscEvents {
         return true;
     }
 
-    public static boolean asbestosDeathCheck(LivingDeathEvent event) {
-        LivingEntity victim = event.getEntity();
-        Level level = victim.level();
-        if (level.isClientSide()) return false;
-        if (!victim.hasEffect(ModMobEffects.TUMMY_ACHE.get())) return false;
-
-        if (!(victim instanceof Player player)) return false;
-
-        TummyAcheMobEffect.cure(victim);
-
-        if (!event.getSource().is(ModDamageTypes.ASBESTOSIS)) return false;
-
-        player.addItem(new ItemStack(ModItems.MUSIC_DISC_GIANT_ROBOTS.get()));
-
-        level.playSound(null, victim.blockPosition(), SoundEvents.TOTEM_USE, SoundSource.PLAYERS);
-
-        return true;
-    }
-
     public static boolean isCritting(LivingEntity entity) {
         return entity.getDeltaMovement().y < 0 && entity.fallDistance > 0;
     }
@@ -874,71 +824,6 @@ public class GenericDiscEvents {
         handler.setHomePosition(target.blockPosition());
         //LOGGER.info("Set the home position to " + target.blockPosition());
 
-        return true;
-    }
-
-    public static boolean asbestosAccelerateCheck(LivingEntityUseItemEvent.Finish event) {
-        LivingEntity entity = event.getEntity();
-        Level level = entity.level();
-        if (level.isClientSide()) return false;
-
-        ItemStack used = event.getItem();
-        if (!used.is(ModItems.INTERESTING_BREAD.get())) return false;
-
-        CompoundTag info = TummyAcheMobEffect.getInfoFrom(entity);
-        float severity = TummyAcheMobEffect.getSeverity(entity, info);
-        //LOGGER.info("Severity: " + severity);
-
-
-        TummyAcheMobEffect.bestowInterestingBreadBoons(entity, severity);
-
-        RandomSource random = level.getRandom();
-
-
-        if (entity.hasEffect(ModMobEffects.TUMMY_ACHE.get())) {
-            boolean doALot = random.nextFloat() < 0.2;
-            if (severity > 0.5 && random.nextFloat() < Math.pow(severity, 2)) TummyAcheMobEffect.inflictAilment(entity, severity);
-            CompoundTag newInfo = TummyAcheMobEffect.advanceTime(info, entity, TummyAcheMobEffect.TICKS_ACCELERATED_ON_BREAD * (doALot ? 8 : 1));
-            float newSeverity = TummyAcheMobEffect.getSeverity(entity, newInfo);
-            entity.sendSystemMessage(Component.literal(String.format((doALot ? "§3Your condition accelerates a lot." : "§3Your condition accelerates.") + (newSeverity > 0 ? " §8(%.2f)" : ""), newSeverity)));
-
-            //LOGGER.info("Severity:" + severity);
-        }
-
-        if (entity.hasEffect(ModMobEffects.TUMMY_ACHE.get())) return true;
-        // evil
-        TummyAcheMobEffect.inflictUpon(entity);
-        return true;
-    }
-
-    public static boolean asbestosDecelerateCheck(LivingEntityUseItemEvent.Finish event) {
-        LivingEntity entity = event.getEntity();
-        Level level = entity.level();
-        if (level.isClientSide()) return false;
-
-        ItemStack used = event.getItem();
-        if (!used.is(ModItems.ONE_DAY_BLINDING_STEW.get())) return false;
-
-        if (!entity.hasEffect(ModMobEffects.TUMMY_ACHE.get())) return false;
-
-        TummyAcheMobEffect.advanceTime(entity, TummyAcheMobEffect.TICKS_DECELERATED_ON_STEW);
-
-        entity.sendSystemMessage(Component.literal(String.format("§3Your condition improves. §8(%.2f)", TummyAcheMobEffect.getSeverity(entity))));
-
-        return true;
-    }
-
-    public static boolean asbestosPillCheck(LivingEntityUseItemEvent.Finish event) {
-        LivingEntity entity = event.getEntity();
-        Level level = entity.level();
-        if (level.isClientSide()) return false;
-
-        ItemStack used = event.getItem();
-        if (!used.is(ModItems.MIRACLE_PILL.get())) return false;
-
-        if (!entity.hasEffect(ModMobEffects.TUMMY_ACHE.get())) return false;
-
-        TummyAcheMobEffect.cure(entity);
         return true;
     }
 
@@ -1516,7 +1401,7 @@ public class GenericDiscEvents {
         if (!loc.toString().equals(GLIDER)) return false;
 
         //LOGGER.info("damage: " + (glider.getMaxDamage() - glider.getDamageValue() > 10));
-        if (glider.getMaxDamage() - glider.getDamageValue() > 15) return false;
+        if (glider.getMaxDamage() - glider.getDamageValue() > DURABILITY_FOR_ICARUS) return false;
 
         //LOGGER.info("and it was damaged enough");
 
@@ -1527,36 +1412,6 @@ public class GenericDiscEvents {
         player.addItem(new ItemStack(ModItems.MUSIC_DISC_PROVIDENCE.get()));
 
         level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.TOTEM_USE, SoundSource.PLAYERS, 1, 1);
-
-        return true;
-    }
-
-    public static boolean asbestosRenewCheck(TickEvent.PlayerTickEvent event) {
-        // Renew Tummy Ache if the player should have it. There is no curing asbestosis. The player must die.
-        Player player = event.player;
-        Level level = player.level();
-        if (level.isClientSide()) return false;
-
-        if (level.getGameTime() % 100 > 0) return false;
-
-        if (player.hasEffect(ModMobEffects.TUMMY_ACHE.get())) return false;
-
-        CompoundTag info = TummyAcheMobEffect.getInfoFrom(player);
-        //LOGGER.info(tag.getAsString());
-        if (info.isEmpty()) return false;
-
-        boolean applicable = TummyAcheMobEffect.getIsApplied(info);
-        if (!applicable) return false;
-        // it has somehow been cured and we need to renew it
-
-        player.addEffect(TummyAcheMobEffect.defaultInstance());
-
-        MobEffectInstance instance = player.getEffect(ModMobEffects.TUMMY_ACHE.get());
-
-        player.sendSystemMessage(Component.literal("§3There is no cure."));
-        TummyAcheMobEffect.inflictAilment(player);
-        if (instance == null) return true;
-        instance.tick(player, () -> {});
 
         return true;
     }

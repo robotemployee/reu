@@ -3,6 +3,7 @@ package com.robotemployee.reu.core.registry.help.datagen;
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.registry.ModItems;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
+import com.simibubi.create.AllTags;
 import net.minecraft.ResourceLocationException;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.FrameType;
@@ -60,6 +61,27 @@ public class Datagen {
 
     public static final Logger LOGGER = LogUtils.getLogger();
 
+    static {
+        //TagKey<Item> back = TagKey.create(Registries.ITEM, new ResourceLocation("curios", "back"));
+        //addTagToTag(() -> AllTags.AllItemTags.PRESSURIZED_AIR_SOURCES.tag, () -> back);
+    }
+
+    @SubscribeEvent
+    public static void run(GatherDataEvent event) {
+        LOGGER.info("Received data generation event");
+        FluidDatagen.run(event);
+
+        DataGenerator gen = event.getGenerator();
+
+        gen.addProvider(event.includeClient(), new ModItemModelProvider(gen.getPackOutput(), event.getExistingFileHelper()));
+        ModTagsProvider.attach(event);
+
+        gen.addProvider(event.includeServer(), ModLootTableProvider.create(gen.getPackOutput()));
+
+        gen.addProvider(event.includeServer(), new ModAdvancementProvider(gen.getPackOutput(), event.getLookupProvider(), event.getExistingFileHelper()));
+    }
+
+
     public static boolean doesResourceAlreadyExist(ResourceLocation loc) {
         return Files.exists(Paths.get("src", "main", "resources", "assets", loc.getNamespace(), loc.getPath()));
     }
@@ -104,6 +126,12 @@ public class Datagen {
         }));
     }
 
+    public static void addTagToTag(Supplier<TagKey<Item>> addition, Supplier<TagKey<Item>> reciever) {
+        ModTagsProvider.queueRequest(Registries.ITEM, (provider -> {
+            provider.tag(reciever.get()).addTag(addition.get());
+        }));
+    }
+
 
     // Textures
 
@@ -143,22 +171,6 @@ public class Datagen {
 
         //ImageIO.write(newborn, "PNG", newTexturePath.toFile());
     }
-
-    @SubscribeEvent
-    public static void run(GatherDataEvent event) {
-        LOGGER.info("Received data generation event");
-        FluidDatagen.run(event);
-
-        DataGenerator gen = event.getGenerator();
-
-        gen.addProvider(event.includeClient(), new ModItemModelProvider(gen.getPackOutput(), event.getExistingFileHelper()));
-        ModTagsProvider.attach(event);
-
-        gen.addProvider(event.includeServer(), ModLootTableProvider.create(gen.getPackOutput()));
-
-        gen.addProvider(event.includeServer(), new ModAdvancementProvider(gen.getPackOutput(), event.getLookupProvider(), event.getExistingFileHelper()));
-    }
-
 
     public static class ModItemModelProvider extends ItemModelProvider {
 

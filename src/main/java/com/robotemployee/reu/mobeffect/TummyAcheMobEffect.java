@@ -16,14 +16,20 @@ import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import top.theillusivec4.curios.api.CuriosApi;
+import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
+import top.theillusivec4.curios.api.type.inventory.ICurioStacksHandler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 public class TummyAcheMobEffect extends MobEffect {
 
@@ -37,7 +43,8 @@ public class TummyAcheMobEffect extends MobEffect {
     protected static final long TICKS_TILL_MAX_SEVERITY = 36000; // 30 minutes
     protected static final long LIFETIME = TICKS_TILL_SYMPTOMS + TICKS_TILL_MAX_SEVERITY;
     protected static final float CHANCE_TO_AILMENT_ON_TICK = 0.2f; // increases with severity
-    protected static final float CHANCE_TO_KILL = 0.001f; // multiplied by severity squared
+    protected static final float BASE_CHANCE_TO_HEART_ATTACK = 0.001f; // multiplied by severity squared
+    protected static final float SEVERITY_FOR_HEART_ATTACK = 0.8f;
 
     public static final int TICKS_ACCELERATED_ON_BREAD = (int)(TICKS_TILL_MAX_SEVERITY / 32);
     public static final int TICKS_DECELERATED_ON_STEW = -(int)(TICKS_TILL_MAX_SEVERITY / 3);
@@ -48,8 +55,14 @@ public class TummyAcheMobEffect extends MobEffect {
     public static final int BREAD_BOON_MEDIUM_DURATION = 4800; // 4 minutes
     public static final int BREAD_BOON_SHORT_DURATION = 2400; // 2 minutes
 
+    protected static final long TICKS_TILL_CAN_GROW_THIRD_FOOT = 12000; // 10 minutes, can't be accelerated
+    // when above this severity, a timer is started. after the timer is finished, you have a chance to grow a third foot every effect tick (8s)
+    protected static final float SEVERITY_FOR_THIRD_FOOT_COUNTDOWN = 0;
+    protected static final float CHANCE_TO_GROW_THIRD_FOOT = 0.04f;
+
     protected static final String ROOT_PATH = "Asbestosis";
-    protected static final String TIMESTAMP_PATH = "Time";
+    protected static final String THIRD_FOOT_TIMESTAMP_PATH = "ThirdFootTimer";
+    protected static final String TIMESTAMP_PATH = "MutableTime";
     protected static final String APPLIED_PATH = "isActive";
     protected static final String TIME_ADVANCE_PATH = "BonusTime";
 
@@ -102,15 +115,13 @@ public class TummyAcheMobEffect extends MobEffect {
         return new ArrayList<>();
     }
 
+    // everything that stems from this is serverside only
     @Override
     public void applyEffectTick(@NotNull LivingEntity victim, int amp) {
         //LOGGER.info("This code is executing");
         Level level = victim.level();
         long tick = level.getGameTime();
         if (level.isClientSide()) return;
-
-        // every tick
-        if (victim instanceof ServerPlayer player) suffocateVictimExertion(player);
 
         if (tick % INTERVAL != OFFSET) return;
 
@@ -119,49 +130,8 @@ public class TummyAcheMobEffect extends MobEffect {
         long time = getTime(victim, info, tick) + info.getLong(TIME_ADVANCE_PATH);
         float severity = getSeverity(time, info);
 
-        suffocateVictimUnderwater(victim);
-
         if (time < TICKS_TILL_SYMPTOMS) return;
         tickInflictAilment(victim, severity);
-    }
-
-    public static void suffocateVictimExertion(ServerPlayer player) {
-        Level level = player.level();
-        //RandomSource random = level.getRandom();
-        boolean sprinting = player.isSprinting();
-        boolean using = player.isUsingItem();
-        boolean falling = player.fallDistance > 0.1;
-        boolean full = player.getAirSupply() == player.getMaxAirSupply();
-
-        //boolean isInThinAir = (level.dimension() != Level.NETHER && level.dimension() != Level.END);
-        boolean canBreathe = canBreathe(player);
-        boolean excited = (using || !player.onGround()) && !full;
-        boolean exerting = sprinting;
-
-        boolean preventAirSupplyRegain = canBreathe && exerting;
-        //LOGGER.info("preventing:" + preventAirSupplyRegain + canBreathe + exerting);
-        if (preventAirSupplyRegain) player.setAirSupply(player.getAirSupply() - 4);
-        else return;
-        if (exerting) player.setAirSupply(player.getAirSupply() - 1);
-        //else if (using) victim.setAirSupply(victim.getAirSupply() - 3);
-    }
-
-    public static void suffocateVictimUnderwater(LivingEntity victim) {
-        if (canBreathe(victim)) return;
-        int air = victim.getAirSupply();
-        int max = victim.getMaxAirSupply();
-        // tripled air consumption
-        if (air < max) victim.setAirSupply(air - 2 * INTERVAL);
-        float airFraction = air / (float)max;
-
-        //if (air <= 0 && !victim.hasEffect(MobEffects.BLINDNESS)) victim.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 400));
-        if (airFraction < 0.7 && !victim.hasEffect(MobEffects.DARKNESS)) victim.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 400));
-    }
-
-    private static boolean canBreathe(LivingEntity victim) {
-        Level level = victim.level();
-        BlockPos eye = BlockPos.containing(victim.getEyePosition());
-        return !level.getBlockState(eye).isSuffocating(level, eye);
     }
 
     public static void tickInflictAilment(LivingEntity victim, float severity) {
@@ -173,6 +143,7 @@ public class TummyAcheMobEffect extends MobEffect {
         //LOGGER.info("We! are! here!");
         victim.level().playSound(null, victim.blockPosition(), SoundEvents.WARDEN_HEARTBEAT, SoundSource.PLAYERS, 1.6f, 0.8f);
 
+        perhapsGrantThirdFoot(victim, severity);
         inflictAilment(victim, severity);
     }
 
@@ -183,7 +154,7 @@ public class TummyAcheMobEffect extends MobEffect {
 
         if (random.nextFloat() + severity < CHANCE_TO_AILMENT_ON_TICK) return;
 
-        if (severity > 0.6 && (victim instanceof Player player && !player.isCreative()) && random.nextFloat() < CHANCE_TO_KILL + 0.05 * Math.pow(severity, 4)) {
+        if (severity > SEVERITY_FOR_HEART_ATTACK && (victim instanceof Player player && !player.isCreative()) && random.nextFloat() < BASE_CHANCE_TO_HEART_ATTACK + 0.05 * Math.pow(severity, 4)) {
             obliterateVictim(victim, severity);
             return;
         }
@@ -244,6 +215,7 @@ public class TummyAcheMobEffect extends MobEffect {
     }
 
     // note that this also normalizes the time to only be as long as the maximum duration
+    // if you want the actual time since it was originally applied, use getOriginalTime()
     public static long getTime(LivingEntity victim, CompoundTag info, long currentTick) {
         if (info == null || info.isEmpty()) return 0;
         if (!info.contains(TIMESTAMP_PATH)) return 0;
@@ -257,6 +229,10 @@ public class TummyAcheMobEffect extends MobEffect {
         long returned = Math.min(currentTick - adjustedTimestamp, LIFETIME);
         //LOGGER.info("Time: " + returned);
         return returned;
+    }
+
+    public static long getOriginalTime(CompoundTag info) {
+        return info.getLong(THIRD_FOOT_TIMESTAMP_PATH);
     }
 
     public static boolean getIsApplied(CompoundTag info) {
@@ -297,7 +273,9 @@ public class TummyAcheMobEffect extends MobEffect {
     public static void activateInfo(LivingEntity victim) {
         CompoundTag persistent = victim.getPersistentData();
         CompoundTag mod = persistent.getCompound(RobotEmployeeUtils.MODID);
+
         CompoundTag newborn = new CompoundTag();
+
         newborn.putLong(TIMESTAMP_PATH, victim.level().getGameTime());
         newborn.putLong(TIME_ADVANCE_PATH, 0);
         newborn.putBoolean(APPLIED_PATH, true);
@@ -324,6 +302,44 @@ public class TummyAcheMobEffect extends MobEffect {
         if (victim.hasEffect(MobEffects.REGENERATION) && damage > 4) victim.removeEffect(MobEffects.REGENERATION);
         if (severity < SEVERITY_TO_HURT_VICTIM) return;
         victim.hurt(ModDamageTypes.getDamageSource(victim.level(), ModDamageTypes.ASBESTOSIS), damage);
+    }
+
+    private static final UUID THIRD_FOOT_MODIFIER_UUID = UUID.fromString("2d361a22-5ea4-4ac8-95a8-217bbd3c3ebb");
+    public static void perhapsGrantThirdFoot(LivingEntity victim, float severity) {
+        RandomSource random = victim.getRandom();
+        Level level = victim.level();
+        if (!(victim instanceof Player)) return;
+        final String slot = "shoes";
+
+        CompoundTag info = getInfoFrom(victim);
+
+        if (severity < SEVERITY_FOR_THIRD_FOOT_COUNTDOWN) {
+            info.remove(THIRD_FOOT_TIMESTAMP_PATH);
+            saveInfoTo(info, victim);
+            return;
+        }
+
+        if (!info.contains(THIRD_FOOT_TIMESTAMP_PATH)) {
+            info.putLong(THIRD_FOOT_TIMESTAMP_PATH, level.getGameTime());
+            saveInfoTo(info, victim);
+            return;
+        }
+
+        if (level.getGameTime() - getOriginalTime(info) < TICKS_TILL_CAN_GROW_THIRD_FOOT) return;
+
+        if (random.nextFloat() > CHANCE_TO_GROW_THIRD_FOOT) return;
+        ICuriosItemHandler handler = CuriosApi.getCuriosInventory(victim).resolve().get();
+
+        Optional<ICurioStacksHandler> invOptional = handler.getStacksHandler(slot);
+        if (invOptional.isEmpty()) return;
+
+        ICurioStacksHandler inv = invOptional.get();
+        // check if we already have our third foot modifier applied
+        if (inv.getPermanentModifiers().stream().anyMatch(modifier -> modifier.getId() == THIRD_FOOT_MODIFIER_UUID)) return;
+
+        // we should add a third foot slot
+        victim.sendSystemMessage(Component.literal("§3You are no longer chained to bipedalism."));
+        handler.addPermanentSlotModifier(slot, THIRD_FOOT_MODIFIER_UUID, "asbestosis_third_foot", 1, AttributeModifier.Operation.ADDITION);
     }
 
     public static void obliterateVictim(LivingEntity victim, float severity) {

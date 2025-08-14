@@ -82,6 +82,8 @@ public class RobotEmployeeUtils
         MinecraftForge.EVENT_BUS.register(FriendsAndFoesCompat.class);
         MinecraftForge.EVENT_BUS.register(AlexsCavesCompat.class);
         MinecraftForge.EVENT_BUS.register(GenericDiscEvents.class);
+        MinecraftForge.EVENT_BUS.register(CuriosCompat.class);
+        MinecraftForge.EVENT_BUS.register(TummyAcheEvents.class);
 
         // only for the client :)
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
