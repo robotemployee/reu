@@ -91,7 +91,6 @@ minecraft {
         client {
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', mod_id
-
         }
 
         server {
@@ -248,6 +247,7 @@ dependencies {
 
     // shamelessly stolen from https://github.com/pajicadvance/accessorify/blob/forge-1.20.1/build.gradle
     // maybe fix ????? ???
+    /*
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixinextras_version}"))
     implementation(jarJar("io.github.llamalad7:mixinextras-forge:${mixinextras_version}")) {
         jarJar.ranged(it, "[0.4.1,)")
@@ -258,6 +258,7 @@ dependencies {
     compileOnly(jarJar("dev.su5ed.sinytra.fabric-api:fabric-resource-loader-v0:${fresloader_version}")) {
         jarJar.ranged(it, "[0.11.10,)")
     }
+     */
 
     // JEI
     compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
