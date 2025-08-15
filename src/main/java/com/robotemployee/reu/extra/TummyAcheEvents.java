@@ -76,7 +76,7 @@ public class TummyAcheEvents {
         // vastly increase the amount of air you use underwater / in the nether / etc
         // checking if the position is suffocating because we need to get past backtanks
         if (level.getBlockState(eyePos).isSuffocating(level, eyePos)) {
-            LOGGER.info("AAAAAAHHHHH!!!");
+            //LOGGER.info("AAAAAAHHHHH!!!");
             // increase backtank air consumption if we have one on and are using it
             ICuriosItemHandler handler = CuriosApi.getCuriosInventory(player).resolve().get();
             Optional<SlotResult> backtankOptional = handler.findFirstCurio(s -> s.is(AllTags.AllItemTags.PRESSURIZED_AIR_SOURCES.tag));
@@ -94,7 +94,7 @@ public class TummyAcheEvents {
             if (player.getAirSupply() / (float)player.getMaxAirSupply() < 0.1f) player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 240, 0, false, false, true));
         }
 
-        boolean sappingAir = !player.hasEffect(MobEffects.WATER_BREATHING) && ((player.isSprinting() && !player.isCrouching()) || player.isUsingItem());
+        boolean sappingAir = (!player.hasEffect(MobEffects.WATER_BREATHING)) && ((player.isSprinting() && !player.isCrouching()) || player.isUsingItem());
         boolean stopRefill = sappingAir;
 
         if (sappingAir) event.setCanBreathe(false);

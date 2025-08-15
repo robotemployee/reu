@@ -56,6 +56,7 @@ public class CuriosCompat {
 
                 if (!BacktankUtil.hasAirRemaining(stack)) return;
                 if (!(player.getItemBySlot(EquipmentSlot.HEAD).getItem() instanceof DivingHelmetItem)) return;
+                if (player.getItemBySlot(EquipmentSlot.CHEST).is(AllTags.AllItemTags.PRESSURIZED_AIR_SOURCES.tag)) return;
 
                 entity.addEffect(new MobEffectInstance(MobEffects.WATER_BREATHING, 40, 0, false, false));
                 BacktankUtil.consumeAir(entity, stack, 1);

@@ -1163,6 +1163,7 @@ public class GenericDiscEvents {
         // when it's a golem
         BetrayalCapability.BetrayalHandler handler = entity.getCapability(BetrayalCapability.CAPABILITY).resolve().orElse(null);
         if (handler == null) return false;
+        if (handler.hasHomePosition()) return false;
         handler.setHomePosition(entity.blockPosition());
         return true;
     }
@@ -1355,8 +1356,7 @@ public class GenericDiscEvents {
 
         DamageSource source = event.getSource();
 
-        if (!(source.getDirectEntity() instanceof Arrow)) return false;
-        if (!(source.getEntity() instanceof Player player)) return false;
+        if (!(source.getDirectEntity() instanceof Player player)) return false;
 
         if (!player.getMainHandItem().isEmpty()) return false;
 
