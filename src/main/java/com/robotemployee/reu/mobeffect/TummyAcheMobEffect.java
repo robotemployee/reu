@@ -1,11 +1,15 @@
 package com.robotemployee.reu.mobeffect;
 
+import com.google.common.collect.HashMultimap;
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.core.registry.ModDamageTypes;
 import com.robotemployee.reu.core.registry.ModMobEffects;
+import io.wispforest.accessories.api.AccessoriesAPI;
+import io.wispforest.accessories.api.AccessoriesCapability;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -18,16 +22,11 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import org.antlr.v4.runtime.misc.MultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
-import top.theillusivec4.curios.api.CuriosApi;
-import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
-import top.theillusivec4.curios.api.type.inventory.ICurioStacksHandler;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public class TummyAcheMobEffect extends MobEffect {
 
@@ -302,7 +301,7 @@ public class TummyAcheMobEffect extends MobEffect {
         victim.hurt(ModDamageTypes.getDamageSource(victim.level(), ModDamageTypes.ASBESTOSIS), damage);
     }
 
-    private static final UUID THIRD_FOOT_MODIFIER_UUID = UUID.fromString("2d361a22-5ea4-4ac8-95a8-217bbd3c3ebb");
+    private static final ResourceLocation THIRD_FOOT_MODIFIER_LOCATION = new ResourceLocation(RobotEmployeeUtils.MODID, "third_foot_from_asbestosis");
     public static void perhapsGrantThirdFoot(LivingEntity victim, float severity) {
         RandomSource random = victim.getRandom();
         Level level = victim.level();
@@ -326,18 +325,18 @@ public class TummyAcheMobEffect extends MobEffect {
         if (level.getGameTime() - getOriginalTime(info) < TICKS_TILL_CAN_GROW_THIRD_FOOT) return;
 
         if (random.nextFloat() > CHANCE_TO_GROW_THIRD_FOOT) return;
-        ICuriosItemHandler handler = CuriosApi.getCuriosInventory(victim).resolve().get();
+        AccessoriesCapability handler = AccessoriesCapability.get(victim);
+        if (handler == null) return;
 
-        Optional<ICurioStacksHandler> invOptional = handler.getStacksHandler(slot);
-        if (invOptional.isEmpty()) return;
-
-        ICurioStacksHandler inv = invOptional.get();
         // check if we already have our third foot modifier applied
-        if (inv.getPermanentModifiers().stream().anyMatch(modifier -> modifier.getId() == THIRD_FOOT_MODIFIER_UUID)) return;
+        Collection<AttributeModifier> attrs = handler.getSlotModifiers().get(slot);
+        if (attrs.stream().anyMatch(attr -> attr.getName().equals(THIRD_FOOT_MODIFIER_LOCATION.toString()))) return;
 
         // we should add a third foot slot
         victim.sendSystemMessage(Component.literal("§3You are no longer chained to bipedalism."));
-        handler.addPermanentSlotModifier(slot, THIRD_FOOT_MODIFIER_UUID, "asbestosis_third_foot", 1, AttributeModifier.Operation.ADDITION);
+        HashMultimap<String, AttributeModifier> result = HashMultimap.create();
+        result.put(slot, new AttributeModifier(THIRD_FOOT_MODIFIER_LOCATION.toString(), 1, AttributeModifier.Operation.ADDITION));
+        handler.addPersistentSlotModifiers(result);
     }
 
     public static void obliterateVictim(LivingEntity victim, float severity) {

@@ -8,6 +8,8 @@ import com.robotemployee.reu.mobeffect.TummyAcheMobEffect;
 import com.simibubi.create.AllTags;
 import com.simibubi.create.content.equipment.armor.BacktankUtil;
 import com.simibubi.create.content.equipment.armor.DivingHelmetItem;
+import io.wispforest.accessories.api.AccessoriesCapability;
+import io.wispforest.accessories.api.slot.SlotEntryReference;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -31,9 +33,6 @@ import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.slf4j.Logger;
-import top.theillusivec4.curios.api.CuriosApi;
-import top.theillusivec4.curios.api.SlotResult;
-import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
 
 import java.util.Optional;
 
@@ -78,10 +77,11 @@ public class TummyAcheEvents {
         if (level.getBlockState(eyePos).isSuffocating(level, eyePos)) {
             //LOGGER.info("AAAAAAHHHHH!!!");
             // increase backtank air consumption if we have one on and are using it
-            ICuriosItemHandler handler = CuriosApi.getCuriosInventory(player).resolve().get();
-            Optional<SlotResult> backtankOptional = handler.findFirstCurio(s -> s.is(AllTags.AllItemTags.PRESSURIZED_AIR_SOURCES.tag));
+            AccessoriesCapability handler = AccessoriesCapability.get(player);
+            assert handler != null;
+            SlotEntryReference accessoriesOptional = handler.getFirstEquipped(s -> s.is(AllTags.AllItemTags.PRESSURIZED_AIR_SOURCES.tag));
             ItemStack chest = player.getItemBySlot(EquipmentSlot.CHEST);
-            ItemStack curio = backtankOptional.map(SlotResult::stack).orElse(ItemStack.EMPTY);
+            ItemStack curio = accessoriesOptional != null ? accessoriesOptional.stack() : ItemStack.EMPTY;
             ItemStack backtank = chest.is(AllTags.AllItemTags.PRESSURIZED_AIR_SOURCES.tag) ? chest : curio;
 
             if (backtank.is(AllTags.AllItemTags.PRESSURIZED_AIR_SOURCES.tag) && player.getItemBySlot(EquipmentSlot.HEAD).getItem() instanceof DivingHelmetItem) {

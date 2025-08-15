@@ -14,6 +14,7 @@ import com.robotemployee.reu.core.registry.ModItems;
 import com.robotemployee.reu.core.registry.ModSounds;
 import com.robotemployee.reu.mobeffect.TummyAcheMobEffect;
 import com.supermartijn642.rechiseled.ChiselItem;
+import io.wispforest.accessories.api.AccessoriesCapability;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -68,8 +69,6 @@ import net.minecraftforge.registries.ForgeRegistries;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
 import org.slf4j.Logger;
-import top.theillusivec4.curios.api.CuriosApi;
-import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
 
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -497,9 +496,9 @@ public class GenericDiscEvents {
             }
         }
 
-        ICuriosItemHandler handler = CuriosApi.getCuriosInventory(player).resolve().get();
+        AccessoriesCapability handler = AccessoriesCapability.get(player);
 
-        boolean hasCurios = handler.isEquipped(stack -> !stack.isEmpty());
+        boolean hasCurios = handler != null && handler.isEquipped(stack -> !stack.isEmpty());
         boolean tooMuchHealth = playerMaxHealth > ALLOWED_BEAR_MAX_HP;
         //boolean tooMuchArmor = player.getArmorValue() > ALLOWED_BEAR_ARMOR;
         boolean tooFar = distance > ALLOWED_BEAR_DISTANCE;

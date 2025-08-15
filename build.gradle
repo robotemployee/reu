@@ -242,7 +242,8 @@ dependencies {
     implementation fg.deobf("maven.modrinth:mimi:${mimi_version}")
 
     // Accessories
-    implementation("io.wispforest:accessories-neoforge:${accessories_version}")
+    implementation fg.deobf("io.wispforest:accessories-neoforge:${accessories_version}")
+    implementation fg.deobf("me.shedaniel.cloth:cloth-config-forge:${cloth_config_version}")
 
     // Curios API
     /*
@@ -346,10 +347,11 @@ tasks.withType(JavaCompile).configureEach {
 
 // if it complains about the mixin config not being able to be read
 // comment out this mixin block thing
+// refresh the horrible elephant
+// gen intellij runs
 // run the client without it
 // then stop the client, put this block back, and run the client again
 // something about hatred and nanoangstroms
-
 
 mixin {
     // MixinGradle Settings

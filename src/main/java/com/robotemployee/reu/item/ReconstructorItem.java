@@ -2,6 +2,8 @@ package com.robotemployee.reu.item;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.capability.FluidAndEnergyStorage;
+import io.wispforest.accessories.api.AccessoriesCapability;
+import io.wispforest.accessories.api.slot.SlotEntryReference;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
@@ -24,11 +26,11 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
-import top.theillusivec4.curios.api.CuriosApi;
-import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
 
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ReconstructorItem extends Item {
 
@@ -188,8 +190,11 @@ public class ReconstructorItem extends Item {
         candidates.addAll(player.getInventory().armor);
         candidates.addAll(player.getInventory().offhand);
 
-        ICuriosItemHandler curios = CuriosApi.getCuriosInventory(player).resolve().get();
-        IItemHandlerModifiable modifiableHandler = curios.getEquippedCurios();
+        AccessoriesCapability accessoriesHandler = AccessoriesCapability.get(player);
+        if (accessoriesHandler != null) {
+            List<SlotEntryReference> equippedAccessories = accessoriesHandler.getAllEquipped();
+            candidates.addAll(equippedAccessories.stream().map(SlotEntryReference::stack).toList());
+        }
 
         for (ItemStack victim : candidates) {
             if (victim.isRepairable() && victim.isDamaged()) {
@@ -205,21 +210,7 @@ public class ReconstructorItem extends Item {
             }
         }
 
-        for (int i = 0; i < modifiableHandler.getSlots(); i++) {
-            ItemStack victim = modifiableHandler.getStackInSlot(i).copy();
-            if (victim.isRepairable() && victim.isDamaged()) {
-                if (!hasResources(energy, fluid)) break;
-                // man
-                int repairAmount = Math.min(getAdjustedRepairAmount(victim.getMaxDamage()), getPoints(energy, fluid));
-                if (repairAmount >= victim.getDamageValue()) {
-                    repairAmount = victim.getDamageValue();
-                    hasRepairedToFull = true;
-                }
-                victim.setDamageValue(victim.getDamageValue() - repairAmount);
-                totalRepaired += repairAmount;
-                modifiableHandler.setStackInSlot(i, victim);
-            }
-        }
+
 
         //player.sendSystemMessage(Component.literal(String.format("repaired %s items in inventory... %s FE %s mB", repairCount, energy, fluid)));
 
