@@ -1,0 +1,83 @@
+package com.robotemployee.reu.core.registry.help.builder;
+
+import com.robotemployee.reu.core.RobotEmployeeUtils;
+import com.robotemployee.reu.core.registry.ModEntities;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.registries.RegistryObject;
+
+import java.util.function.Supplier;
+
+public class EntityBuilder<T extends Entity> {
+
+    private String name;
+    private final Supplier<EntityType.Builder<T>> entityTypeBuilderSupplier;
+    private Supplier<AttributeSupplier.Builder> attributesBuilderSupplier;
+
+    public EntityBuilder(Supplier<EntityType.Builder<T>> builder) {
+        this.entityTypeBuilderSupplier = builder;
+    }
+
+    /*
+    public static <T extends Entity> EntityBuilder<T> of(Supplier<EntityType.Builder<T>> builder) {
+        EntityBuilder<T> newborn = new EntityBuilder<T>();
+        newborn.entityTypeBuilderSupplier = builder;
+        return newborn;
+    }
+     */
+
+    public EntityBuilder<T> withName(String name) {
+        this.name = name;
+        return this;
+    }
+
+    public EntityBuilder<T> withAttributes(Supplier<AttributeSupplier.Builder> attributesBuilderSupplier) {
+        this.attributesBuilderSupplier = attributesBuilderSupplier;
+        return this;
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private EntityRendererProvider<T> rendererProvider;
+    // AAAAAHHHHH I LOVE BEING AUTISTIC THIS SHIT IS FUCKING GREAT AAAAHHH
+
+    @OnlyIn(Dist.CLIENT)
+    public EntityBuilder<T> customRenderer(EntityRendererProvider<T> rendererProvider) {
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+            // implement later
+            this.rendererProvider = rendererProvider;
+        });
+        return this;
+    }
+
+    public RegistryObject<EntityType<T>> build() {
+        checkForInsufficientParams();
+        Supplier<EntityType<T>> entityTypeSupplier = () -> entityTypeBuilderSupplier.get().build(name);
+        RegistryObject<EntityType<T>> newborn = ModEntities.ENTITIES.register(name, entityTypeSupplier);
+
+        if (attributesBuilderSupplier != null) {
+            ModEntities.addAttributeRequest(event -> {
+                event.put((EntityType<? extends LivingEntity>) newborn.get(), attributesBuilderSupplier.get().build());
+            });
+            //(RegistryObject<EntityType<? extends LivingEntity>>)(Object)newborn, () -> attributesBuilderSupplier.get().build())
+        }
+
+        //EntityRegistryEntry<T> entry = new EntityRegistryEntry<>(newborn);
+
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+            if (rendererProvider != null) RobotEmployeeUtils.ClientModEvents.addCustomRenderer(newborn, rendererProvider);
+        });
+
+        return newborn;
+    }
+
+    public void checkForInsufficientParams() {
+        if (name == null) throw new IllegalStateException("Must assign a name");
+        if (entityTypeBuilderSupplier == null) throw new IllegalStateException("Must assign an entity type");
+    }
+}

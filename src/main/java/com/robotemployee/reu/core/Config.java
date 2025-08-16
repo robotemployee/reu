@@ -2,6 +2,7 @@ package com.robotemployee.reu.core;
 
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import org.joml.Vector2i;
@@ -13,21 +14,10 @@ import java.util.ArrayList;
 @Mod.EventBusSubscriber(modid = RobotEmployeeUtils.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class Config
 {
+
+    public static final boolean ACCESSORIES_PRESENT = ModList.get().isLoaded("accessories");
+
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
-
-    /*
-    private static final ForgeConfigSpec.BooleanValue LOG_DIRT_BLOCK = BUILDER
-            .comment("Whether to log the dirt block on common setup")
-            .define("logDirtBlock", true);
-
-    private static final ForgeConfigSpec.IntValue MAGIC_NUMBER = BUILDER
-            .comment("A magic number")
-            .defineInRange("magicNumber", 42, 0, Integer.MAX_VALUE);
-
-    public static final ForgeConfigSpec.ConfigValue<String> MAGIC_NUMBER_INTRODUCTION = BUILDER
-            .comment("What you want the introduction message to be for the magic number")
-            .define("magicNumberIntroduction", "The magic number is... ");
-     */
 
     private static final ForgeConfigSpec.ConfigValue<Double> MIMI_VOLUME = BUILDER
             .comment("Client stuff!!")
@@ -62,7 +52,7 @@ public class Config
     /*public static boolean logDirtBlock;
     public static int magicNumber;
     public static String magicNumberIntroduction;*/
-    private static ArrayList<Vector2i> sculkBorders = new ArrayList<Vector2i>(2);
+    private static final ArrayList<Vector2i> sculkBorders = new ArrayList<>(2);
     public static ArrayList<Vector2i> getSculkBorders() {
         return sculkBorders;
     }

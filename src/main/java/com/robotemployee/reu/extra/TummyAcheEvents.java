@@ -34,8 +34,6 @@ import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.slf4j.Logger;
 
-import java.util.Optional;
-
 public class TummyAcheEvents {
 
     static final Logger LOGGER = LogUtils.getLogger();

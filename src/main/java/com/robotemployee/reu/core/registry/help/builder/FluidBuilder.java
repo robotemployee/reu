@@ -193,7 +193,7 @@ public class FluidBuilder {
     public Supplier<Item> getBucketSupplier(RegistryObject<Fluid> fluid) {
         if (!hasBucket) return null;
         if (bucketSupplier != null) return bucketSupplier;
-        return () -> new BucketItem(fluid.get(), (new Item.Properties()).craftRemainder(Items.BUCKET).stacksTo(1));
+        return () -> new BucketItem(fluid, (new Item.Properties()).craftRemainder(Items.BUCKET).stacksTo(1));
     }
 
     @Nullable

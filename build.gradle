@@ -338,6 +338,18 @@ tasks.named('jar', Jar).configure {
     finalizedBy 'reobfJar'
 }
 
+// 500g more copium, please
+tasks.register('playRainWorld', Copy) {
+
+    dependsOn tasks.jar
+
+    from file('build/libs')
+
+    into file(System.getenv("MINECRAFT_MODS_DEV_DIR"))
+
+    include 'reu-*.jar'
+}
+
 // However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing:
 // tasks.named('publish').configure {
 //     dependsOn 'reobfJar'
