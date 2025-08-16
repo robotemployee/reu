@@ -8,24 +8,41 @@ import net.minecraft.world.phys.Vec3;
 
 public class DevilProtectGoal extends FollowSpecificMobGoal {
     public DevilProtectGoal(Mob follower, double speedModifier, double maxDistance) {
-        super(follower, BananaRaidMob.class, speedModifier, maxDistance);
+        super(follower, BananaRaidMob.class, speedModifier, maxDistance, 40);
     }
 
     static final float DODGE_FORCE = 0.3f;
     static final int MIN_TICKS_TILL_DODGE = 10;
     static final int MAX_TICKS_TILL_DODGE = 30;
     private int ticksTillDodge = 0;
+
+    static final int BUFFS_INTERVAL = 100;
+    private int ticksTillBuff = 0;
+
     @Override
     public void tick() {
+        RandomSource random = follower.getRandom();
         if (--ticksTillDodge <= 0) {
-            RandomSource random = follower.getRandom();
             ticksTillDodge = random.nextInt(MIN_TICKS_TILL_DODGE, MAX_TICKS_TILL_DODGE);
+            dodge();
+        }
 
-            Vec3 addedMovement = new Vec3((random.nextFloat() - 0.5), (random.nextFloat() - 0.5) * 0.25, (random.nextFloat() - 0.5))
-                    .scale(2 * random.nextFloat() * DODGE_FORCE);
-            follower.addDeltaMovement(addedMovement);
+        if (--ticksTillBuff <= 0) {
+            ticksTillDodge = BUFFS_INTERVAL;
+            applyBuffs();
         }
         super.tick();
+    }
+
+    protected void dodge() {
+        RandomSource random = follower.getRandom();
+        Vec3 addedMovement = new Vec3((random.nextFloat() - 0.5), (random.nextFloat() - 0.5) * 0.25, (random.nextFloat() - 0.5))
+                .scale(2 * random.nextFloat() * DODGE_FORCE);
+        follower.addDeltaMovement(addedMovement);
+    }
+
+    protected void applyBuffs() {
+        // TODO: implement
     }
 
 

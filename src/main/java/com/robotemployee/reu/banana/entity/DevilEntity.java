@@ -9,6 +9,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.FlyingMoveControl;
 import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
+import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomFlyingGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
@@ -22,16 +23,11 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class DevilEntity extends BananaRaidMob implements GeoAnimatable {
+public class DevilEntity extends FlyingBananaRaidMob implements GeoAnimatable {
 
     public DevilEntity(EntityType<? extends DevilEntity> entityType, Level level) {
         super(entityType, level);
         this.moveControl = new FlyingMoveControl(this, 5, false);
-    }
-
-    @Override
-    public boolean causeFallDamage(float p_147187_, float p_147188_, DamageSource p_147189_) {
-        return false;
     }
 
     @Override
@@ -63,8 +59,9 @@ public class DevilEntity extends BananaRaidMob implements GeoAnimatable {
 
     @Override
     protected void registerGoals() {
+        // TODO: make it move a little livelier, and have it actually fly around
         int goalIndex = 0;
-        this.goalSelector.addGoal(goalIndex++, new AvoidEntityGoal<>(this, Player.class, 16, 1, 1.5));
+        //this.goalSelector.addGoal(goalIndex++, new AvoidEntityGoal<>(this, Player.class, 16, 1, 1.5));
         this.goalSelector.addGoal(goalIndex++, new DevilProtectGoal(this, 1, 3));
         this.goalSelector.addGoal(goalIndex++, new WaterAvoidingRandomFlyingGoal(this, 1));
         this.goalSelector.addGoal(goalIndex++, new FloatGoal(this));
@@ -72,11 +69,11 @@ public class DevilEntity extends BananaRaidMob implements GeoAnimatable {
     }
 
     public static AttributeSupplier.Builder createAttributes() {
-        return Monster.createMonsterAttributes()
+        return createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 20)
                 .add(Attributes.MOVEMENT_SPEED, 0.25)
                 .add(Attributes.FLYING_SPEED, 0.25)
-                .add(Attributes.KNOCKBACK_RESISTANCE, 0.5);
+                .add(Attributes.KNOCKBACK_RESISTANCE, 1);
     }
 
     @Override

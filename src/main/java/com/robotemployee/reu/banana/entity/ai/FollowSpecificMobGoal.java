@@ -16,14 +16,17 @@ public class FollowSpecificMobGoal extends Goal {
     protected final Class<? extends LivingEntity> targetedClass;
     protected final double speedModifier;
     protected final double maxDistance;
+    protected final int scanInterval;
+    protected int ticksUntilScan;
 
     static final Logger LOGGER = LogUtils.getLogger();
 
-    public FollowSpecificMobGoal(Mob follower, Class<? extends LivingEntity> targetedClass, double speedModifier, double maxDistance) {
+    public FollowSpecificMobGoal(Mob follower, Class<? extends LivingEntity> targetedClass, double speedModifier, double maxDistance, int scanInterval) {
         this.follower = follower;
         this.targetedClass = targetedClass;
         this.speedModifier = speedModifier;
         this.maxDistance = maxDistance;
+        this.scanInterval = scanInterval;
     }
 
     protected Comparator<? super LivingEntity> getComparator() {
@@ -38,6 +41,8 @@ public class FollowSpecificMobGoal extends Goal {
 
     @Override
     public boolean canUse() {
+        if (ticksUntilScan-- > 0) return false;
+        ticksUntilScan = scanInterval;
         List<? extends LivingEntity> foundEntities = follower.level().getEntitiesOfClass(targetedClass, follower.getBoundingBox().inflate(maxDistance));
 
         if (foundEntities.isEmpty()) return false;

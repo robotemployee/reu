@@ -61,9 +61,7 @@ public class EntityBuilder<T extends Entity> {
         RegistryObject<EntityType<T>> newborn = ModEntities.ENTITIES.register(name, entityTypeSupplier);
 
         if (attributesBuilderSupplier != null) {
-            ModEntities.addAttributeRequest(event -> {
-                event.put((EntityType<? extends LivingEntity>) newborn.get(), attributesBuilderSupplier.get().build());
-            });
+            ModEntities.addAttributeRequest((RegistryObject<EntityType<? extends LivingEntity>>)(Object) newborn, () -> attributesBuilderSupplier.get().build());
             //(RegistryObject<EntityType<? extends LivingEntity>>)(Object)newborn, () -> attributesBuilderSupplier.get().build())
         }
 
