@@ -33,7 +33,7 @@ public class LoggerIncrementer {
         LOGGER.info(String.format(getHeader() + "%s reached %s", label, displayedNumber++));
     }
 
-    public String getHeader() {
+    protected String getHeader() {
         return "LI" + index % 11 + ": ";
     }
 }

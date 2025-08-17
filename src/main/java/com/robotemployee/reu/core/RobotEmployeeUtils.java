@@ -50,15 +50,6 @@ public class RobotEmployeeUtils
     // Directly reference a slf4j logger
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    // sequence of registering:
-    // sounds
-    // blocks
-    // block entities
-    // fluid types
-    // fluids
-    // items
-    // entities
-
     public RobotEmployeeUtils(@NotNull FMLJavaModLoadingContext context)
     {
         IEventBus modEventBus = context.getModEventBus();
@@ -66,14 +57,15 @@ public class RobotEmployeeUtils
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
 
+        ModEntityDataSerializers.SERIALIZERS.register(modEventBus);
         ModMobEffects.EFFECTS.register(modEventBus);
         ModSounds.SOUNDS.register(modEventBus);
+        ModEntities.ENTITIES.register(modEventBus);
         ModBlocks.BLOCKS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModFluidTypes.FLUID_TYPES.register(modEventBus);
         ModFluids.FLUIDS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
-        ModEntities.ENTITIES.register(modEventBus);
 
         // the rest of these don't care as much about the ordering
         ModAdvancements.register();

@@ -31,6 +31,8 @@ public class ModEntities {
     public static final DeferredRegister<EntityType<?>> ENTITIES =
             DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, RobotEmployeeUtils.MODID);
 
+    public static final int BANANA_EGG_COLOR = 0xE2EE1A;
+
     public static final RegistryObject<EntityType<DevilEntity>> DEVIL =
             new EntityBuilder<>(
                     () -> EntityType.Builder.of(DevilEntity::new, MobCategory.MONSTER)
@@ -38,6 +40,7 @@ public class ModEntities {
                     .withName("devil")
                     .withAttributes(DevilEntity::createAttributes)
                     .customRenderer(DevilRenderer::new)
+                    .eggColor(0x4CC9E1, BANANA_EGG_COLOR)
                     .build();
 
     private static void addAttributeRequest(Consumer<EntityAttributeCreationEvent> consumer) {
