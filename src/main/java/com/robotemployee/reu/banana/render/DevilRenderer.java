@@ -171,7 +171,7 @@ public class DevilRenderer extends BananaRenderer<DevilEntity> {
         poseStack.mulPose(Axis.YP.rotation(-yaw));
         poseStack.mulPose(Axis.XP.rotation(-(float)Math.PI / 2));
         poseStack.mulPose(Axis.XP.rotation(pitch));
-        poseStack.mulPose(Axis.ZP.rotation((float)(Math.PI / 2) - pitchToCam));
+        poseStack.mulPose(Axis.YP.rotation(pitchToCam));
 
         float length = diff.length();
         // for the V coordinate of the UVs on the toEntity side of the beam
