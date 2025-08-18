@@ -188,6 +188,8 @@ public class DevilRenderer extends BananaRenderer<DevilEntity> {
         // create a plane perpendicular to the xz axis along the beam
         // the plane is centered on fromEntity
         Vector3f planeNormal = new Vector3f(normalizedHDiff.x, 0, normalizedHDiff.y);
+        // todo set the plane origin to be the closest point on the beam to the camera
+        //  (make sure the MathTools method works)
         Vector3f planeOrigin = new Vector3f(diff).mul(0.5f).add(startPosition);
         Vector3f vecToCam = new Vector3f(cameraPos).sub(planeOrigin);
 
