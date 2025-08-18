@@ -191,7 +191,7 @@ public class DevilRenderer extends BananaRenderer<DevilEntity> {
         Vector3f planeOrigin = new Vector3f(diff).mul(0.5f).add(startPosition);
         Vector3f vecToCam = new Vector3f(cameraPos).sub(planeOrigin);
 
-        Vector3f planeProjectedCameraPos = MathTools.getPointProjectedToPlane(planeOrigin, planeNormal, vecToCam);
+        Vector3f planeProjectedCameraPos = MathTools.getPointProjectedToPlane(planeOrigin, planeNormal, cameraPos);
 
         Vector3f planeProjectedCameraDiff = new Vector3f(planeProjectedCameraPos).sub(planeOrigin);
         // we need to project our resulting vector to a normal vector pointing up because we need arctan for a signed angle
