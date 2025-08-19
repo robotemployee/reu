@@ -100,8 +100,8 @@ public abstract class BananaRaidMob extends Monster {
     }
 
 
-    // Recycling
-    public abstract float getRecycleWeight();
+    // This is for recycling - the higher your value, the more reluctant things are to recycle you
+    public abstract float getImportance();
 
     public abstract BananaRaid.EnemyTypes getBananaType();
 

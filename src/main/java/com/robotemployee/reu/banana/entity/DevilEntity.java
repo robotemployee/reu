@@ -89,8 +89,8 @@ public class DevilEntity extends FlyingBananaRaidMob implements GeoAnimatable {
     }
 
     @Override
-    public float getRecycleWeight() {
-        return 0;
+    public float getImportance() {
+        return 5;
     }
 
     @Override
