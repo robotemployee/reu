@@ -1,6 +1,6 @@
-package com.robotemployee.reu.core.registry.help.entry;
+package com.robotemployee.reu.registry.help.entry;
 
-import com.robotemployee.reu.core.registry.help.builder.FluidBuilder;
+import com.robotemployee.reu.registry.help.builder.FluidBuilder;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.material.Fluid;

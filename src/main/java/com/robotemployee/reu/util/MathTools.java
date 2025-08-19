@@ -11,16 +11,16 @@ public class MathTools {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public static float getScalarProjection(Vector3f u, Vector3f v) {
-        return new Vector3f(u).dot(v) / v.lengthSquared();
+        return new Vector3f(u).dot(v) / v.length();
     }
 
     public static Vector3f getVectorProjection(Vector3f u, Vector3f v) {
-        return new Vector3f(v).mul(getScalarProjection(u, v));
+        return new Vector3f(v).mul(getScalarProjection(u, v) / v.length());
     }
 
     public static Vector3f getClosestPointOnVector(Vector3f origin, Vector3f vector, Vector3f point) {
         Vector3f originToPoint = new Vector3f(point).sub(origin);
-        return getVectorProjection(originToPoint, vector);
+        return new Vector3f(origin).add(getVectorProjection(originToPoint, vector));
     }
 
     public static Vector3f getPointProjectedToPlane(Vector3f planeOrigin, Vector3f planeNormal, Vector3f point) {

@@ -1,10 +1,10 @@
-package com.robotemployee.reu.core.registry.help.builder;
+package com.robotemployee.reu.registry.help.builder;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
-import com.robotemployee.reu.core.registry.ModBlocks;
-import com.robotemployee.reu.core.registry.ModItems;
-import com.robotemployee.reu.core.registry.help.entry.BlockRegistryEntry;
+import com.robotemployee.reu.registry.ModBlocks;
+import com.robotemployee.reu.registry.ModItems;
+import com.robotemployee.reu.registry.help.entry.BlockRegistryEntry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;

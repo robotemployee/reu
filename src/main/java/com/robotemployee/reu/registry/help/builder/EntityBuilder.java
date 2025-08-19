@@ -1,7 +1,9 @@
-package com.robotemployee.reu.core.registry.help.builder;
+package com.robotemployee.reu.registry.help.builder;
 
 import com.robotemployee.reu.core.RobotEmployeeUtils;
-import com.robotemployee.reu.core.registry.ModEntities;
+import com.robotemployee.reu.registry.ModEntities;
+import com.robotemployee.reu.registry.help.datagen.Datagen;
+import com.robotemployee.reu.registry.help.entry.EntityRegistryEntry;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -9,7 +11,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeSpawnEggItem;
@@ -70,7 +71,7 @@ public class EntityBuilder<T extends Entity> {
         return this;
     }
 
-    public RegistryObject<EntityType<T>> build() {
+    public EntityRegistryEntry<T> build() {
         checkForInsufficientParams();
         Supplier<EntityType<T>> entityTypeSupplier = () -> entityTypeBuilderSupplier.get().build(name);
         RegistryObject<EntityType<T>> newborn = ModEntities.ENTITIES.register(name, entityTypeSupplier);
@@ -80,13 +81,14 @@ public class EntityBuilder<T extends Entity> {
             //(RegistryObject<EntityType<? extends LivingEntity>>)(Object)newborn, () -> attributesBuilderSupplier.get().build())
         }
 
+        RegistryObject<Item> egg = null;
         if (hasEgg) {
-            new ItemBuilder()
+            egg = new ItemBuilder()
                     .withName(name + "_spawn_egg")
                     .withSupplier(() ->
                         new ForgeSpawnEggItem(() -> (EntityType<? extends Mob>) newborn.get(), eggColorA, eggColorB, new Item.Properties())
                     )
-                    .noDatagen()
+                    .customDatagen(Datagen.ModItemModelProvider.spawnEgg())
                     .build();
         }
 
@@ -96,7 +98,7 @@ public class EntityBuilder<T extends Entity> {
             if (rendererProvider != null) RobotEmployeeUtils.ClientModEvents.addCustomRenderer(newborn, rendererProvider);
         });
 
-        return newborn;
+        return new EntityRegistryEntry<>(newborn, egg);
     }
 
     public void checkForInsufficientParams() {

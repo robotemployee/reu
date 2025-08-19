@@ -12,6 +12,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -90,6 +91,150 @@ public class RenderTools {
 
         poseStack.popPose();
     }
+
+    public static void renderCameraFacing2DBeamBetween(Vector3f emanatingPoint, Vector3f receivingPoint, Vector3f cameraPos, float stretchFactor, float width, float time, float scrollSpeed, RenderType renderType, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource) {
+        // swapping the starts and ends on purpose, so that the recipient appears to "slide" along the beam instead of the other way around
+        // due to the UV repeating stuff
+        Vector3f endPosition = emanatingPoint;
+        Vector3f startPosition = receivingPoint;
+
+        Vector3f diff = new Vector3f(endPosition).sub(startPosition);
+        float distance = diff.length();
+        // refer to the above UV repeating comment for why I'm doing this
+        poseStack.translate(-diff.x, -diff.y, -diff.z);
+        Vector2f hDiff = new Vector2f(diff.x, diff.z);
+        Vector2f normalizedHDiff = new Vector2f(hDiff).normalize();
+        Vector3f normalizedDiff = new Vector3f(diff).normalize();
+
+        float yaw = (float) Math.atan2(normalizedHDiff.y, normalizedHDiff.x) + (float)(Math.PI / 2);
+        float pitch = (float) Math.atan2(diff.y, hDiff.length());
+
+        // we are now going to try and angle the beam towards the camera
+
+        // create a plane perpendicular to the xz axis along the beam
+        // the plane is centered on fromEntity
+        Vector3f planeNormal = new Vector3f(normalizedHDiff.x, 0, normalizedHDiff.y);
+        Vector3f planeOrigin = MathTools.getClosestPointOnVector(startPosition, normalizedDiff, cameraPos);
+
+        Vector3f planeProjectedCameraPos = MathTools.getPointProjectedToPlane(planeOrigin, planeNormal, cameraPos);
+
+        Vector3f planeProjectedCameraDiff = new Vector3f(planeProjectedCameraPos).sub(planeOrigin);
+        // we need to project our resulting vector to a normal vector pointing up because we need arctan for a signed angle
+        // can't use the dot product equation because it has to be signed
+        // and for that we need ourselves a right triangle
+        // we are going to normalize the plane-projected camera displacement so that it's always shorter
+        // than a vector going straight up. that way we can always just project it to that up vector
+        Vector3f normalizedPlaneProjectedCameraDiff = new Vector3f(planeProjectedCameraDiff).normalize();
+
+        float lengthOfModifiedUpVector = MathTools.getScalarProjection(normalizedPlaneProjectedCameraDiff, new Vector3f(0,1,0));
+        Vector3f modifiedUpVector = new Vector3f(0, 1, 0).mul(lengthOfModifiedUpVector);
+        // getting the length of the opposite vector to angle alone removes signage; almost there
+        // we should create a second plane that is perpendicular to both the xz plane and to the one we previously created
+        // then we can just check the sign of the offset of our camera to that point
+        Vector3f oppositeVectorOfAngle = new Vector3f(modifiedUpVector).sub(normalizedPlaneProjectedCameraDiff);
+
+        Vector3f secondPlaneNormal = new Vector3f(planeNormal).cross(new Vector3f(0, 1, 0)).normalize();
+        boolean shouldNegatePitchToCamera = MathTools.getOffsetFromPlane(planeOrigin, secondPlaneNormal, cameraPos) < 0;
+
+        float oppositeSideOfAngle = oppositeVectorOfAngle.length();
+        Vector2f finallyWeAreHere = new Vector2f(lengthOfModifiedUpVector, oppositeSideOfAngle).normalize();
+        float pitchToCamera = (float)Math.atan2(finallyWeAreHere.y, finallyWeAreHere.x) * (shouldNegatePitchToCamera ? -1 : 1);
+        // christ it works
+        // i am so washed at calc 3 i swear to fucking god
+
+        // giga logger
+        /*
+        if (fromEntity.level().getGameTime() % 40 == 0) {
+            NumberFormat noDecimal = NumberFormat.getInstance();
+            noDecimal.setMaximumFractionDigits(0);
+            NumberFormat decimal = NumberFormat.getInstance();
+            decimal.setMaximumFractionDigits(2);
+            decimal.setMinimumFractionDigits(2);
+            LOGGER.info(String.format("cameraPos: %s, vecToCam:%s, planeNormal:%s, planeProjectedCameraPos: %s, planeProjectedCameraDiff: %s, nPlaneProjectedCameraDiff: %s ... opvecang: %s ... lOMUV: %.1f, mUV: %s, oSOA: %.1f, fWAH: %s, pitch: %.1f, negating: %s",
+                    cameraPos.toString(noDecimal),
+                    vecToCam.toString(noDecimal),
+                    planeNormal.toString(decimal),
+                    planeProjectedCameraPos.toString(noDecimal),
+                    planeProjectedCameraDiff.toString(noDecimal),
+                    normalizedPlaneProjectedCameraDiff.toString(decimal),
+
+                    oppositeVectorOfAngle.toString(decimal),
+
+                    lengthOfModifiedUpVector,
+                    modifiedUpVector.toString(decimal),
+                    oppositeSideOfAngle,
+                    finallyWeAreHere.toString(decimal),
+                    Math.toDegrees(pitchToCamera),
+                    shouldNegatePitchToCamera
+            ));
+        }
+         */
+
+        // begin the actual rendering
+        poseStack.pushPose();
+
+        poseStack.mulPose(Axis.YP.rotation(-yaw));
+        poseStack.mulPose(Axis.XP.rotation(-(float)Math.PI / 2));
+        poseStack.mulPose(Axis.XP.rotation(pitch));
+        poseStack.mulPose(Axis.YP.rotation(pitchToCamera));
+
+        float length = diff.length();
+
+        // scrolling effect!!!
+        float scrollTime;
+        float uvModifier;
+
+        if (scrollSpeed != 0) {
+            scrollTime = time % (20 / scrollSpeed);
+            uvModifier = -(scrollTime / (20 / scrollSpeed));
+        } else {
+            uvModifier = 0;
+        }
+        // for the V coordinate of the UVs on the toEntity side of the beam
+        float startV = 0 + uvModifier;
+        float endV = (stretchFactor != 0 ? length / stretchFactor : 1) + uvModifier;
+
+        VertexConsumer vertexes = bufferSource.getBuffer(renderType);
+
+        Matrix4f lastPose = poseStack.last().pose();
+        Matrix3f normal = poseStack.last().normal();
+
+        vertexes.vertex(lastPose, -width, 0, 0)
+                .color(1.0f, 1.0f, 1.0f, 1.0f)
+                .uv(0, endV)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(PACKED_LIGHT_FOR_2DS)
+                .normal(normal, 0, 1, 0)
+                .endVertex();
+
+        vertexes.vertex(lastPose, -width, length, 0)
+                .color(1.0f, 1.0f, 1.0f, 1.0f)
+                .uv(0, startV)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(PACKED_LIGHT_FOR_2DS)
+                .normal(normal, 0, 1, 0)
+                .endVertex();
+
+        vertexes.vertex(lastPose, width, length, 0)
+                .color(1.0f, 1.0f, 1.0f, 1.0f)
+                .uv(1, startV)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(PACKED_LIGHT_FOR_2DS)
+                .normal(normal, 0, 1, 0)
+                .endVertex();
+
+        vertexes.vertex(lastPose, width, 0, 0)
+                .color(1.0f, 1.0f, 1.0f, 1.0f)
+                .uv(1, endV)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(PACKED_LIGHT_FOR_2DS)
+                .normal(normal, 0, 1, 0)
+                .endVertex();
+
+
+        poseStack.popPose();
+    }
+
 
     public enum Colors {
         RED(0xFF0000),

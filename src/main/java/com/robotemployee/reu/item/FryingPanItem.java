@@ -1,6 +1,6 @@
 package com.robotemployee.reu.item;
 
-import com.robotemployee.reu.core.registry.ModItems;
+import com.robotemployee.reu.registry.ModItems;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;

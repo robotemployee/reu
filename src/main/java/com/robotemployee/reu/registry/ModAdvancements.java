@@ -1,7 +1,7 @@
-package com.robotemployee.reu.core.registry;
+package com.robotemployee.reu.registry;
 
 import com.mojang.logging.LogUtils;
-import com.robotemployee.reu.core.registry.help.datagen.Datagen;
+import com.robotemployee.reu.registry.help.datagen.Datagen;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.client.Minecraft;

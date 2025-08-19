@@ -60,5 +60,6 @@
   "death.attack.reu.asbestosis.player": "%1$s had a tummy ache while trying to escape %2$s",
 
 
-  "entity.reu.devil": "Devil"
+  "entity.reu.devil": "Devil",
+  "item.reu.devil_spawn_egg": "Devil Spawn Egg"
 }

@@ -1,11 +1,13 @@
-package com.robotemployee.reu.core.registry;
+package com.robotemployee.reu.registry;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.banana.entity.DevilEntity;
+import com.robotemployee.reu.banana.entity.GregEntity;
 import com.robotemployee.reu.banana.render.DevilRenderer;
+import com.robotemployee.reu.banana.render.GregRenderer;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
-import com.robotemployee.reu.core.registry.help.builder.EntityBuilder;
-import net.minecraft.world.entity.Entity;
+import com.robotemployee.reu.registry.help.builder.EntityBuilder;
+import com.robotemployee.reu.registry.help.entry.EntityRegistryEntry;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobCategory;
@@ -33,7 +35,7 @@ public class ModEntities {
 
     public static final int BANANA_EGG_COLOR = 0xE2EE1A;
 
-    public static final RegistryObject<EntityType<DevilEntity>> DEVIL =
+    public static final EntityRegistryEntry<DevilEntity> DEVIL =
             new EntityBuilder<>(
                     () -> EntityType.Builder.of(DevilEntity::new, MobCategory.MONSTER)
                             .sized(0.5f, 0.5f))
@@ -42,6 +44,19 @@ public class ModEntities {
                     .customRenderer(DevilRenderer::new)
                     .eggColor(0x4CC9E1, BANANA_EGG_COLOR)
                     .build();
+
+    public static final EntityRegistryEntry<GregEntity> GREG =
+            new EntityBuilder<>(
+                    () -> EntityType.Builder.of(GregEntity::new, MobCategory.MONSTER)
+                            .sized(0.85f, 0.5f))
+                    .withName("greg")
+                    .withAttributes(GregEntity::createAttributes)
+                    .customRenderer(GregRenderer::new)
+                    .eggColor(0xAC3232, BANANA_EGG_COLOR)
+                    .build();
+
+
+
 
     private static void addAttributeRequest(Consumer<EntityAttributeCreationEvent> consumer) {
         attributeCreationRequests.add(consumer);

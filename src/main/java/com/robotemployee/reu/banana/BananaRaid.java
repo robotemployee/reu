@@ -1,6 +1,7 @@
 package com.robotemployee.reu.banana;
 
 import com.robotemployee.reu.banana.entity.BananaRaidMob;
+import com.robotemployee.reu.util.MobUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -8,6 +9,7 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 
 import java.util.ArrayList;
 import java.util.UUID;
@@ -44,7 +46,7 @@ public class BananaRaid {
         this.manager = manager;
         for (UUID bananaUUID : spawnedEntities) {
             Entity entity = level.getEntity(bananaUUID);
-            if (!(entity instanceof BananaRaidMob raidMob)) {
+            if (!(entity instanceof BananaRaidMob raidMob) || !MobUtils.entityIsValidForTargeting(raidMob)) {
                 spawnedEntities.remove(bananaUUID);
                 continue;
             }
@@ -100,7 +102,7 @@ public class BananaRaid {
     }
 
     public enum EnemyTypes {
-        OSTINATO,
+        GREG,
         ASCENDER,
         COMMANDER,
         ORCHESTRATOR,

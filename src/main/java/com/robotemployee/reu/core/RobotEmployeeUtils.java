@@ -7,6 +7,7 @@ import com.robotemployee.reu.extra.*;
 import com.robotemployee.reu.extra.music_disc_obtainment.ClientDiscEvents;
 import com.robotemployee.reu.extra.music_disc_obtainment.GenericDiscEvents;
 import com.robotemployee.reu.item.ReconstructorItem;
+import com.robotemployee.reu.registry.*;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.EntityRenderers;
@@ -31,6 +32,7 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
@@ -49,6 +51,10 @@ public class RobotEmployeeUtils
     public static final String MODID = "reu";
     // Directly reference a slf4j logger
     private static final Logger LOGGER = LogUtils.getLogger();
+
+    // do not try to do runClient - accessories' jar in jars not being deobfuscated and me thusly setting it to compileOnly fucks that up
+    // this boolean is here to ensure that accessories things are never loaded during datagen
+    public static final boolean developmentEnvironment = !FMLEnvironment.production;
 
     public RobotEmployeeUtils(@NotNull FMLJavaModLoadingContext context)
     {
@@ -75,23 +81,25 @@ public class RobotEmployeeUtils
 
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
-        // same for eeeverything else that wants to hook into events
-        MinecraftForge.EVENT_BUS.register(SculkHordeCompat.class);
-        //MinecraftForge.EVENT_BUS.register(BornInChaosCompat.class); // born in chaos is being removed from the pack
-        MinecraftForge.EVENT_BUS.register(BaseGame.class);
-        MinecraftForge.EVENT_BUS.register(FriendsAndFoesCompat.class);
-        MinecraftForge.EVENT_BUS.register(AlexsCavesCompat.class);
-        MinecraftForge.EVENT_BUS.register(GenericDiscEvents.class);
-        MinecraftForge.EVENT_BUS.register(CuriosCompat.class);
-        MinecraftForge.EVENT_BUS.register(TummyAcheEvents.class);
-        MinecraftForge.EVENT_BUS.register(BananaRaidEvents.class);
+        if (!developmentEnvironment) {
+            // same for eeeverything else that wants to hook into events
+            MinecraftForge.EVENT_BUS.register(SculkHordeCompat.class);
+            //MinecraftForge.EVENT_BUS.register(BornInChaosCompat.class); // born in chaos is being removed from the pack
+            MinecraftForge.EVENT_BUS.register(BaseGame.class);
+            MinecraftForge.EVENT_BUS.register(FriendsAndFoesCompat.class);
+            MinecraftForge.EVENT_BUS.register(AlexsCavesCompat.class);
+            MinecraftForge.EVENT_BUS.register(GenericDiscEvents.class);
+            MinecraftForge.EVENT_BUS.register(CuriosCompat.class);
+            MinecraftForge.EVENT_BUS.register(TummyAcheEvents.class);
+            MinecraftForge.EVENT_BUS.register(BananaRaidEvents.class);
 
-        // only for the client :)
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-            modEventBus.addListener(ClientModEvents::onClientSetup);
-            MinecraftForge.EVENT_BUS.register(ClientModEvents.class);
-            MinecraftForge.EVENT_BUS.register(ClientDiscEvents.class);
-        });
+            // only for the client :)
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                modEventBus.addListener(ClientModEvents::onClientSetup);
+                MinecraftForge.EVENT_BUS.register(ClientModEvents.class);
+                MinecraftForge.EVENT_BUS.register(ClientDiscEvents.class);
+            });
+        }
 
         //MinecraftForge.EVENT_BUS.register(Datagen.class);
 

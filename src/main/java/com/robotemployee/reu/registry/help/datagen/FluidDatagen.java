@@ -1,4 +1,4 @@
-package com.robotemployee.reu.core.registry.help.datagen;
+package com.robotemployee.reu.registry.help.datagen;
 
 import net.minecraft.data.DataGenerator;
 import net.minecraft.resources.ResourceLocation;

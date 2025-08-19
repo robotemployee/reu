@@ -1,4 +1,4 @@
-package com.robotemployee.reu.core.registry.help.entry;
+package com.robotemployee.reu.registry.help.entry;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;

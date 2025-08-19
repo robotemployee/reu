@@ -1,8 +1,9 @@
-package com.robotemployee.reu.core.registry.help.datagen;
+package com.robotemployee.reu.registry.help.datagen;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
-import com.robotemployee.reu.core.registry.ModItems;
+import com.robotemployee.reu.registry.ModItems;
+import com.robotemployee.reu.registry.help.builder.ItemBuilder;
 import net.minecraft.ResourceLocationException;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.FrameType;
@@ -37,6 +38,7 @@ import net.minecraftforge.data.event.GatherDataEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -192,6 +194,16 @@ public class Datagen {
             LOGGER.info("Generating models... Amount of requests: " + requests.size());
             for (Consumer<ModItemModelProvider> request : requests) request.accept(this);
             LOGGER.info("Finished generating models!");
+        }
+
+        /** for use in {@link ItemBuilder} */
+        // isn't that pretty
+        public static Consumer<RegistryObject<Item>> spawnEgg() {
+            return (newborn) -> Datagen.ModItemModelProvider.queueRequest(provider -> {
+                provider.getBuilder(newborn.getId().getPath())
+                        .parent(provider.getExistingFile(new ResourceLocation("item/template_spawn_egg")))
+                        .texture("layer0", "minecraft:item/spawn_egg");
+            });
         }
     }
 

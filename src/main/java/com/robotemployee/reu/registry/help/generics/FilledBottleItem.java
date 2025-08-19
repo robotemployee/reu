@@ -1,4 +1,4 @@
-package com.robotemployee.reu.core.registry.help.generics;
+package com.robotemployee.reu.registry.help.generics;
 
 import com.robotemployee.reu.capability.FilteredSimpleFluidStorage;
 import net.minecraft.advancements.CriteriaTriggers;

@@ -1,4 +1,4 @@
-package com.robotemployee.reu.core.registry;
+package com.robotemployee.reu.registry;
 
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import net.minecraft.world.level.block.Block;

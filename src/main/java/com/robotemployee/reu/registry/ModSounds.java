@@ -1,4 +1,4 @@
-package com.robotemployee.reu.core.registry;
+package com.robotemployee.reu.registry;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;

@@ -1,8 +1,8 @@
-package com.robotemployee.reu.core.registry;
+package com.robotemployee.reu.registry;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
-import com.robotemployee.reu.core.registry.help.builder.ItemBuilder;
+import com.robotemployee.reu.registry.help.builder.ItemBuilder;
 import com.robotemployee.reu.item.FryingPanItem;
 import com.robotemployee.reu.item.ReconstructorItem;
 import com.robotemployee.reu.item.SculkReconstructorItem;

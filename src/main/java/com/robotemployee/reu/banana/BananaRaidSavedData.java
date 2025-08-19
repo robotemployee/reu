@@ -53,7 +53,7 @@ public class BananaRaidSavedData extends SavedData {
         return storage.computeIfAbsent(BananaRaidSavedData::loadFromTag, BananaRaidSavedData::new, SAVED_DATA_PATH);
     }
 
-    // this one is for propagating "hey we've loaded" to every raid
+    // this one is for propagating "hey the server is loaded now" to every raid
     private void init(ServerLevel level) {
         for (BananaRaid raid : RAIDS.values()) raid.init(level, this);
     }
