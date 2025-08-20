@@ -8,6 +8,7 @@
   },
   "mixins": [
     "base.NoteBlockMixin",
+    "base.PathNavigationAccessor",
     "create.RecipeApplierMixin",
     "mimi.MIMIChannelMixin",
     "mimi.MIMISynthUtilsMixin",

@@ -31,6 +31,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
+import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -44,7 +45,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.UUID;
 
-public class DevilEntity extends FlyingBananaRaidMob implements GeoAnimatable {
+public class DevilEntity extends FlyingBananaRaidMob implements GeoEntity {
 
     static final Logger LOGGER = LogUtils.getLogger();
 
@@ -108,8 +109,6 @@ public class DevilEntity extends FlyingBananaRaidMob implements GeoAnimatable {
         return BananaRaid.EnemyTypes.DEVIL;
     }
 
-    public static final RawAnimation GLOW_ANIM = RawAnimation.begin().thenLoop("animation.devil.glow");
-
     @Override
     protected void registerGoals() {
         // TODO: make it move a little livelier
@@ -142,6 +141,7 @@ public class DevilEntity extends FlyingBananaRaidMob implements GeoAnimatable {
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.5);
     }
 
+    public static final RawAnimation GLOW_ANIM = RawAnimation.begin().thenLoop("animation.devil.glow");
     @Override
     public void registerControllers(final AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(this, "Flying", 5, this::glowAnimController));
