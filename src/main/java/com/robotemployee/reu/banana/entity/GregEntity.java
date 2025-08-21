@@ -1,6 +1,7 @@
 package com.robotemployee.reu.banana.entity;
 
 import com.robotemployee.reu.banana.BananaRaid;
+import com.robotemployee.reu.banana.entity.ai.MultiGoal;
 import com.robotemployee.reu.banana.entity.extra.MultiMoveControl;
 import com.robotemployee.reu.banana.entity.extra.MultiPathNavigation;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
@@ -13,10 +14,16 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.FlyingMoveControl;
 import net.minecraft.world.entity.ai.control.MoveControl;
+import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
+import net.minecraft.world.entity.ai.goal.FloatGoal;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -36,6 +43,7 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
     public static final SerializableDataTicket<String> VISUAL_STATE = SerializableDataTicket.ofString(new ResourceLocation(RobotEmployeeUtils.MODID, "visual_state"));
 
     private VisualState visualState = VisualState.GROUNDED;
+    private BehaviorMode behaviorMode = BehaviorMode.BRAVE;
 
     public GregEntity(EntityType<? extends Monster> entityType, Level level) {
         super(entityType, level);
@@ -50,14 +58,26 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         HashMap<MoveControlMode, PathNavigation> navigations = new HashMap<>();
         navigations.put(MoveControlMode.FLYING, new FlyingPathNavigation(this, level));
         navigations.put(MoveControlMode.GROUNDED, new GroundPathNavigation(this, level));
-        navigation = new MultiPathNavigation<>(this, level, navigations);
+        navigation = new MultiPathNavigation<>(this, level, MoveControlMode.GROUNDED, navigations);
+    }
+
+    public void setBehaviorMode(BehaviorMode mode) {
+        behaviorMode = mode;
+    }
+
+    public BehaviorMode getBehaviorMode() {
+        return behaviorMode;
     }
 
     @Override
     protected void registerGoals() {
-        super.registerGoals();
+        int goalIndex = 0;
+        goalSelector.addGoal(goalIndex++, new FloatGoal(this));
+        goalSelector.addGoal(goalIndex++, new GregAlternateAttackAndRunAwayGoal(this));
+        goalSelector.addGoal(goalIndex++, new NearestAttackableTargetGoal<>(this, Player.class, false));
+
         /*
-        * move to attack but run and hide after
+        * alternate between moving to attack and running away, on a global timer - attacks have 5% chance to cause blindness for 4 seconds
         * airlift allies
         * start flying if can't reach
         * */
@@ -184,6 +204,77 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         return 0;
     }
 
+    public static class GregAlternateAttackAndRunAwayGoal extends MultiGoal<BehaviorMode> {
+        public GregAlternateAttackAndRunAwayGoal(GregEntity mob) {
+            super(mob, BehaviorMode.BRAVE, new HashMap<>());
+            goals.put(BehaviorMode.BRAVE, new MeleeAttackGoal(mob, 2, true));
+            goals.put(BehaviorMode.FEARFUL, new AvoidEntityGoal<>(mob, Player.class, 32, 1, 3));
+            swapTicksOffset = mob.getRandom().nextInt(-MAX_SWAP_TICKS_OFFSET, MAX_SWAP_TICKS_OFFSET);
+        }
+
+        // the purpose of this is that i want all of them to swap at roughly the same time, with a little b
+        static final int INTERVAL = 240;
+        static final int MAX_SWAP_TICKS_OFFSET = 40;
+        int swapTicksOffset;
+
+        @Override
+        public boolean canUse() {
+            if (shouldSwap()) swap();
+            return super.canUse();
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            if (shouldSwap()) {
+                swap();
+                // the goal we swapped to must start naturally on its own;
+                // we don't know the logic that might have been bundled in canUse()
+                return false;
+            }
+            return super.canContinueToUse();
+        }
+
+        @Override
+        public void tick() {
+            if (shouldSwap()) {
+                // the goal must start naturally
+                swap();
+                return;
+            }
+            super.tick();
+        }
+
+        boolean shouldSwap() {
+            long time = mob.level().getGameTime();
+            return ((time + swapTicksOffset) % INTERVAL) == 0;
+        }
+
+        void swap() {
+            if (goalKey == BehaviorMode.BRAVE) {
+                setGoal(BehaviorMode.FEARFUL);
+            } else {
+                setGoal(BehaviorMode.BRAVE);
+            }
+            swapTicksOffset = mob.getRandom().nextInt(-MAX_SWAP_TICKS_OFFSET, MAX_SWAP_TICKS_OFFSET);
+        }
+
+        @Override
+        public void setGoal(BehaviorMode key) {
+            ((GregEntity)mob).setBehaviorMode(key);
+            super.setGoal(key);
+        }
+    }
+
+    // todo implement
+    // use the behavior mode in this calsss
+    public static class TakeOffToReachGoal extends Goal {
+
+        @Override
+        public boolean canUse() {
+            return false;
+        }
+    }
+
     public enum MoveControlMode {
         FLYING,
         GROUNDED
@@ -194,5 +285,10 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         TAKING_OFF,
         FLYING,
         LANDING
+    }
+
+    public enum BehaviorMode {
+        BRAVE,
+        FEARFUL
     }
 }

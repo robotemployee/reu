@@ -21,9 +21,10 @@ public class MultiPathNavigation<T> extends PathNavigation {
 
     protected final Map<T, PathNavigation> navigators;
     protected T navKey;
-    public MultiPathNavigation(Mob mob, Level level, Map<T, PathNavigation> navigators) {
+    public MultiPathNavigation(Mob mob, Level level, T initialNavKey, Map<T, PathNavigation> navigators) {
         super(mob, level);
         this.navigators = navigators;
+        navKey = initialNavKey;
     }
 
     public T getNavKey() {
@@ -202,22 +203,21 @@ public class MultiPathNavigation<T> extends PathNavigation {
         return getCurrentNavigation().canFloat();
     }
 
-    // evil things and copium down here
+    // this is only used in the constructor, null should be safe here
     @Override
     protected PathFinder createPathFinder(int idk) {
         return null;//((PathNavigationAccessor)getCurrentNavigation()).createPathFinder(idk);
     }
 
+    // this is only used in
     @Override
     protected Vec3 getTempMobPos() {
-        return null;//((PathNavigationAccessor)getCurrentNavigation()).getTempMobPos();
+        return ((PathNavigationAccessor)getCurrentNavigation()).getTempMobPos();
     }
 
     @Override
     protected boolean canUpdatePath() {
         //throw new IllegalCallerException("canUpdatePath() cannot be called in MultiPathNavigation.");
-        return true;
+        return ((PathNavigationAccessor)getCurrentNavigation()).canUpdatePath();
     }
-
-
 }

@@ -105,7 +105,13 @@ public abstract class BananaRaidMob extends Monster {
 
     public abstract BananaRaid.EnemyTypes getBananaType();
 
-    public void requestAirliftTo(BlockPos destination) {
-        getParentRaid().requestAirlift(this.getUUID(), destination);
+    long lastAirliftRequestTime;
+    public static final long AIRLIFT_REQUEST_COOLDOWN = 200;
+    public void airliftMePrettyPlease(BlockPos destination) {
+        if (level().getGameTime() - lastAirliftRequestTime < AIRLIFT_REQUEST_COOLDOWN) return;
+        forceRequestAirlift(destination);
+    }
+    public void forceRequestAirlift(BlockPos destination) {
+        getParentRaid().requestAirlift(this, destination);
     }
 }

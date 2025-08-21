@@ -8,10 +8,13 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class BananaRaid {
@@ -25,9 +28,10 @@ public class BananaRaid {
     private static final String RAID_UUID_PATH = "RaidUUID";
 
     private ServerLevel level;
-
     private final BlockPos epicenter;
     private static final String EPICENTER_PATH = "Epicenter";
+
+    private static final HashMap<UUID, AirliftRequest> airliftRequests = new HashMap<>();
 
     // use this constructor if you are making a new raid
     public BananaRaid(BananaRaidSavedData manager, ServerLevel level, BlockPos epicenter) {
@@ -51,6 +55,16 @@ public class BananaRaid {
                 continue;
             }
             raidMob.init(this);
+        }
+    }
+
+    public void onBananaRemoved(BananaRaidMob raidMob) {
+        removeAirliftRequest(raidMob.getUUID());
+    }
+
+    public void checkForHanging() {
+        for (Map.Entry<UUID, AirliftRequest> entry : airliftRequests.entrySet()) {
+            if (entry.getValue().shouldExpire()) airliftRequests.remove(entry.getKey());
         }
     }
 
@@ -81,8 +95,24 @@ public class BananaRaid {
         return newborn;
     }
 
-    public void requestAirlift(UUID requester, BlockPos destination) {
-        //TODO: implement
+    public void requestAirlift(BananaRaidMob requester, BlockPos destination) {
+        UUID requestUUID = requester.getUUID();
+        HashMap<UUID, AirliftRequest> requests = getAirliftRequests();
+
+        requests.computeIfPresent(requestUUID, (uuid, req) -> {
+            req.updateRequest(requester, destination);
+            return req;
+        });
+
+        requests.computeIfAbsent(requestUUID, uuid -> new AirliftRequest(this, requester, destination));
+    }
+
+    public void removeAirliftRequest(UUID requesterUUID) {
+        getAirliftRequests().remove(requesterUUID);
+    }
+
+    public HashMap<UUID, AirliftRequest> getAirliftRequests() {
+        return airliftRequests;
     }
 
     public void registerSpawnedEntity(UUID uuid) {
@@ -99,6 +129,102 @@ public class BananaRaid {
 
     public ServerLevel getLevel() {
         return level;
+    }
+
+    public static class AirliftRequest {
+        private final WeakReference<BananaRaid> raid;
+        private final WeakReference<BananaRaidMob> requester;
+        private final UUID requesterUUID;
+        private BlockPos from;
+        private BlockPos to;
+        private final float weightCoefficient;
+        private final float baseDistance;
+        private long timestamp;
+
+        private boolean pleaseKillMe = false;
+
+        public static final float MAX_WEIGHT_AT_MIN_DISTANCE = 10;
+        public static final float MIN_WEIGHT_FROM_DISTANCE = 0.05f;
+        public static final float DISTANCE_UNTIL_ZERO = 40f;
+
+        public static final long TICKS_UNTIL_EXPIRE = 1200;
+
+        public AirliftRequest(BananaRaid raid, BananaRaidMob requester, BlockPos destination) {
+            this(raid, requester, requester.blockPosition(), destination);
+        }
+
+        public AirliftRequest(BananaRaid raid, BananaRaidMob requester, BlockPos from, BlockPos to) {
+            this.raid = new WeakReference<>(raid);
+            this.requester = new WeakReference<>(requester);
+            this.requesterUUID = requester.getUUID();
+            this.from = from;
+            this.to = to;
+            this.weightCoefficient = requester.getAirliftWeight();
+            this.baseDistance = (float)Math.sqrt(from.distSqr(to));
+            this.timestamp = requester.level().getGameTime();
+        }
+
+        public void updateRequest(BananaRaidMob requester, BlockPos destination) {
+            updateRequest(requester, requester.blockPosition(), destination);
+        }
+
+        public void updateRequest(BananaRaidMob requester, BlockPos from, BlockPos to) {
+            if (requester != getRequester()) throw new IllegalArgumentException("Must give a requester that matches the one that originally created the request");
+            this.timestamp = requester.level().getGameTime();
+            this.from = from;
+            this.to = to;
+        }
+
+        public UUID getRequesterUUID() {
+            return requesterUUID;
+        }
+
+        public BananaRaid getRaid() {
+            return getFromWeakReference(raid);
+        }
+
+        public BananaRaidMob getRequester() {
+            return getFromWeakReference(requester);
+        }
+
+        private <T> T getFromWeakReference(WeakReference<T> reference) {
+            T deferenced = reference.get();
+            if (deferenced == null) {
+                pleaseKillMe = true;
+            }
+            return deferenced;
+        }
+
+
+        public BlockPos getStartingPosition() {
+            return from;
+        }
+
+        public BlockPos getEndingPosition() {
+            return to;
+        }
+
+        public float calculateWeight(BlockPos positionOfGreg) {
+            float distance = (float)Math.sqrt(positionOfGreg.distSqr(from)) + baseDistance;
+            float weightFromProximity = MAX_WEIGHT_AT_MIN_DISTANCE * (1 - Mth.clamp((distance / DISTANCE_UNTIL_ZERO), 0, 1));
+            return weightCoefficient * Math.max(MIN_WEIGHT_FROM_DISTANCE, weightFromProximity);
+        }
+
+        public boolean shouldExpire() {
+            BananaRaidMob raidMob = getFromWeakReference(requester);
+            if (raidMob == null) {
+                pleaseKillMe = true;
+                return true;
+            }
+            long time = raidMob.level().getGameTime();
+
+            if (time - timestamp > TICKS_UNTIL_EXPIRE) {
+                pleaseKillMe = true;
+                return true;
+            }
+
+            return pleaseKillMe || getFromWeakReference(raid) == null || getFromWeakReference(requester) == null;
+        }
     }
 
     public enum EnemyTypes {
