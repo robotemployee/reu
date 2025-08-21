@@ -5,11 +5,13 @@ import com.robotemployee.reu.banana.entity.ai.MultiGoal;
 import com.robotemployee.reu.banana.entity.extra.MultiMoveControl;
 import com.robotemployee.reu.banana.entity.extra.MultiPathNavigation;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.FlyingMoveControl;
@@ -83,17 +85,23 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         * */
     }
 
-    public void startFlying() {
+    public void startFlying(boolean quietly) {
         setVisualState(VisualState.TAKING_OFF);
         getMultiMoveControl().setMovement(MoveControlMode.FLYING);
-        getMultiPathNavigation().setNavigationLoudly(MoveControlMode.FLYING);
+
+        if (quietly) getMultiPathNavigation().setNavigationQuietly(MoveControlMode.FLYING);
+        else getMultiPathNavigation().setNavigationLoudly(MoveControlMode.FLYING);
+
         entityData.set(IS_FLYING, true);
     }
 
-    public void stopFlying() {
+    public void stopFlying(boolean quietly) {
         setVisualState(VisualState.LANDING);
         getMultiMoveControl().setMovement(MoveControlMode.GROUNDED);
-        getMultiPathNavigation().setNavigationLoudly(MoveControlMode.GROUNDED);
+
+        if (quietly) getMultiPathNavigation().setNavigationQuietly(MoveControlMode.GROUNDED);
+        else getMultiPathNavigation().setNavigationLoudly(MoveControlMode.GROUNDED);
+
         entityData.set(IS_FLYING, false);
     }
 
@@ -265,12 +273,47 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         }
     }
 
-    // todo implement
-    // use the behavior mode in this calsss
-    public static class TakeOffToReachGoal extends Goal {
+    // todo test
+    public static class SwitchFlightModeGoal extends Goal {
+        public final GregEntity greg;
+        public SwitchFlightModeGoal(GregEntity greg) {
+            this.greg = greg;
+        }
+        static final int PATHING_CHECK_INTERVAL = 40;
+        int ticksUntilNextPathingCheck = PATHING_CHECK_INTERVAL;
 
         @Override
         public boolean canUse() {
+            MoveControlMode moveMode = greg.getMultiPathNavigation().getNavKey();
+            MultiPathNavigation<MoveControlMode> navigation = greg.getMultiPathNavigation();
+
+            if (ticksUntilNextPathingCheck-- > 0) return false;
+            ticksUntilNextPathingCheck = PATHING_CHECK_INTERVAL;
+
+            LivingEntity target = greg.getTarget();
+            BlockPos navTarget = navigation.getTargetPos();
+            BlockPos gregTarget = target != null ? target.blockPosition() : null;
+            BlockPos generalTarget = navTarget == null ? gregTarget : navTarget;
+            boolean hasTarget = generalTarget != null;
+            boolean pathSucks = hasTarget && navigation.createPath(generalTarget, 64) != null;
+
+            if (moveMode == MoveControlMode.GROUNDED) {
+                if (pathSucks) {
+                    greg.startFlying(false);
+                    LivingEntity targetEntity = greg.getTarget();
+                    if (targetEntity != null) navigation.moveTo(greg.getTarget(), 2);
+                }
+            } else if (!pathSucks) {
+                boolean goodGroundPath = navigation.getNavigation(MoveControlMode.GROUNDED).createPath(generalTarget, 48) != null;
+                if (goodGroundPath) {
+                    greg.stopFlying(true);
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean canContinueToUse() {
             return false;
         }
     }

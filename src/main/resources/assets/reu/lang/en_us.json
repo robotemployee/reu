@@ -61,5 +61,8 @@
 
 
   "entity.reu.devil": "Devil",
-  "item.reu.devil_spawn_egg": "Devil Spawn Egg"
+  "item.reu.devil_spawn_egg": "Devil Spawn Egg",
+
+  "entity.reu.greg": "Maroon",
+  "item.reu.greg_spawn_egg": "Maroon Spawn Egg"
 }

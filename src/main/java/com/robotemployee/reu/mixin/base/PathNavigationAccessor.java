@@ -14,6 +14,9 @@ import java.util.Set;
 @Mixin(PathNavigation.class)
 public interface PathNavigationAccessor {
 
+    @Accessor("pathFinder")
+    PathFinder getPathFinder();
+
     @Accessor("speedModifier")
     double getSpeedModifier();
 
