@@ -24,6 +24,6 @@ public class GregEntityModel extends GeoModel<GregEntity> {
 
     @Override
     public ResourceLocation getAnimationResource(GregEntity animatable) {
-        return new ResourceLocation(RobotEmployeeUtils.MODID, "textures/entity/greg/greg.animation.json");
+        return new ResourceLocation(RobotEmployeeUtils.MODID, "animations/greg.animation.json");
     }
 }

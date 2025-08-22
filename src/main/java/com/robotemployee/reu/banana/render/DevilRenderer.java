@@ -157,7 +157,7 @@ public class DevilRenderer extends BananaRenderer<DevilEntity> {
 
     public void renderProtectionBeam(@NotNull LivingEntity fromEntity, @NotNull LivingEntity toEntity, float partialTick, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight) {
         Vector3f emanatingFrom = fromEntity.getPosition(partialTick).toVector3f();
-        Vector3f receiving = toEntity.getPosition(partialTick).toVector3f();
+        Vector3f receiving = toEntity.getPosition(partialTick).add(0, toEntity.getBbHeight() * 0.5, 0).toVector3f();
         Vector3f cameraPos = entityRenderDispatcher.camera.getPosition().toVector3f();
         float stretchFactor = STRETCH_FACTOR;
         float width = BEAM_WIDTH;

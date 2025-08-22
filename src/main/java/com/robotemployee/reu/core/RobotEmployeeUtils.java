@@ -2,7 +2,6 @@ package com.robotemployee.reu.core;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.banana.BananaRaidEvents;
-import com.robotemployee.reu.core.registry.*;
 import com.robotemployee.reu.extra.*;
 import com.robotemployee.reu.extra.music_disc_obtainment.ClientDiscEvents;
 import com.robotemployee.reu.extra.music_disc_obtainment.GenericDiscEvents;

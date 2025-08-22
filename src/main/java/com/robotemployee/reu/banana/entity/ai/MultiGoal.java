@@ -14,12 +14,10 @@ import java.util.function.Predicate;
 public abstract class MultiGoal<T> extends Goal {
     protected final Map<T, Goal> goals;
     protected T goalKey;
-    protected final Mob mob;
 
-    public MultiGoal(Mob mob, T initialGoalKey, Map<T, Goal> goals) {
+    public MultiGoal(T initialGoalKey, Map<T, Goal> goals) {
         this.goals = goals;
         this.goalKey = initialGoalKey;
-        this.mob = mob;
     }
 
     public void setGoal(T key) {
