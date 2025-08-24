@@ -22,15 +22,18 @@ public class MultiMoveControl<T> extends MoveControl {
         movementKey = initialMovementKey;
     }
 
-    public void setMovement(T newMovementKey) {
+    public void setMovement(T newMovementKey, boolean keepWantedLocation) {
         MoveControl oldMovement = getCurrentMovement();
         MoveControl newMovement = getMovement(newMovementKey);
-        double wantedX = oldMovement.getWantedX();
-        double wantedY = oldMovement.getWantedY();
-        double wantedZ = oldMovement.getWantedZ();
-        double speedmod = oldMovement.getSpeedModifier();
 
-        newMovement.setWantedPosition(wantedX, wantedY, wantedZ, speedmod);
+        if (keepWantedLocation) {
+            double wantedX = oldMovement.getWantedX();
+            double wantedY = oldMovement.getWantedY();
+            double wantedZ = oldMovement.getWantedZ();
+            double speedmod = oldMovement.getSpeedModifier();
+
+            newMovement.setWantedPosition(wantedX, wantedY, wantedZ, speedmod);
+        }
         // we can't get the operation from the oldMovement
         // and i don't know how to create an accessor in a mixin which gives you an object of a type that isn't public (MoveControl.Operation)
         // soooo we just won't copy the strafe
@@ -47,6 +50,10 @@ public class MultiMoveControl<T> extends MoveControl {
         return movements.get(movementKey);
     }
 
+    public T getKey() {
+        return movementKey;
+    }
+
     @Override
     public void tick() {
         getCurrentMovement().tick();
@@ -60,5 +67,30 @@ public class MultiMoveControl<T> extends MoveControl {
     @Override
     public void strafe(float strafeForwards, float strafeRight) {
         getCurrentMovement().strafe(strafeForwards, strafeRight);
+    }
+
+    @Override
+    public boolean hasWanted() {
+        return getCurrentMovement().hasWanted();
+    }
+
+    @Override
+    public double getSpeedModifier() {
+        return getCurrentMovement().getSpeedModifier();
+    }
+
+    @Override
+    public double getWantedX() {
+        return getCurrentMovement().getWantedX();
+    }
+
+    @Override
+    public double getWantedY() {
+        return getCurrentMovement().getWantedY();
+    }
+
+    @Override
+    public double getWantedZ() {
+        return getCurrentMovement().getWantedZ();
     }
 }

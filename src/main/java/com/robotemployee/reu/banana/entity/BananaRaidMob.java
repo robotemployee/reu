@@ -10,6 +10,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,8 +24,13 @@ public abstract class BananaRaidMob extends Monster {
     }
 
     protected BananaRaid parentRaid;
+    @Nullable
     public BananaRaid getParentRaid() {
         return parentRaid;
+    }
+
+    public boolean isInRaid() {
+        return getParentRaid() != null;
     }
 
     public void init(BananaRaid parentRaid) {
@@ -42,7 +48,6 @@ public abstract class BananaRaidMob extends Monster {
     public abstract float getAirliftWeight();
 
     // Devil Protection
-    protected ArrayList<DevilEntity> devilsProtectingMe = new ArrayList<>();
     public void startProtectionFrom(@NotNull DevilEntity devil) {
         addDevilProtectingMe(devil);
     }
@@ -53,7 +58,6 @@ public abstract class BananaRaidMob extends Monster {
     }
 
     private void addDevilProtectingMe(@NotNull DevilEntity devil) {
-        devilsProtectingMe.add(devil);
         List<Integer> ids = getDevilsProtectingMeIds();
         ids.add(devil.getId());
         saveDevilsProtectingMe(ids);
@@ -61,9 +65,8 @@ public abstract class BananaRaidMob extends Monster {
 
     private void removeDevilProtectingMe(@NotNull DevilEntity devil) {
         List<Integer> ids = getDevilsProtectingMeIds();
-        ids.remove(devil.getId());
+        ids.remove((Object)devil.getId());
         saveDevilsProtectingMe(ids);
-        devilsProtectingMe.remove(devil);
     }
 
     private void saveDevilsProtectingMe(List<Integer> ids) {
@@ -75,12 +78,9 @@ public abstract class BananaRaidMob extends Monster {
     }
 
     public List<DevilEntity> getDevilsProtectingMe() {
-        if (level().isClientSide()) {
-            List<Integer> ids = getDevilsProtectingMeIds();
-            List<DevilEntity> devils = ids.stream().map(id -> (DevilEntity)level().getEntity(id)).toList();
-            return devils;
-        }
-        return devilsProtectingMe;
+        List<Integer> ids = getDevilsProtectingMeIds();
+        List<DevilEntity> devils = ids.stream().map(id -> (DevilEntity)level().getEntity(id)).toList();
+        return devils;
     }
     public boolean isBeingProtected() {
         return getDevilsProtectingMe().size() > 0;
@@ -99,7 +99,6 @@ public abstract class BananaRaidMob extends Monster {
         return 1f;
     }
 
-
     // This is for recycling - the higher your value, the more reluctant things are to recycle you
     public abstract float getImportance();
 
@@ -108,6 +107,7 @@ public abstract class BananaRaidMob extends Monster {
     long lastAirliftRequestTime;
     public static final long AIRLIFT_REQUEST_COOLDOWN = 200;
     public void airliftMePrettyPlease(BlockPos destination) {
+        if (!isInRaid()) return;
         if (level().getGameTime() - lastAirliftRequestTime < AIRLIFT_REQUEST_COOLDOWN) return;
         forceRequestAirlift(destination);
     }

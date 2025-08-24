@@ -49,6 +49,7 @@ public class MultiPathNavigation<T> extends PathNavigation {
             double speedMod = ((PathNavigationAccessor) current).getSpeedModifier();
 
             newcomer.moveTo(targetPosition.getX(), targetPosition.getY(), targetPosition.getZ(), speedMod);
+            newcomer.setSpeedModifier(speedMod);
         }
         navKey = key;
     }

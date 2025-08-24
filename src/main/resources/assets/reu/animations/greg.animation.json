@@ -1,7 +1,7 @@
 {
 	"format_version": "1.8.0",
 	"animations": {
-		"animation.model.walk": {
+		"move.walk": {
 			"loop": true,
 			"animation_length": 0.5,
 			"bones": {
@@ -74,14 +74,14 @@
 							"vector": [0, 0, 0]
 						},
 						"0.125": {
-							"vector": [0, 0, 2],
+							"vector": [0, -3, 2],
 							"easing": "easeOutQuart"
 						},
 						"0.25": {
 							"vector": [0, 0, 0]
 						},
 						"0.375": {
-							"vector": [0, 0, -2],
+							"vector": [0, 3, -2],
 							"easing": "easeOutQuart"
 						},
 						"0.5": {
@@ -91,8 +91,7 @@
 				}
 			}
 		},
-		"animation.model.start_flying": {
-			"loop": "hold_on_last_frame",
+		"misc.take_off": {
 			"animation_length": 2,
 			"bones": {
 				"legs": {
@@ -149,7 +148,7 @@
 				}
 			}
 		},
-		"animation.model.flying": {
+		"move.fly": {
 			"loop": true,
 			"animation_length": 0.75,
 			"bones": {
@@ -170,7 +169,7 @@
 				}
 			}
 		},
-		"animation.model.stop_flying": {
+		"misc.land": {
 			"animation_length": 2,
 			"bones": {
 				"legs": {
@@ -205,7 +204,7 @@
 				}
 			}
 		},
-		"animation.model.grab": {
+		"misc.grab": {
 			"loop": "hold_on_last_frame",
 			"animation_length": 0.5,
 			"bones": {
@@ -259,7 +258,7 @@
 				}
 			}
 		},
-		"animation.model.lookAt": {
+		"misc.lookAt": {
 			"loop": "hold_on_last_frame",
 			"animation_length": 0.5,
 			"bones": {
@@ -276,7 +275,7 @@
 				}
 			}
 		},
-		"animation.model.stopLookingAt": {
+		"misc.stopLookingAt": {
 			"animation_length": 0.5,
 			"bones": {
 				"head": {

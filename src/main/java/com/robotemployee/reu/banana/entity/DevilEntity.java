@@ -3,8 +3,7 @@ package com.robotemployee.reu.banana.entity;
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.banana.BananaRaid;
 import com.robotemployee.reu.banana.entity.ai.FlyingWanderGoal;
-import com.robotemployee.reu.banana.entity.ai.FollowSpecificMobGoal;
-import net.minecraft.client.multiplayer.ClientLevel;
+import com.robotemployee.reu.banana.entity.ai.FollowMobTypeGoal;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -23,6 +22,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.FlyingMoveControl;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
+import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.pathfinder.Path;
@@ -30,9 +30,9 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 import org.slf4j.Logger;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
@@ -41,9 +41,7 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.UUID;
 
 public class DevilEntity extends FlyingBananaRaidMob implements GeoEntity {
 
@@ -167,8 +165,8 @@ public class DevilEntity extends FlyingBananaRaidMob implements GeoEntity {
     }
 
     // todo: set to BananaRaidMob.class
-    public static final Class<? extends LivingEntity> targetClass = Pig.class;
-    public static class ProtectGoal extends FollowSpecificMobGoal {
+    public static final Class<? extends LivingEntity> targetClass = BananaRaidMob.class;
+    public static class ProtectGoal extends FollowMobTypeGoal {
 
         static final Logger LOGGER = LogUtils.getLogger();
 
@@ -206,7 +204,7 @@ public class DevilEntity extends FlyingBananaRaidMob implements GeoEntity {
 
         protected void dodge() {
             RandomSource random = follower.getRandom();
-            Vec3 addedMovement = new Vec3((random.nextFloat() - 0.5), (random.nextFloat() - 0.5) * 0.25, (random.nextFloat() - 0.5))
+            Vec3 addedMovement = new Vec3((random.nextFloat() - 0.5), (random.nextFloat() - 0.5) * 0.15, (random.nextFloat() - 0.5))
                     .scale(2 * random.nextFloat() * DODGE_FORCE);
             follower.addDeltaMovement(addedMovement);
         }
@@ -216,6 +214,7 @@ public class DevilEntity extends FlyingBananaRaidMob implements GeoEntity {
             //LOGGER.info("Applying buffs to target at" + getTarget().blockPosition());
         }
 
+        /*
         @Override
         protected Path pathFromPositionOfTarget(BlockPos targetPos) {
             RandomSource random = follower.getRandom();
@@ -240,6 +239,17 @@ public class DevilEntity extends FlyingBananaRaidMob implements GeoEntity {
 
             return result;
         }
+         */
+
+        @Override
+        protected BlockPos getMoveToPos() {
+            double angle = ((follower.level().getGameTime() % 80) / 80d) * 2 * Math.PI;
+            BlockPos target = getTarget().blockPosition();
+            double xOffset = Math.cos(angle) * SPREAD;
+            double yOffset = 6;
+            double zOffset = Math.sin(angle) * SPREAD;
+            return target.offset((int)Math.ceil(xOffset), (int)Math.floor(yOffset), (int)Math.ceil(zOffset));
+        }
 
         @Override
         protected double getWeightForEntity(LivingEntity entity) {
@@ -254,7 +264,7 @@ public class DevilEntity extends FlyingBananaRaidMob implements GeoEntity {
         public boolean isValidTarget(@NotNull LivingEntity entity) {
             // todo: uncomment
 
-            // if (!((BananaRaidMob)entity).canDevilProtect()) return false;
+            if (!((BananaRaidMob)entity).canDevilProtect()) return false;
             return super.isValidTarget(entity);
         }
 

@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import java.util.Comparator;
 import java.util.List;
 
-public class FollowSpecificMobGoal extends Goal {
+public class FollowMobTypeGoal extends Goal {
 
     protected final Mob follower;
     // in the case that you want to store the target elsewhere, there are methods you can override for getting and setting it
@@ -29,7 +29,7 @@ public class FollowSpecificMobGoal extends Goal {
 
     static final Logger LOGGER = LogUtils.getLogger();
 
-    public FollowSpecificMobGoal(Mob follower, Class<? extends LivingEntity> targetedClass, double speedModifier, double desiredMinDistance, double desiredMaxDistance, double scanRange, int scanInterval) {
+    public FollowMobTypeGoal(Mob follower, Class<? extends LivingEntity> targetedClass, double speedModifier, double desiredMinDistance, double desiredMaxDistance, double scanRange, int scanInterval) {
         this.follower = follower;
         this.targetedClass = targetedClass;
         this.speedModifier = speedModifier;

@@ -13,6 +13,7 @@ import com.robotemployee.reu.registry.ModAdvancements;
 import com.robotemployee.reu.registry.ModItems;
 import com.robotemployee.reu.registry.ModSounds;
 import com.robotemployee.reu.mobeffect.TummyAcheMobEffect;
+import com.robotemployee.reu.util.LevelUtils;
 import com.supermartijn642.rechiseled.ChiselItem;
 import io.wispforest.accessories.api.AccessoriesCapability;
 import net.minecraft.core.BlockPos;
@@ -427,17 +428,8 @@ public class GenericDiscEvents {
 
         // simple algorithm to find the block position corresponding to the air above the ground below us
         // this is important because if we directly check the player's y-position
-        BlockPos airAboveGroundPos = player.blockPosition();
-        int depth = 4;
-        for (int i = 0; i < depth; i++) {
-            BlockPos pos = airAboveGroundPos.below();
-            BlockState examined = level.getBlockState(pos);
-            boolean hasCollision = !examined.getCollisionShape(level, pos).isEmpty();
-            boolean air = examined.isAir();
+        BlockPos groundPos = LevelUtils.findSolidGroundBelow(level, player.blockPosition());
 
-            if (air || !hasCollision) airAboveGroundPos = airAboveGroundPos.below();
-            else break;
-        }
 
         //level.g
 
@@ -448,7 +440,7 @@ public class GenericDiscEvents {
         // these are all summarized into unreachable
         boolean pathCantReach = !pathNull && !path.canReach();
         boolean pathTargetTooFar = !pathNull && !path.getTarget().closerToCenterThan(player.position(), 1);
-        boolean pathEndNodeVerticalTooFar = pathHasNodes && airAboveGroundPos.getY() - path.getEndNode().asBlockPos().getY() > 1;
+        boolean pathEndNodeVerticalTooFar = pathHasNodes && groundPos != null && path.getEndNode() != null && (groundPos.above().getY() - path.getEndNode().asBlockPos().getY() > 1);
         // no longer dependent on path existing
         boolean footObscured = footResult.getType() == HitResult.Type.BLOCK && badFootBlock;
         boolean eyeObscured = eyeResult.getType() == HitResult.Type.BLOCK;
