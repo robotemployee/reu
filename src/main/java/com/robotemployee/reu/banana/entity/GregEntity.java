@@ -95,9 +95,14 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
     public void baseTick() {
         super.baseTick();
 
+        if (level().isClientSide()) return;
 
         //fixme logger
-        LOGGER.info(String.format("speedInfo (%s): Flying: %s Flyspeed... Base: %.1f Mod: %.1f, Gndspeed... Base: %.1f Mod: %.1f ... Speedmod: %.1f Speed: %.1f Flyspeed: %.1f",
+        LOGGER.info(String.format("speedInfo (%s): " +
+                        "Flying: %s Flyspeed... Base: %.1f Mod: %.1f, " +
+                        "Gndspeed... Base: %.1f Mod: %.1f ... " +
+                        "Speedmod: %.1f Speed: %.1f Flyspeed: %.1f " +
+                        "isFallFlying: %s, onGround: %s, shouldDiscardFriction: %s",
                 level().isClientSide() ? "CLIENT" : "LEVEL",
                 getMultiMoveControl().getKey() == MoveControlMode.FLYING,
                 getAttributeBaseValue(Attributes.FLYING_SPEED),
@@ -106,10 +111,12 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
                 getAttribute(Attributes.MOVEMENT_SPEED).getModifiers().stream().mapToDouble(AttributeModifier::getAmount).sum(),
                 getMoveControl().getSpeedModifier(),
                 getSpeed(),
-                getFlyingSpeed()
+                getFlyingSpeed(),
+                isFallFlying(),
+                onGround(),
+                shouldDiscardFriction()
         ));
 
-        if (level().isClientSide()) return;
         boolean flying = isFlying();
         if (!flying && onGround() && getMoveControl().hasWanted() && getDeltaMovement().lengthSqr() < 0.05) {
             if (ticksWantedPosWithoutMoving++ >= ticksUntilJumpWhenStuck) {
@@ -258,9 +265,6 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
     }
     // this function is called in the ai goal that tells greg to actually change its flying state when it comes to the ground
     public void stopFlying(boolean quietPathNav) {
-        setSprinting(true);
-        setNoGravity(false);
-        setDeltaMovement(Vec3.ZERO);
         setVisualState(VisualState.GROUNDED);
         // fixme inspect keepWantedLocation
         getMultiMoveControl().setMovement(MoveControlMode.GROUNDED, true);
@@ -274,6 +278,8 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
          */
         //setSpeed(0);
 
+        setNoGravity(false);
+        setDeltaMovement(Vec3.ZERO);
         entityData.set(IS_FLYING, false);
     }
 
@@ -686,8 +692,9 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
             LOGGER.info("Greg coming to the ground. Detected ground pos: " + groundPos);
             //greg.addDeltaMovement(new Vec3(0, -0.03, 0));
             if (greg.getNavigation().isInProgress()) greg.getNavigation().stop();
-            if (greg.getMoveControl().getWantedY() != groundPos.getY()) greg.getMoveControl().setWantedPosition(groundPos.getX(), groundPos.getY(), groundPos.getZ(), 0.7);
-            if (groundPos.getX() != greg.getX() || groundPos.getY() != greg.getY()) findGround();
+            greg.addDeltaMovement(new Vec3(0, -0.025, 0));
+            //if (greg.getMoveControl().getWantedY() != groundPos.getY()) greg.getMoveControl().setWantedPosition(groundPos.getX(), groundPos.getY(), groundPos.getZ(), 0.7);
+            if (groundPos.getX() != greg.getX() || groundPos.getZ() != greg.getZ()) findGround();
             if (!isCloseToLand()) return;
             if (greg.getVisualState() == VisualState.FLYING) greg.startLandingAnim();
         }
@@ -720,10 +727,14 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
     }
 
     public void groundTravel(@NotNull Vec3 vec) {
+        //fixme logger
+        LOGGER.info("Ground travel");
         super.travel(vec);
     }
 
     public void flyTravel(@NotNull Vec3 vec) {
+        //fixme logger
+        LOGGER.info("Fly travel");
         if (this.isControlledByLocalInstance()) {
             if (this.isInWater()) {
                 this.moveRelative(0.02F, vec);

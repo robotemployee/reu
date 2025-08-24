@@ -1,5 +1,6 @@
 package com.robotemployee.reu.banana.entity.extra;
 
+import com.robotemployee.reu.mixin.base.MoveControlAccessor;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.control.MoveControl;
 
@@ -25,6 +26,7 @@ public class MultiMoveControl<T> extends MoveControl {
     public void setMovement(T newMovementKey, boolean keepWantedLocation) {
         MoveControl oldMovement = getCurrentMovement();
         MoveControl newMovement = getMovement(newMovementKey);
+        ((MoveControlAccessor)(Object)oldMovement).reu$stop();
 
         if (keepWantedLocation) {
             double wantedX = oldMovement.getWantedX();
@@ -33,6 +35,7 @@ public class MultiMoveControl<T> extends MoveControl {
             double speedmod = oldMovement.getSpeedModifier();
 
             newMovement.setWantedPosition(wantedX, wantedY, wantedZ, speedmod);
+            oldMovement.hasWanted()
         }
         // we can't get the operation from the oldMovement
         // and i don't know how to create an accessor in a mixin which gives you an object of a type that isn't public (MoveControl.Operation)
