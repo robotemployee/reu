@@ -6,6 +6,8 @@ import com.robotemployee.reu.banana.entity.ai.MultiGoal;
 import com.robotemployee.reu.banana.entity.extra.MultiMoveControl;
 import com.robotemployee.reu.banana.entity.extra.MultiPathNavigation;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
+import com.robotemployee.reu.mixin.base.EntityAccessor;
+import com.robotemployee.reu.registry.ModSounds;
 import com.robotemployee.reu.util.LevelUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -15,10 +17,11 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.*;
 import net.minecraft.world.entity.ai.control.FlyingMoveControl;
 import net.minecraft.world.entity.ai.control.MoveControl;
@@ -27,12 +30,16 @@ import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
+import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.ForgeMod;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -47,8 +54,10 @@ import software.bernie.geckolib.network.SerializableDataTicket;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.HashMap;
+import java.util.UUID;
 
 public class GregEntity extends BananaRaidMob implements GeoEntity {
+    // todo remove all the junk at the bottom
     static final Logger LOGGER = LogUtils.getLogger();
 
     public static final EntityDataAccessor<Boolean> IS_FLYING = SynchedEntityData.defineId(GregEntity.class, EntityDataSerializers.BOOLEAN);
@@ -102,19 +111,37 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
                         "Flying: %s Flyspeed... Base: %.1f Mod: %.1f, " +
                         "Gndspeed... Base: %.1f Mod: %.1f ... " +
                         "Speedmod: %.1f Speed: %.1f Flyspeed: %.1f " +
-                        "isFallFlying: %s, onGround: %s, shouldDiscardFriction: %s",
+                        "isFallFlying: %s, onGround: %s, shouldDiscardFriction: %s, isNoGravity: %s, isJumping: %s, isComingToLand: %s" +
+                        "Fly... hasWanted: %s isPathing: %s Gnd... hasWanted: %s isPathing: %s " +
+                        "Desired movement.. Fwd: %s Strafe: %s Vert:%s",
                 level().isClientSide() ? "CLIENT" : "LEVEL",
+
                 getMultiMoveControl().getKey() == MoveControlMode.FLYING,
                 getAttributeBaseValue(Attributes.FLYING_SPEED),
-                getAttribute(Attributes.FLYING_SPEED).getModifiers().stream().mapToDouble(AttributeModifier::getAmount).sum(),
+                getAttributeValue(Attributes.FLYING_SPEED) - getAttributeBaseValue(Attributes.FLYING_SPEED),
+
                 getAttributeBaseValue(Attributes.MOVEMENT_SPEED),
-                getAttribute(Attributes.MOVEMENT_SPEED).getModifiers().stream().mapToDouble(AttributeModifier::getAmount).sum(),
+                getAttributeValue(Attributes.MOVEMENT_SPEED) - getAttributeBaseValue(Attributes.MOVEMENT_SPEED),
+
                 getMoveControl().getSpeedModifier(),
                 getSpeed(),
                 getFlyingSpeed(),
+
                 isFallFlying(),
                 onGround(),
-                shouldDiscardFriction()
+                shouldDiscardFriction(),
+                isNoGravity(),
+                jumping,
+                isComingToLand(),
+
+                getMultiMoveControl().getMovement(MoveControlMode.FLYING).hasWanted(),
+                getMultiPathNavigation().getNavigation(MoveControlMode.FLYING).isInProgress(),
+                getMultiMoveControl().getMovement(MoveControlMode.GROUNDED).hasWanted(),
+                getMultiPathNavigation().getNavigation(MoveControlMode.GROUNDED).isInProgress(),
+
+                zza,
+                xxa,
+                yya
         ));
 
         boolean flying = isFlying();
@@ -150,8 +177,9 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
                 //LOGGER.info(String.format("gametime: %s, timestamp: %s, duration: %s", level().getGameTime(), timestampOfAnimationStarted, duration));
                 if (level().getGameTime() - timestampOfAnimationStarted > duration) {
                     //LOGGER.info("Animation finished, running logic");
-                    if (landing) stopFlying(false);
-                    else startFlying(false);
+                    // todo inspect
+                    if (landing) stopFlying(true);
+                    else startFlying(true);
                 }
                 break;
         }
@@ -279,7 +307,8 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         //setSpeed(0);
 
         setNoGravity(false);
-        setDeltaMovement(Vec3.ZERO);
+        Vec3 motion = getDeltaMovement();
+        setDeltaMovement(motion.x, 0, motion.z);
         entityData.set(IS_FLYING, false);
     }
 
@@ -692,8 +721,8 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
             LOGGER.info("Greg coming to the ground. Detected ground pos: " + groundPos);
             //greg.addDeltaMovement(new Vec3(0, -0.03, 0));
             if (greg.getNavigation().isInProgress()) greg.getNavigation().stop();
-            greg.addDeltaMovement(new Vec3(0, -0.025, 0));
-            //if (greg.getMoveControl().getWantedY() != groundPos.getY()) greg.getMoveControl().setWantedPosition(groundPos.getX(), groundPos.getY(), groundPos.getZ(), 0.7);
+            //greg.addDeltaMovement(new Vec3(0, -0.025, 0));
+            if (greg.getMoveControl().getWantedY() != groundPos.getY()) greg.getMoveControl().setWantedPosition(groundPos.getX(), groundPos.getY(), groundPos.getZ(), 0.7);
             if (groundPos.getX() != greg.getX() || groundPos.getZ() != greg.getZ()) findGround();
             if (!isCloseToLand()) return;
             if (greg.getVisualState() == VisualState.FLYING) greg.startLandingAnim();
@@ -720,21 +749,19 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         if (tag.getBoolean(IS_FLYING_PATH)) startFlying(true);
     }
 
+    /*
     @Override
     public void travel(Vec3 vec) {
         if (isFlying()) flyTravel(vec);
         else groundTravel(vec);
     }
+     */
 
     public void groundTravel(@NotNull Vec3 vec) {
-        //fixme logger
-        LOGGER.info("Ground travel");
         super.travel(vec);
     }
 
     public void flyTravel(@NotNull Vec3 vec) {
-        //fixme logger
-        LOGGER.info("Fly travel");
         if (this.isControlledByLocalInstance()) {
             if (this.isInWater()) {
                 this.moveRelative(0.02F, vec);
@@ -781,5 +808,216 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
     public enum BehaviorMode {
         BRAVE,
         FEARFUL
+    }
+
+
+
+    private static final AttributeModifier SLOW_FALLING = new AttributeModifier(UUID.fromString("A5B6CF2A-2F7C-31EF-9022-7C3E7D5E6ABA"), "Slow falling acceleration reduction", -0.07, AttributeModifier.Operation.ADDITION); // Add -0.07 to 0.08 so we get the vanilla default of 0.01
+    @Override
+    public void travel(Vec3 p_21280_) {
+        if (this.isControlledByLocalInstance()) {
+            double d0 = 0.08D;
+            AttributeInstance gravity = this.getAttribute(ForgeMod.ENTITY_GRAVITY.get());
+            boolean flag = this.getDeltaMovement().y <= 0.0D;
+            if (flag && this.hasEffect(MobEffects.SLOW_FALLING)) {
+                if (!gravity.hasModifier(SLOW_FALLING)) gravity.addTransientModifier(SLOW_FALLING);
+            } else if (gravity.hasModifier(SLOW_FALLING)) {
+                gravity.removeModifier(SLOW_FALLING);
+            }
+            d0 = gravity.getValue();
+
+            FluidState fluidstate = this.level().getFluidState(this.blockPosition());
+            if ((this.isInWater() || (this.isInFluidType(fluidstate) && fluidstate.getFluidType() != ForgeMod.LAVA_TYPE.get())) && this.isAffectedByFluids() && !this.canStandOnFluid(fluidstate)) {
+                LOGGER.info("In water or non-lava fluid");
+                if (this.isInWater() || (this.isInFluidType(fluidstate) && !this.moveInFluid(fluidstate, p_21280_, d0))) {
+                    LOGGER.info("Passed second water + non-lava check");
+                    double d9 = this.getY();
+                    float f4 = this.isSprinting() ? 0.9F : this.getWaterSlowDown();
+                    float f5 = 0.02F;
+                    float f6 = (float) EnchantmentHelper.getDepthStrider(this);
+                    if (f6 > 3.0F) {
+                        f6 = 3.0F;
+                    }
+
+                    if (!this.onGround()) {
+                        f6 *= 0.5F;
+                    }
+
+                    if (f6 > 0.0F) {
+                        f4 += (0.54600006F - f4) * f6 / 3.0F;
+                        f5 += (this.getSpeed() - f5) * f6 / 3.0F;
+                    }
+
+                    if (this.hasEffect(MobEffects.DOLPHINS_GRACE)) {
+                        f4 = 0.96F;
+                    }
+
+                    f5 *= (float)this.getAttribute(ForgeMod.SWIM_SPEED.get()).getValue();
+                    this.moveRelative(f5, p_21280_);
+                    this.move(MoverType.SELF, this.getDeltaMovement());
+                    Vec3 vec36 = this.getDeltaMovement();
+                    if (this.horizontalCollision && this.onClimbable()) {
+                        vec36 = new Vec3(vec36.x, 0.2D, vec36.z);
+                    }
+
+                    this.setDeltaMovement(vec36.multiply((double)f4, (double)0.8F, (double)f4));
+                    Vec3 vec32 = this.getFluidFallingAdjustedMovement(d0, flag, this.getDeltaMovement());
+                    this.setDeltaMovement(vec32);
+                    if (this.horizontalCollision && this.isFree(vec32.x, vec32.y + (double)0.6F - this.getY() + d9, vec32.z)) {
+                        this.setDeltaMovement(vec32.x, (double)0.3F, vec32.z);
+                    }
+                }
+            } else if (this.isInLava() && this.isAffectedByFluids() && !this.canStandOnFluid(fluidstate)) {
+                LOGGER.info("In lava and affected by fluids");
+                double d8 = this.getY();
+                this.moveRelative(0.02F, p_21280_);
+                this.move(MoverType.SELF, this.getDeltaMovement());
+                if (this.getFluidHeight(FluidTags.LAVA) <= this.getFluidJumpThreshold()) {
+                    LOGGER.info("Coping and seething in lava");
+                    this.setDeltaMovement(this.getDeltaMovement().multiply(0.5D, (double)0.8F, 0.5D));
+                    Vec3 vec33 = this.getFluidFallingAdjustedMovement(d0, flag, this.getDeltaMovement());
+                    this.setDeltaMovement(vec33);
+                } else {
+                    LOGGER.info("Not coping and seething in lava");
+                    this.setDeltaMovement(this.getDeltaMovement().scale(0.5D));
+                }
+
+                if (!this.isNoGravity()) {
+                    LOGGER.info("Has gravity in lava. wow");
+                    this.setDeltaMovement(this.getDeltaMovement().add(0.0D, -d0 / 4.0D, 0.0D));
+                } else LOGGER.info("Has no gravity in lava. wow");
+
+                Vec3 vec34 = this.getDeltaMovement();
+                if (this.horizontalCollision && this.isFree(vec34.x, vec34.y + (double)0.6F - this.getY() + d8, vec34.z)) {
+                    LOGGER.info("lava weird horizontal collision check, prolly being pushed");
+                    this.setDeltaMovement(vec34.x, (double)0.3F, vec34.z);
+                }
+            } else if (this.isFallFlying()) {
+                LOGGER.info("Fall flying");
+                this.checkSlowFallDistance();
+                Vec3 vec3 = this.getDeltaMovement();
+                Vec3 vec31 = this.getLookAngle();
+                float f = this.getXRot() * ((float)Math.PI / 180F);
+                double d1 = Math.sqrt(vec31.x * vec31.x + vec31.z * vec31.z);
+                double d3 = vec3.horizontalDistance();
+                double d4 = vec31.length();
+                double d5 = Math.cos((double)f);
+                d5 = d5 * d5 * Math.min(1.0D, d4 / 0.4D);
+                vec3 = this.getDeltaMovement().add(0.0D, d0 * (-1.0D + d5 * 0.75D), 0.0D);
+                if (vec3.y < 0.0D && d1 > 0.0D) {
+                    LOGGER.info("First bullshit vec check passed");
+                    double d6 = vec3.y * -0.1D * d5;
+                    vec3 = vec3.add(vec31.x * d6 / d1, d6, vec31.z * d6 / d1);
+                } else LOGGER.info("First bullshit vec check failed");
+
+                if (f < 0.0F && d1 > 0.0D) {
+                    LOGGER.info("Second bullshit vec check passed");
+                    double d10 = d3 * (double)(-Mth.sin(f)) * 0.04D;
+                    vec3 = vec3.add(-vec31.x * d10 / d1, d10 * 3.2D, -vec31.z * d10 / d1);
+                } LOGGER.info("Second bullshit vec check failed");
+
+                if (d1 > 0.0D) {
+                    LOGGER.info("Third bullshit vec check passed");
+                    vec3 = vec3.add((vec31.x / d1 * d3 - vec3.x) * 0.1D, 0.0D, (vec31.z / d1 * d3 - vec3.z) * 0.1D);
+                } else LOGGER.info("Third bullshit vec check failed");
+
+                this.setDeltaMovement(vec3.multiply((double)0.99F, (double)0.98F, (double)0.99F));
+                this.move(MoverType.SELF, this.getDeltaMovement());
+                if (this.horizontalCollision && !this.level().isClientSide) {
+                    LOGGER.info("Fourth vec check passed");
+                    double d11 = this.getDeltaMovement().horizontalDistance();
+                    double d7 = d3 - d11;
+                    float f1 = (float)(d7 * 10.0D - 3.0D);
+                    if (f1 > 0.0F) {
+                        LOGGER.info("Embedded fourth vec check passed");
+                        this.playSound(ModSounds.MEH_CHEERING.get(), 1.0F, 1.0F);
+                        this.hurt(this.damageSources().flyIntoWall(), f1);
+                    } else LOGGER.info("Embedded fourth vec check failed");
+                } else LOGGER.info("Forth vec check failed");
+
+                if (this.onGround() && !this.level().isClientSide) {
+                    LOGGER.info("Weird flag being set");
+                    this.setSharedFlag(7, false);
+                } LOGGER.info("Weird flag not being set");
+            } else {
+                LOGGER.info("The everything else section");
+                LOGGER.info(String.format("Pre-friction state: deltaMovement=%s, onGround=%s, noGravity=%s", getDeltaMovement(), onGround(), isNoGravity()));
+                BlockPos blockpos = this.getBlockPosBelowThatAffectsMyMovement();
+                float f2 = this.level().getBlockState(this.getBlockPosBelowThatAffectsMyMovement()).getFriction(level(), this.getBlockPosBelowThatAffectsMyMovement(), this);
+                float f3 = this.onGround() ? f2 * 0.91F : 0.91F;
+                Vec3 vec35 = this.handleRelativeFrictionAndCalculateMovement(p_21280_, f2);
+                double d2 = vec35.y;
+                if (this.hasEffect(MobEffects.LEVITATION)) {
+                    LOGGER.info("Has levitation");
+                    d2 += (0.05D * (double)(this.getEffect(MobEffects.LEVITATION).getAmplifier() + 1) - vec35.y) * 0.2D;
+                } else if (this.level().isClientSide && !this.level().hasChunkAt(blockpos)) {
+                    LOGGER.info("Whatever this clientside chunk check thing is");
+                    if (this.getY() > (double)this.level().getMinBuildHeight()) {
+                        d2 = -0.1D;
+                    } else {
+                        d2 = 0.0D;
+                    }
+                } else if (!this.isNoGravity()) {
+                    LOGGER.info("Has gravity");
+                    d2 -= d0;
+                } else LOGGER.info("None of the previous checks passed");
+
+                if (this.shouldDiscardFriction()) {
+                    LOGGER.info("Discarding friction");
+                    this.setDeltaMovement(vec35.x, d2, vec35.z);
+                } else {
+                    LOGGER.info(String.format("Not discarding friction, vec: %s f: %.1f", vec35, f3));
+                    this.setDeltaMovement(vec35.x * (double)f3, d2 * (double)0.98F, vec35.z * (double)f3);
+                }
+            }
+        }
+
+        this.calculateEntityAnimation(this instanceof FlyingAnimal);
+    }
+
+    @Override
+    public void moveRelative(float speed, Vec3 vec) {
+        float yRot = getYRot();
+        Vec3 inputVec = getInputVector(vec, speed, yRot);
+        Vec3 deltaBefore = getDeltaMovement();
+        Vec3 deltaAfter = deltaBefore.add(inputVec);
+
+        LOGGER.info(String.format("Moving relative... speed: %.3f, vec: %s, yRot: %s, Flying: %s, Attrs... Base: %.3f, Total: %.3f, " +
+                        "inputVec: %s, deltaBefore: %s, deltaAfter: %s",
+                speed,
+                vec,
+                yRot,
+                isFlying(),
+                getAttributeBaseValue(Attributes.MOVEMENT_SPEED),
+                getAttributeValue(Attributes.MOVEMENT_SPEED),
+
+                inputVec,
+                deltaBefore,
+                deltaAfter
+        ));
+        this.setDeltaMovement(deltaAfter);
+    }
+
+    // mixin dodging. maybe it works? lol
+    public Vec3 getInputVector(Vec3 inputVec, float speed, float yRot) {
+        double inputLength = inputVec.lengthSqr();
+        if (inputLength < 1.0E-7D) {
+            LOGGER.info("Input length is so tiny that we are stopping");
+            return Vec3.ZERO;
+        }
+
+        Vec3 normalizedOrLess = inputLength > 1 ? inputVec.normalize() : inputVec;
+        Vec3 speedScaled = normalizedOrLess.scale(speed);
+
+        float radians = (float)Math.toRadians(yRot);
+        float sin = (float)Math.sin(radians);
+        float cos = (float)Math.cos(radians);
+
+        Vec3 result = new Vec3(speedScaled.x * cos - speedScaled.z * sin, speedScaled.y, speedScaled.z * cos + speedScaled.x * sin);
+
+        LOGGER.info(String.format("Getting input vector. Args... inputVec: %s, speed: %s, yRot: %s Results... normalizedOrLess: %s, speedScaled: %s, result: %s",
+                inputVec, speed, yRot, normalizedOrLess, speedScaled, result));
+
+        return result;
     }
 }

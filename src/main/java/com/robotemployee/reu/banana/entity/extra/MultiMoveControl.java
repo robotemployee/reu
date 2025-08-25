@@ -26,7 +26,16 @@ public class MultiMoveControl<T> extends MoveControl {
     public void setMovement(T newMovementKey, boolean keepWantedLocation) {
         MoveControl oldMovement = getCurrentMovement();
         MoveControl newMovement = getMovement(newMovementKey);
-        ((MoveControlAccessor)(Object)oldMovement).reu$stop();
+        ((MoveControlAccessor)oldMovement).setOperation(Operation.WAIT);
+
+        // we have to do this no matter what -
+        // let's say we're swapping from a controller that controls Yya to one that doesn't
+        // Yya will be set to some value and *never reset or changed* by the horizontal-only controller.
+        // Because of that, we must assume that controllers will not set their own movement commands for any given axis
+        // So we will allow them to populate their own... after we reset the commands
+        mob.setZza(0);
+        mob.setYya(0);
+        mob.setXxa(0);
 
         if (keepWantedLocation) {
             double wantedX = oldMovement.getWantedX();
@@ -35,7 +44,6 @@ public class MultiMoveControl<T> extends MoveControl {
             double speedmod = oldMovement.getSpeedModifier();
 
             newMovement.setWantedPosition(wantedX, wantedY, wantedZ, speedmod);
-            oldMovement.hasWanted()
         }
         // we can't get the operation from the oldMovement
         // and i don't know how to create an accessor in a mixin which gives you an object of a type that isn't public (MoveControl.Operation)
