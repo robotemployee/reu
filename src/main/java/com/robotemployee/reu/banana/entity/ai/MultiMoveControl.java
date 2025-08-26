@@ -1,4 +1,4 @@
-package com.robotemployee.reu.banana.entity.extra;
+package com.robotemployee.reu.banana.entity.ai;
 
 import com.robotemployee.reu.mixin.base.MoveControlAccessor;
 import net.minecraft.world.entity.Mob;

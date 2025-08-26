@@ -10,6 +10,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -229,10 +230,10 @@ public class BananaRaid {
 
     public enum EnemyTypes {
         GREG,
-        ASCENDER,
-        COMMANDER,
-        ORCHESTRATOR,
         DEVIL,
-        LIEUTENANT
+        ASTEIRTO,
+        TEMFUR_TEMFUR,
+        POSTERBOY,
+        FLAPJACK
     }
 }

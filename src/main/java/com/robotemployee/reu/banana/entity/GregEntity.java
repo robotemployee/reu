@@ -3,11 +3,10 @@ package com.robotemployee.reu.banana.entity;
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.banana.BananaRaid;
 import com.robotemployee.reu.banana.entity.ai.MultiGoal;
-import com.robotemployee.reu.banana.entity.extra.MultiMoveControl;
-import com.robotemployee.reu.banana.entity.extra.MultiPathNavigation;
+import com.robotemployee.reu.banana.entity.ai.MultiMoveControl;
+import com.robotemployee.reu.banana.entity.ai.MultiPathNavigation;
+import com.robotemployee.reu.banana.entity.ai.StrictGroundPathNavigation;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
-import com.robotemployee.reu.mixin.base.EntityAccessor;
-import com.robotemployee.reu.registry.ModSounds;
 import com.robotemployee.reu.util.LevelUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -17,10 +16,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.tags.FluidTags;
-import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.*;
 import net.minecraft.world.entity.ai.control.FlyingMoveControl;
@@ -30,17 +26,13 @@ import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
-import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.monster.Monster;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.ForgeMod;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.constant.DefaultAnimations;
@@ -54,10 +46,8 @@ import software.bernie.geckolib.network.SerializableDataTicket;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.HashMap;
-import java.util.UUID;
 
 public class GregEntity extends BananaRaidMob implements GeoEntity {
-    // todo remove all the junk at the bottom
     static final Logger LOGGER = LogUtils.getLogger();
 
     public static final EntityDataAccessor<Boolean> IS_FLYING = SynchedEntityData.defineId(GregEntity.class, EntityDataSerializers.BOOLEAN);
@@ -85,7 +75,7 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
 
         HashMap<MoveControlMode, PathNavigation> navigations = new HashMap<>();
         navigations.put(MoveControlMode.FLYING, new FlyingPathNavigation(this, level));
-        navigations.put(MoveControlMode.GROUNDED, navigation);
+        navigations.put(MoveControlMode.GROUNDED, new StrictGroundPathNavigation(this, level));
         navigation = new MultiPathNavigation<>(this, level, MoveControlMode.GROUNDED, navigations);
     }
 
@@ -106,12 +96,12 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
 
         if (level().isClientSide()) return;
 
-        //fixme logger
+        /*
         LOGGER.info(String.format("speedInfo (%s): " +
                         "Flying: %s Flyspeed... Base: %.1f Mod: %.1f, " +
                         "Gndspeed... Base: %.1f Mod: %.1f ... " +
                         "Speedmod: %.1f Speed: %.1f Flyspeed: %.1f " +
-                        "isFallFlying: %s, onGround: %s, shouldDiscardFriction: %s, isNoGravity: %s, isJumping: %s, isComingToLand: %s" +
+                        "isFallFlying: %s, onGround: %s, shouldDiscardFriction: %s, isNoGravity: %s, isJumping: %s" +
                         "Fly... hasWanted: %s isPathing: %s Gnd... hasWanted: %s isPathing: %s " +
                         "Desired movement.. Fwd: %s Strafe: %s Vert:%s",
                 level().isClientSide() ? "CLIENT" : "LEVEL",
@@ -132,7 +122,6 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
                 shouldDiscardFriction(),
                 isNoGravity(),
                 jumping,
-                isComingToLand(),
 
                 getMultiMoveControl().getMovement(MoveControlMode.FLYING).hasWanted(),
                 getMultiPathNavigation().getNavigation(MoveControlMode.FLYING).isInProgress(),
@@ -143,6 +132,7 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
                 xxa,
                 yya
         ));
+         */
 
         boolean flying = isFlying();
         if (!flying && onGround() && getMoveControl().hasWanted() && getDeltaMovement().lengthSqr() < 0.05) {
@@ -198,7 +188,7 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
     protected void registerGoals() {
         int goalIndex = 0;
         int targetIndex = 0;
-        goalSelector.addGoal(goalIndex++, new GregComeToGroundAndFinishLandingGoal(this));
+        //goalSelector.addGoal(goalIndex++, new GregComeToGroundAndFinishLandingGoal(this));
         goalSelector.addGoal(goalIndex++, new FloatGoal(this));
         goalSelector.addGoal(goalIndex++, new MeleeAttackGoal(this, 1.3, true));
         // too much extra stuff...
@@ -212,8 +202,8 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         goalSelector.addGoal(goalIndex++, new GregTakeOffIfUnreachableGoal(this));
         // todo GregTakeOffToAirliftGoal
         //
-        // these are where you actually
-        goalSelector.addGoal(goalIndex++, new GregStartLandingIfFlightNotNeededGoal(this));
+        goalSelector.addGoal(goalIndex++, new GregLandIfIdleGoal(this));
+        goalSelector.addGoal(goalIndex++, new GregLandIfCouldReachTargetAnywayGoal(this));
 
         goalSelector.addGoal(goalIndex++, new RandomLookAroundGoal(this));
         goalSelector.addGoal(goalIndex++, new WaterAvoidingRandomStrollGoal(this, 0.6));
@@ -274,20 +264,27 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         entityData.set(IS_FLYING, true);
     }
 
-    protected boolean isComingToLand;
-    public boolean isComingToLand() {
-        return isComingToLand;
-    }
     // this function is called in the ai goals that tell greg to come to the land so it could start the landing process
+    public boolean landIfCloseToGround() {
+        return landIfCloseToGround(LevelUtils.findSolidGroundBelow(this));
+    }
+
+    public static final int DISTANCE_TO_LAND = 2;
+    public boolean landIfCloseToGround(BlockPos groundPos) {
+        BlockPos pos = blockPosition();
+        int distance = pos.getY() - groundPos.getY();
+        if (distance <= DISTANCE_TO_LAND + 1) {
+            startLanding();
+            return true;
+        }
+        return false;
+    }
     public void startLanding() {
-        //BlockPos ground = LevelUtils.findSolidGroundBelowPosition(level(), blockPosition());
-        //if (ground == null) ground = blockPosition().below(64);
-        isComingToLand = true;
         getNavigation().stop();
+        startLandingAnim();
     }
     // this function is called in another ai goal when greg is close enough to the ground to actually land
-    public void startLandingAnim() {
-        isComingToLand = false;
+    protected void startLandingAnim() {
         timestampOfAnimationStarted = level().getGameTime();
         setVisualState(VisualState.LANDING);
     }
@@ -323,7 +320,7 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
     public boolean canChangeFlying() {
         //LOGGER.info("Asking if can change flying. Visual state is " + getVisualState());
         VisualState state = getVisualState();
-        return !isComingToLand() && state != VisualState.TAKING_OFF && state != VisualState.LANDING;
+        return state != VisualState.TAKING_OFF && state != VisualState.LANDING;
     }
 
     public VisualState getVisualState() {
@@ -548,12 +545,11 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
             boolean isInGroundMode = greg.isGrounded();
             boolean canChangeFlying = greg.canChangeFlying();
             boolean isNotAlreadyTakingOff = greg.getVisualState() != VisualState.TAKING_OFF;
-            boolean isNotLanding = !greg.isComingToLand();
 
             boolean pathSucks = canCheckPath && canWeNotPath();
             boolean targetTooVerticallyFar = (target != null) && (target.blockPosition().getY() - greg.blockPosition().getY() > VERTICAL_DISTANCE_UNTIL_FLY_TO_REACH);
 
-            boolean canTakeOff = isInGroundMode && canChangeFlying && isNotLanding && isNotAlreadyTakingOff;
+            boolean canTakeOff = isInGroundMode && canChangeFlying && isNotAlreadyTakingOff;
             boolean shouldTakeOff = targetTooVerticallyFar || pathSucks;
 
             //LOGGER.info(String.format("GREG takeoffcheck. " + (canTakeOff && shouldTakeOff ? "ACTIVATING" : "") + " can: %s %s%s%s%s, should: %s %s%s", canTakeOff, isInGroundMode, canChangeFlying, isNotLanding, isNotAlreadyTakingOff, shouldTakeOff, targetTooVerticallyFar, pathSucks));
@@ -567,7 +563,9 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
             BlockPos gregTarget = targetEntity != null ? targetEntity.blockPosition() : null;
             BlockPos generalTarget = navTarget == null ? gregTarget : navTarget;
             boolean hasTarget = generalTarget != null;
-            return hasTarget && navigation.createPath(generalTarget, GregEntity.MAX_PATH_LENGTH) == null;
+            if (!hasTarget) return false;
+            Path path = navigation.createPath(generalTarget, GregEntity.MAX_PATH_LENGTH);
+            return (path == null || !path.canReach());
         }
 
         @Override
@@ -584,18 +582,22 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         }
     }
 
-    public static class GregStartLandingIfFlightNotNeededGoal extends Goal {
+    public static class GregLandIfCouldReachTargetAnywayGoal extends Goal {
+
+        // Does not ask Greg to navigate to the ground because if their target is reachable from the ground they'll get there anyway eventually
 
         public final GregEntity greg;
-        public GregStartLandingIfFlightNotNeededGoal(GregEntity greg) {
+        public GregLandIfCouldReachTargetAnywayGoal(GregEntity greg) {
             this.greg = greg;
-            lastTickWhereMovingToTarget = greg.level().getGameTime();
+            lastCheckedGroundPosTimestamp = greg.level().getGameTime() - greg.getRandom().nextInt(10);
         }
 
-        long lastTickWhereMovingToTarget;
-        static final int TICKS_UNTIL_IDLE = 100;
+        //long lastTickWhereMovingToTarget;
+
         static final int CREATE_PATH_COOLDOWN = 40;
         int createPathCooldownTicks = CREATE_PATH_COOLDOWN;
+
+        boolean groundPathGood = false;
         @Override
         public boolean canUse() {
             MoveControlMode moveMode = greg.getMoveControlMode();
@@ -609,7 +611,6 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
             // checks for if we even can
             boolean canChangeFlying = greg.canChangeFlying();
             boolean isFlying = greg.isFlying();
-            boolean alreadyLanding = greg.isComingToLand();
 
             // checks for if we should based on whether we could reach the target from the ground
             boolean canCreatePath = createPathCooldownTicks-- <= 0;
@@ -620,52 +621,155 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
                 groundPath = navigation.getNavigation(MoveControlMode.GROUNDED).createPath(targetPos, 32);
             } else groundPath = null;
             boolean groundCloseToTarget = getTargetDistanceToGround() < VERTICAL_DISTANCE_UNTIL_FLY_TO_REACH;
-            boolean groundPathGood = groundPath != null && groundPath.canReach() && groundCloseToTarget;
+            // update groundPathGood
+            if (canCreatePath) groundPathGood = groundPath != null && groundPath.canReach() && groundCloseToTarget;
 
             // checks for if we have gone too long without having a targeted entity
             // we also need to either be pathing somewhere and have a good ground path
             // or not be pathing at all
-            if (hasTargetEntity && (groundPathGood || !isPathing)) lastTickWhereMovingToTarget = greg.level().getGameTime();
-            boolean idling = greg.level().getGameTime() - lastTickWhereMovingToTarget > TICKS_UNTIL_IDLE;
 
-            boolean rejectingSwap = alreadyLanding;
+            boolean rejectingSwap = false;
             boolean canSwap = (canChangeFlying && isFlying) && !rejectingSwap;
-            boolean shouldSwap = groundPathGood || idling;
+            boolean shouldSwap = groundPathGood;
 
             //LOGGER.info(String.format("GREG landcheck. " + (canSwap && shouldSwap ? "ACTIVATING" : "") + " can: %s %s%s%s, should: %s pathGood: %s idling: %s idleTime: %s", canSwap, canChangeFlying, isFlying, !rejectingSwap, shouldSwap, groundPathGood, idling, greg.level().getGameTime() - lastTickWhereMovingToTarget));
             return canSwap && shouldSwap;
         }
 
+        @Nullable
+        BlockPos groundPos = null;
+
+        long lastCheckedGroundPosTimestamp;
+        public static final int GROUND_POS_CHECK_INTERVAL = 30;
+
+        public boolean canCheckGroundPos() {
+            return greg.level().getGameTime() - lastCheckedGroundPosTimestamp > GROUND_POS_CHECK_INTERVAL;
+        }
+        public BlockPos getOrFindGroundPos() {
+            boolean alreadyFound = groundPos != null;
+            boolean innacurateGroundPos = alreadyFound && (groundPos.getX() != greg.getX() || groundPos.getZ() != greg.getZ() || groundPos.getY() > greg.getY());
+            boolean shouldRedoGroundPos = innacurateGroundPos && canCheckGroundPos();
+            if ((!alreadyFound) || shouldRedoGroundPos) {
+                lastCheckedGroundPosTimestamp = greg.level().getGameTime();
+                groundPos = LevelUtils.findSolidGroundBelow(greg);
+            }
+            return groundPos;
+        }
+
         public int getTargetDistanceToGround() {
             LivingEntity target = greg.getTarget();
             int referenceY = (target == null) ? greg.getBlockY() : target.getBlockY();
-            BlockPos groundPos = LevelUtils.findSolidGroundBelow(greg);
+            getOrFindGroundPos();
             if (groundPos == null) return 128;
             // comparing the target's vertical position to the ground position below greg
             return referenceY - groundPos.getY();
         }
 
+        boolean successfullyLanded = false;
         @Override
         public void start() {
-            /*
-            MultiPathNavigation<MoveControlMode> navigation = greg.getMultiPathNavigation();
-            LivingEntity gregTarget = greg.getTarget();
-            BlockPos gregTargetPos = gregTarget == null ? null : gregTarget.blockPosition();
-            BlockPos pathTargetPos = navigation.getTargetPos();
-            BlockPos generalTargetPos = gregTargetPos == null ? pathTargetPos : gregTargetPos;
-            if (generalTargetPos == null) return;
-            Path path = navigation.getNavigation(MoveControlMode.GROUNDED).createPath(generalTargetPos, GregEntity.MAX_PATH_LENGTH);
-            if (path == null || !path.canReach()) return;
-             */
-            greg.startLanding();
+            successfullyLanded = successfullyLanded || greg.landIfCloseToGround(getOrFindGroundPos());
         }
 
         @Override
         public boolean canContinueToUse() {
-            return false;
+            return !successfullyLanded;
+        }
+
+        @Override
+        public void tick() {
+            successfullyLanded = successfullyLanded || greg.landIfCloseToGround(getOrFindGroundPos());
+        }
+
+        @Override
+        public void stop() {
+            successfullyLanded = false;
+        }
+    }
+    public static class GregLandIfIdleGoal extends Goal {
+        // Involves navigating to the ground
+
+        public final GregEntity greg;
+        long lastTickWhereMovingToTarget;
+        long lastTickWhereRecalculatedGroundPos;
+        static final int TICKS_RECALCULATE_GROUND_COOLDOWN = 40;
+        boolean idling = false;
+        boolean landed = false;
+        BlockPos groundPos = null;
+        BlockPos targetPos = null;
+
+        static final int TICKS_UNTIL_IDLE = 100;
+        public GregLandIfIdleGoal(GregEntity greg) {
+            this.greg = greg;
+            lastTickWhereMovingToTarget = greg.level().getGameTime();
+            lastTickWhereRecalculatedGroundPos = greg.level().getGameTime();
+        }
+
+        @Override
+        public boolean canUse() {
+            boolean isMoving = greg.getMoveControl().hasWanted();
+            trackIdling();
+
+            boolean can = greg.canChangeFlying() && greg.isGrounded();
+            boolean should = idling;
+            return can && should;
+        }
+
+        public void trackIdling() {
+            boolean hasTargetEntity = greg.getTarget() != null;
+            if (hasTargetEntity) lastTickWhereMovingToTarget = greg.level().getGameTime();
+            idling = greg.level().getGameTime() - lastTickWhereMovingToTarget > TICKS_UNTIL_IDLE;
+            //fixme logger
+            LOGGER.info(String.format("GREG tracking idle time; idling: %s idleTime: %s", idling, greg.level().getGameTime() - lastTickWhereMovingToTarget));
+        }
+
+        @Override
+        public void start() {
+            //fixme logger
+            LOGGER.info("GREG idle goal starting");
+            getOrFindGroundPos();
+            greg.getNavigation().moveTo(targetPos.getX(), targetPos.getY(), targetPos.getZ(), 0.7);
+            landed = greg.landIfCloseToGround(groundPos);
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            trackIdling();
+            return idling && !landed;
+        }
+
+        public BlockPos getOrFindGroundPos() {
+            if (groundPos == null || canRecalculateGroundPos()) {
+                groundPos = LevelUtils.findSolidGroundBelow(greg);
+                lastTickWhereRecalculatedGroundPos = greg.level().getGameTime();
+            }
+            targetPos = groundPos != null ? groundPos.above() : null;
+            LOGGER.info("GREG found ground pos at " + groundPos);
+            return groundPos;
+        }
+
+        public boolean canRecalculateGroundPos() {
+            BlockPos current = greg.blockPosition();
+            if (current.getX() == groundPos.getX() && current.getZ() == groundPos.getZ()) return false;
+            return greg.level().getGameTime() - lastTickWhereRecalculatedGroundPos > TICKS_RECALCULATE_GROUND_COOLDOWN;
+        }
+
+        @Override
+        public void tick() {
+            BlockPos currentTarget = greg.getNavigation().getTargetPos();
+            if (currentTarget != groundPos.above()) greg.getNavigation().moveTo(targetPos.getX(), targetPos.getY(), targetPos.getZ(), 0.7);
+            landed = landed || greg.landIfCloseToGround(groundPos);
+        }
+
+        @Override
+        public void stop() {
+            landed = false;
+            groundPos = null;
+            targetPos = null;
         }
     }
 
+    /*
     public static class GregComeToGroundAndFinishLandingGoal extends Goal {
 
         static final Logger LOGGER = LogUtils.getLogger();
@@ -729,6 +833,8 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         }
     }
 
+     */
+
     @Override
     protected SoundEvent getHurtSound(DamageSource p_33034_) {
         return SoundEvents.RABBIT_HURT;
@@ -755,7 +861,7 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         if (isFlying()) flyTravel(vec);
         else groundTravel(vec);
     }
-     */
+
 
     public void groundTravel(@NotNull Vec3 vec) {
         super.travel(vec);
@@ -793,6 +899,8 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         this.calculateEntityAnimation(false);
     }
 
+     */
+
     public enum MoveControlMode {
         FLYING,
         GROUNDED
@@ -811,7 +919,7 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
     }
 
 
-
+/*
     private static final AttributeModifier SLOW_FALLING = new AttributeModifier(UUID.fromString("A5B6CF2A-2F7C-31EF-9022-7C3E7D5E6ABA"), "Slow falling acceleration reduction", -0.07, AttributeModifier.Operation.ADDITION); // Add -0.07 to 0.08 so we get the vanilla default of 0.01
     @Override
     public void travel(Vec3 p_21280_) {
@@ -1020,4 +1128,6 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
 
         return result;
     }
+
+ */
 }

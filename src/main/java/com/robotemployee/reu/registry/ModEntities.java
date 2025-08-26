@@ -48,7 +48,7 @@ public class ModEntities {
     public static final EntityRegistryEntry<GregEntity> GREG =
             new EntityBuilder<>(
                     () -> EntityType.Builder.of(GregEntity::new, MobCategory.MONSTER)
-                            .sized(0.85f, 0.65f))
+                            .sized(1, 0.65f))
                     .withName("greg")
                     .withAttributes(GregEntity::createAttributes)
                     .customRenderer(GregRenderer::new)
