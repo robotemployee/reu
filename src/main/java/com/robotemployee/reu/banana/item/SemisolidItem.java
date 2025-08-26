@@ -2,6 +2,7 @@ package com.robotemployee.reu.banana.item;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -63,6 +64,20 @@ public class SemisolidItem extends Item {
     public boolean onDroppedByPlayer(ItemStack stack, Player player) {
         if (vibeChecker(stack)) return false;
         return super.onDroppedByPlayer(stack, player);
+    }
+
+    @Override
+    public boolean onEntityItemUpdate(ItemStack stack, ItemEntity entity) {
+        if (vibeChecker(stack)) {
+            entity.discard();
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean canFitInsideContainerItems() {
+        return false;
     }
 
 
