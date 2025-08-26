@@ -1,6 +1,7 @@
 package com.robotemployee.reu.registry;
 
 import com.mojang.logging.LogUtils;
+import com.robotemployee.reu.banana.item.SemisolidItem;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.registry.help.builder.ItemBuilder;
 import com.robotemployee.reu.item.FryingPanItem;
@@ -112,6 +113,15 @@ public class ModItems {
     public static final RegistryObject<Item> MUSIC_DISC_PROVIDENCE = createDiscItem("providence", ModSounds.PROVIDENCE_DISC, 3800);
     public static final RegistryObject<Item> MUSIC_DISC_I_WISH = createDiscItem("i_wish", ModSounds.I_WISH_DISC, 5200);
 
+
+    public static final RegistryObject<Item> SEMISOLID = new ItemBuilder()
+            .withName("semisolid")
+            .withSupplier(() -> new SemisolidItem(new Item.Properties()
+                    .durability(120)
+                    .stacksTo(1)
+                    .rarity(Rarity.RARE)
+            ))
+            .build();
 
     public static RegistryObject<Item> createSimpleItem(String id) {
         return new ItemBuilder()

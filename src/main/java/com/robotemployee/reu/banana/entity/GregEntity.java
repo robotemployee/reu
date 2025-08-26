@@ -137,8 +137,7 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         boolean flying = isFlying();
         if (!flying && onGround() && getMoveControl().hasWanted() && getDeltaMovement().lengthSqr() < 0.05) {
             if (ticksWantedPosWithoutMoving++ >= ticksUntilJumpWhenStuck) {
-                //fixme logger
-                LOGGER.info("Greg jumping because stuck");
+                //LOGGER.info("Greg jumping because stuck");
                 this.jumpFromGround();
             }
         } else {
@@ -238,8 +237,7 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
 
     // this function is called in the ai goals that tell greg to start flying
     public void takeOff() {
-        //fixme logger
-        LOGGER.info("Taking off. Current time: " + level().getGameTime());
+        //LOGGER.info("Taking off. Current time: " + level().getGameTime());
         timestampOfAnimationStarted = level().getGameTime();
         setVisualState(VisualState.TAKING_OFF);
         addDeltaMovement(new Vec3(0, 0.08, 0));
@@ -710,23 +708,22 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
             boolean isMoving = greg.getMoveControl().hasWanted();
             trackIdling();
 
-            boolean can = greg.canChangeFlying() && greg.isGrounded();
+            boolean can = greg.canChangeFlying() && greg.isFlying();
             boolean should = idling;
             return can && should;
         }
 
         public void trackIdling() {
             boolean hasTargetEntity = greg.getTarget() != null;
-            if (hasTargetEntity) lastTickWhereMovingToTarget = greg.level().getGameTime();
+            // Only tracks airborne idle ticks
+            if (hasTargetEntity || greg.isGrounded()) lastTickWhereMovingToTarget = greg.level().getGameTime();
             idling = greg.level().getGameTime() - lastTickWhereMovingToTarget > TICKS_UNTIL_IDLE;
-            //fixme logger
-            LOGGER.info(String.format("GREG tracking idle time; idling: %s idleTime: %s", idling, greg.level().getGameTime() - lastTickWhereMovingToTarget));
+            //LOGGER.info(String.format("GREG tracking idle time; idling: %s idleTime: %s", idling, greg.level().getGameTime() - lastTickWhereMovingToTarget));
         }
 
         @Override
         public void start() {
-            //fixme logger
-            LOGGER.info("GREG idle goal starting");
+            //LOGGER.info("GREG idle goal starting");
             getOrFindGroundPos();
             greg.getNavigation().moveTo(targetPos.getX(), targetPos.getY(), targetPos.getZ(), 0.7);
             landed = greg.landIfCloseToGround(groundPos);
@@ -739,17 +736,18 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         }
 
         public BlockPos getOrFindGroundPos() {
-            if (groundPos == null || canRecalculateGroundPos()) {
+            if (canRecalculateGroundPos()) {
                 groundPos = LevelUtils.findSolidGroundBelow(greg);
                 lastTickWhereRecalculatedGroundPos = greg.level().getGameTime();
             }
             targetPos = groundPos != null ? groundPos.above() : null;
-            LOGGER.info("GREG found ground pos at " + groundPos);
+            //LOGGER.info("GREG found ground pos at " + groundPos);
             return groundPos;
         }
 
         public boolean canRecalculateGroundPos() {
             BlockPos current = greg.blockPosition();
+            if (groundPos == null) return true;
             if (current.getX() == groundPos.getX() && current.getZ() == groundPos.getZ()) return false;
             return greg.level().getGameTime() - lastTickWhereRecalculatedGroundPos > TICKS_RECALCULATE_GROUND_COOLDOWN;
         }
@@ -821,7 +819,7 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
 
         @Override
         public void tick() {
-            // fixme logger
+            // ixme logger
             LOGGER.info("Greg coming to the ground. Detected ground pos: " + groundPos);
             //greg.addDeltaMovement(new Vec3(0, -0.03, 0));
             if (greg.getNavigation().isInProgress()) greg.getNavigation().stop();
