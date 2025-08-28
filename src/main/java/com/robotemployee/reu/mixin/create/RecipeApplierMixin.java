@@ -1,7 +1,7 @@
 package com.robotemployee.reu.mixin.create;
 
-import com.robotemployee.reu.registry.ModItems;
 import com.robotemployee.reu.item.FryingPanItem;
+import com.robotemployee.reu.registry.ModItems;
 import com.simibubi.create.content.kinetics.press.PressingRecipe;
 import com.simibubi.create.foundation.recipe.RecipeApplier;
 import net.minecraft.world.item.ItemStack;

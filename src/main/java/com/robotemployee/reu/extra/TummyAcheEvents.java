@@ -1,10 +1,10 @@
 package com.robotemployee.reu.extra;
 
 import com.mojang.logging.LogUtils;
+import com.robotemployee.reu.mobeffect.TummyAcheMobEffect;
 import com.robotemployee.reu.registry.ModDamageTypes;
 import com.robotemployee.reu.registry.ModItems;
 import com.robotemployee.reu.registry.ModMobEffects;
-import com.robotemployee.reu.mobeffect.TummyAcheMobEffect;
 import com.simibubi.create.AllTags;
 import com.simibubi.create.content.equipment.armor.BacktankUtil;
 import com.simibubi.create.content.equipment.armor.DivingHelmetItem;

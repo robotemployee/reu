@@ -1,13 +1,9 @@
 package com.robotemployee.reu.banana.entity.ai;
 
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.Goal;
 
 import java.util.EnumSet;
 import java.util.Map;
-import java.util.function.Predicate;
 
 /** <p>Tool to bundle multiple goals in one, so that you don't need to run connecting logic in {@link net.minecraft.world.entity.Entity}'s tick() method.</p>
  * <p>You must inherit from this and implement your own switching logic.</p>*/

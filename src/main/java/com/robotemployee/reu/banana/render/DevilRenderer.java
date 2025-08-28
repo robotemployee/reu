@@ -6,7 +6,6 @@ import com.mojang.math.Axis;
 import com.robotemployee.reu.banana.entity.DevilEntity;
 import com.robotemployee.reu.banana.model.DevilEntityModel;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
-import com.robotemployee.reu.util.MathTools;
 import com.robotemployee.reu.util.RenderTools;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;

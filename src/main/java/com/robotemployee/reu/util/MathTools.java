@@ -4,8 +4,6 @@ import com.mojang.logging.LogUtils;
 import org.joml.Vector3f;
 import org.slf4j.Logger;
 
-import java.text.NumberFormat;
-
 public class MathTools {
 
     private static final Logger LOGGER = LogUtils.getLogger();
