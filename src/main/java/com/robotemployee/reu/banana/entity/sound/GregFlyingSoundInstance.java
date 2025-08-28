@@ -35,7 +35,7 @@ public class GregFlyingSoundInstance extends AbstractTickableSoundInstance {
         updatePosition();
     }
 
-    public void updatePosition() {
+    private void updatePosition() {
         this.x = greg.getX();
         this.y = greg.getY();
         this.z = greg.getZ();
