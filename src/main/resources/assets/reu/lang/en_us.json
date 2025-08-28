@@ -55,6 +55,8 @@
   "effect.reu.tummy_ache": "Tummy Ache ☹",
   "effect.reu.tummy_ache.description": "The feeling is permanent.",
 
+  "item.reu.semisolid": "Semi-solid",
+
   "creativetab.reu_tab": "H.D.S.C.",
   "death.attack.reu.asbestosis": "%1$s had a tummy ache",
   "death.attack.reu.asbestosis.player": "%1$s had a tummy ache while trying to escape %2$s",

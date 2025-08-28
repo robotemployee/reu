@@ -117,8 +117,7 @@ public class ModItems {
     public static final RegistryObject<Item> SEMISOLID = new ItemBuilder()
             .withName("semisolid")
             .withSupplier(() -> new SemisolidItem(new Item.Properties()
-                    .durability(120)
-                    .stacksTo(1)
+                    .durability(SemisolidItem.DECAY_SECONDS)
                     .rarity(Rarity.RARE)
             ))
             .build();

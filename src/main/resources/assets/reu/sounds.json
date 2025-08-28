@@ -141,5 +141,18 @@
         "name": "reu:player/epic_cheering"
       }
     ]
+  },
+
+
+
+
+
+  "entity.greg_flying": {
+    "category": "hostile",
+    "sounds": [
+      {
+        "name": "reu:banana/greg_flying"
+      }
+    ]
   }
 }

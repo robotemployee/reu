@@ -1,4 +1,4 @@
-// 1.20.1	2025-08-21T18:51:10.4362685	Item Models: reu
+// 1.20.1	2025-08-26T19:50:32.667859	Item Models: reu
 c3730fa5e3250d2d8e416a8b8186c6c6c05e3bc6 assets/reu/models/item/amphibole.json
 d0b9dbed294c1bc3f75e75c2b202cc8429829690 assets/reu/models/item/asbesdough.json
 e28c8905b59c0f0326a90379702cda52ccf0a40d assets/reu/models/item/asbestos.json
@@ -20,4 +20,5 @@ d262dac9b8b7a9277854a8818f18e5a08ecd51ca assets/reu/models/item/music_disc_hatre
 34d12a8027530500d2be89c28fcc4bfd95cbed08 assets/reu/models/item/music_disc_steel_haze.json
 1eedf19ec3bfba2cf90ad655402630b052423350 assets/reu/models/item/music_disc_triple_baka.json
 507d5370c6f50c99cdac3a33d6e5566d3709a84b assets/reu/models/item/one_day_blinding_stew.json
+a82ce811119654522e924b01af28ce78a4001c90 assets/reu/models/item/semisolid.json
 d559851af70b8f0d9f9a8652128dae832df0da19 assets/reu/models/item/wheat_asbestos_mix.json

@@ -32,6 +32,9 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> GOOD_CHEERING = registerNormalSound("player.good_cheering");
     public static final RegistryObject<SoundEvent> EPIC_CHEERING = registerNormalSound("player.epic_cheering");
 
+
+    public static final RegistryObject<SoundEvent> GREG_FLYING = registerNormalSound("entity.greg_flying");
+
     public static RegistryObject<SoundEvent> registerDiscSound(String location) {
         return registerNormalSound("music_disc." + location);
     }

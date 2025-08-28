@@ -6,6 +6,7 @@ import com.robotemployee.reu.banana.entity.ai.MultiGoal;
 import com.robotemployee.reu.banana.entity.ai.MultiMoveControl;
 import com.robotemployee.reu.banana.entity.ai.MultiPathNavigation;
 import com.robotemployee.reu.banana.entity.ai.StrictGroundPathNavigation;
+import com.robotemployee.reu.banana.entity.sound.GregFlyingSoundInstance;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.util.LevelUtils;
 import net.minecraft.core.BlockPos;
@@ -32,6 +33,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -63,6 +65,8 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
     public static final int tickDurationOfTakingOff = 40;
     public static final int tickDurationOfLanding = 40;
     long timestampOfAnimationStarted;
+
+    public GregFlyingSoundInstance flyingSoundInstance;
 
     public GregEntity(EntityType<? extends Monster> entityType, Level level) {
         super(entityType, level);
@@ -248,6 +252,13 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
 
     // this function is called in the animation controller once greg has finished taking off
     public void startFlying(boolean quietly) {
+        // thank god for how capable minecraft's sound system is
+        // sure you can't speed up / slow down irrespective of pitch but yknow that's complicated
+        if (flyingSoundInstance == null || flyingSoundInstance.isStopped()) {
+            //LOGGER.info("Playing new flying sound");
+            flyingSoundInstance = GregFlyingSoundInstance.startFrom(this);
+        }
+
         setNoGravity(true);
         //LOGGER.info("Starting to fly, setting visual state");
         setVisualState(VisualState.FLYING);
@@ -263,12 +274,8 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
     }
 
     // this function is called in the ai goals that tell greg to come to the land so it could start the landing process
-    public boolean landIfCloseToGround() {
-        return landIfCloseToGround(LevelUtils.findSolidGroundBelow(this));
-    }
-
     public static final int DISTANCE_TO_LAND = 2;
-    public boolean landIfCloseToGround(BlockPos groundPos) {
+    public boolean landIfCloseToGround(@NotNull BlockPos groundPos) {
         BlockPos pos = blockPosition();
         int distance = pos.getY() - groundPos.getY();
         if (distance <= DISTANCE_TO_LAND + 1) {
@@ -343,8 +350,8 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         return getEntityData().get(IS_FLYING);
     }
 
-    public boolean isGrounded() {
-        return !getEntityData().get(IS_FLYING);
+    public boolean isInGroundMode() {
+        return !isFlying();
     }
 
     @Override
@@ -540,7 +547,7 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
 
             LivingEntity target = greg.getTarget();
 
-            boolean isInGroundMode = greg.isGrounded();
+            boolean isInGroundMode = greg.isInGroundMode();
             boolean canChangeFlying = greg.canChangeFlying();
             boolean isNotAlreadyTakingOff = greg.getVisualState() != VisualState.TAKING_OFF;
 
@@ -716,7 +723,7 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         public void trackIdling() {
             boolean hasTargetEntity = greg.getTarget() != null;
             // Only tracks airborne idle ticks
-            if (hasTargetEntity || greg.isGrounded()) lastTickWhereMovingToTarget = greg.level().getGameTime();
+            if (hasTargetEntity || greg.isInGroundMode()) lastTickWhereMovingToTarget = greg.level().getGameTime();
             idling = greg.level().getGameTime() - lastTickWhereMovingToTarget > TICKS_UNTIL_IDLE;
             //LOGGER.info(String.format("GREG tracking idle time; idling: %s idleTime: %s", idling, greg.level().getGameTime() - lastTickWhereMovingToTarget));
         }
