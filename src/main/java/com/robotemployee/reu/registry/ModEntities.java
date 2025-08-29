@@ -1,8 +1,10 @@
 package com.robotemployee.reu.registry;
 
 import com.mojang.logging.LogUtils;
+import com.robotemployee.reu.banana.entity.AsteirtoEntity;
 import com.robotemployee.reu.banana.entity.DevilEntity;
 import com.robotemployee.reu.banana.entity.GregEntity;
+import com.robotemployee.reu.banana.render.AsteirtoRenderer;
 import com.robotemployee.reu.banana.render.DevilRenderer;
 import com.robotemployee.reu.banana.render.GregRenderer;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
@@ -55,6 +57,15 @@ public class ModEntities {
                     .eggColor(0xAC3232, BANANA_EGG_COLOR)
                     .build();
 
+    public static final EntityRegistryEntry<AsteirtoEntity> ASTEIRTO =
+            new EntityBuilder<>(
+                    () -> EntityType.Builder.of(AsteirtoEntity::new, MobCategory.MONSTER)
+                            .sized(3, 3))
+                    .withName("greg")
+                    .withAttributes(GregEntity::createAttributes)
+                    .customRenderer(AsteirtoRenderer::new)
+                    .eggColor(0xCC4141, BANANA_EGG_COLOR)
+                    .build();
 
 
 

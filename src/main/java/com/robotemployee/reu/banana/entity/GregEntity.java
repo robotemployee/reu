@@ -298,7 +298,6 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
     // this function is called in the ai goal that tells greg to actually change its flying state when it comes to the ground
     public void stopFlying(boolean quietPathNav) {
         setVisualState(VisualState.GROUNDED);
-        // fixme inspect keepWantedLocation
         getMultiMoveControl().setMovement(MoveControlMode.GROUNDED, true);
 
         if (quietPathNav) getMultiPathNavigation().setNavigationQuietly(MoveControlMode.GROUNDED);
@@ -455,7 +454,7 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
             goals.put(BehaviorMode.BRAVE, new MeleeAttackGoal(greg, 1.3, true));
             goals.put(BehaviorMode.FEARFUL, new AvoidEntityGoal<>(greg, GregEntity.TARGET_CLASS, 32, 1, 1.1));
             long time = greg.level().getGameTime();
-            // fixme
+            // doesn't work
             this.offset = -(int)(time % INTERVAL) + greg.getRandom().nextInt(-MAX_SWAP_TICKS_OFFSET, MAX_SWAP_TICKS_OFFSET);
             setTicksUntilSwap();
         }
@@ -589,6 +588,8 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         }
     }
 
+    // fixme
+    // it's either this or StrictGroundPathNavigation, but greg thinks it can't reach things it almost certainly can
     public static class GregLandIfCouldReachTargetAnywayGoal extends Goal {
 
         // Does not ask Greg to navigate to the ground because if their target is reachable from the ground they'll get there anyway eventually

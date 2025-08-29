@@ -154,11 +154,6 @@ public class DevilEntity extends FlyingBananaRaidMob implements GeoEntity {
         return this.cache;
     }
 
-    @Override
-    public double getTick(Object object) {
-        return ((DevilEntity)object).getId();
-    }
-
     // todo: set to BananaRaidMob.class
     public static final Class<? extends LivingEntity> targetClass = BananaRaidMob.class;
     public static class ProtectGoal extends FollowMobTypeGoal {

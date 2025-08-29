@@ -92,8 +92,19 @@ public class DevilRenderer extends BananaRenderer<DevilEntity> {
     }
 
     void renderWings(@NotNull DevilEntity entity, float entityYaw, float partialTick, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight, float scale) {
+        RenderTools.renderCameraFacing2DTexture(
+                entity.getPosition(partialTick).toVector3f(),
+                entityRenderDispatcher.camera.getPosition().toVector3f(),
+                RenderType.entityCutoutNoCull(WINGS_TEXTURE),
+                poseStack,
+                bufferSource,
+                scale,
+                new Vector2f(0, 0),
+                new Vector2f(1, 1)
+        );
 
-        Vector3f vecToCam = entity.getPosition(partialTick).vectorTo(entityRenderDispatcher.camera.getPosition()).normalize().toVector3f();
+    }
+        /*Vector3f vecToCam = entity.getPosition(partialTick).vectorTo(entityRenderDispatcher.camera.getPosition()).normalize().toVector3f();
         Vector3f vecToCamHorizontal = new Vector3f(vecToCam).mul(1, 0, 1);
         Vector3f normalizedVecToCamHorizontal = new Vector3f(vecToCamHorizontal).normalize();
         float horizontalDistance = vecToCamHorizontal.length();
@@ -148,6 +159,7 @@ public class DevilRenderer extends BananaRenderer<DevilEntity> {
 
         poseStack.popPose();
     }
+         */
 
     protected static final float BEAM_WIDTH = 0.5f;
     protected static final float STRETCH_FACTOR = 2f;
@@ -169,7 +181,7 @@ public class DevilRenderer extends BananaRenderer<DevilEntity> {
         RenderType renderType = RenderType.entityCutoutNoCull(BEAM_TEXTURE);
 
 
-        RenderTools.renderCameraFacing2DBeamBetween(emanatingFrom, receiving, cameraPos, stretchFactor, width, time, scrollSpeed, renderType, poseStack, bufferSource);
+        RenderTools.renderCameraFacing2DBeamBetween(emanatingFrom, receiving, cameraPos, stretchFactor, width, time, scrollSpeed, renderType, poseStack, bufferSource, new Vector2f(0, 0), new Vector2f(1, 1));
     }
 
 

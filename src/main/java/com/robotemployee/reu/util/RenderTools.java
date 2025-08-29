@@ -3,6 +3,7 @@ package com.robotemployee.reu.util;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import com.robotemployee.reu.banana.entity.DevilEntity;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -92,7 +93,8 @@ public class RenderTools {
         poseStack.popPose();
     }
 
-    public static void renderCameraFacing2DBeamBetween(Vector3f emanatingPoint, Vector3f receivingPoint, Vector3f cameraPos, float stretchFactor, float width, float time, float scrollSpeed, RenderType renderType, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource) {
+    // note that the uv min and uv max implementations are entirely untested
+    public static void renderCameraFacing2DBeamBetween(Vector3f emanatingPoint, Vector3f receivingPoint, Vector3f cameraPos, float stretchFactor, float width, float time, float scrollSpeed, RenderType renderType, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, Vector2f minUV, Vector2f maxUV) {
         // swapping the starts and ends on purpose, so that the recipient appears to "slide" along the beam instead of the other way around
         // due to the UV repeating stuff
         Vector3f endPosition = emanatingPoint;
@@ -191,8 +193,8 @@ public class RenderTools {
             uvModifier = 0;
         }
         // for the V coordinate of the UVs on the toEntity side of the beam
-        float startV = 0 + uvModifier;
-        float endV = (stretchFactor != 0 ? length / stretchFactor : 1) + uvModifier;
+        float startV = minUV.y() + uvModifier;
+        float endV = maxUV.y() + (stretchFactor != 0 ? length / stretchFactor : 1) + uvModifier;
 
         VertexConsumer vertexes = bufferSource.getBuffer(renderType);
 
@@ -201,7 +203,7 @@ public class RenderTools {
 
         vertexes.vertex(lastPose, -width, 0, 0)
                 .color(1.0f, 1.0f, 1.0f, 1.0f)
-                .uv(0, endV)
+                .uv(minUV.x(), endV)
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(PACKED_LIGHT_FOR_2DS)
                 .normal(normal, 0, 1, 0)
@@ -209,7 +211,7 @@ public class RenderTools {
 
         vertexes.vertex(lastPose, -width, length, 0)
                 .color(1.0f, 1.0f, 1.0f, 1.0f)
-                .uv(0, startV)
+                .uv(minUV.x(), startV)
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(PACKED_LIGHT_FOR_2DS)
                 .normal(normal, 0, 1, 0)
@@ -217,7 +219,7 @@ public class RenderTools {
 
         vertexes.vertex(lastPose, width, length, 0)
                 .color(1.0f, 1.0f, 1.0f, 1.0f)
-                .uv(1, startV)
+                .uv(maxUV.x(), startV)
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(PACKED_LIGHT_FOR_2DS)
                 .normal(normal, 0, 1, 0)
@@ -225,7 +227,7 @@ public class RenderTools {
 
         vertexes.vertex(lastPose, width, 0, 0)
                 .color(1.0f, 1.0f, 1.0f, 1.0f)
-                .uv(1, endV)
+                .uv(maxUV.x(), endV)
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(PACKED_LIGHT_FOR_2DS)
                 .normal(normal, 0, 1, 0)
@@ -235,6 +237,63 @@ public class RenderTools {
         poseStack.popPose();
     }
 
+    public static void renderCameraFacing2DTexture(Vector3f renderPos, Vector3f camPos, RenderType renderType, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, float scale, Vector2f minUV, Vector2f maxUV) {
+
+        Vector3f normalizedVecToCam = new Vector3f(camPos).sub(renderPos).normalize();
+        Vector3f vecToCamHorizontal = new Vector3f(normalizedVecToCam).mul(1, 0, 1);
+        Vector3f normalizedVecToCamHorizontal = new Vector3f(vecToCamHorizontal).normalize();
+        float horizontalDistance = vecToCamHorizontal.length();
+        float yaw = (float) Math.atan2(normalizedVecToCamHorizontal.x, normalizedVecToCamHorizontal.z);
+        Vector2f normalizedPitchTriangleLegs = new Vector2f(horizontalDistance, normalizedVecToCam.y).normalize();
+        float pitch = (float) Math.atan2(normalizedPitchTriangleLegs.y, normalizedPitchTriangleLegs.x);
+
+        poseStack.pushPose();
+
+        poseStack.mulPose(Axis.YP.rotation(yaw));
+        poseStack.mulPose(Axis.XP.rotation(-pitch));
+        poseStack.scale(scale, scale, scale);
+
+        VertexConsumer vertexes = bufferSource.getBuffer(renderType);
+
+        float size = 0.5f;
+
+        Matrix4f lastPose = poseStack.last().pose();
+        Matrix3f normal = poseStack.last().normal();
+
+        vertexes.vertex(lastPose, -size, -size, 0)
+                .color(1.0f, 1.0f, 1.0f, 1.0f)
+                .uv(minUV.x(), maxUV.y())
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(PACKED_LIGHT_FOR_2DS)
+                .normal(normal, 0, 1, 0)
+                .endVertex();
+
+        vertexes.vertex(lastPose, -size, size, 0)
+                .color(1.0f, 1.0f, 1.0f, 1.0f)
+                .uv(minUV.x(), minUV.y())
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(PACKED_LIGHT_FOR_2DS)
+                .normal(normal, 0, 1, 0)
+                .endVertex();
+
+        vertexes.vertex(lastPose, size, size, 0)
+                .color(1.0f, 1.0f, 1.0f, 1.0f)
+                .uv(maxUV.x(), minUV.y())
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(PACKED_LIGHT_FOR_2DS)
+                .normal(normal, 0, 1, 0)
+                .endVertex();
+
+        vertexes.vertex(lastPose, size, -size, 0)
+                .color(1.0f, 1.0f, 1.0f, 1.0f)
+                .uv(maxUV.x(), maxUV.y())
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(PACKED_LIGHT_FOR_2DS)
+                .normal(normal, 0, 1, 0)
+                .endVertex();
+
+        poseStack.popPose();
+    }
 
     public enum Colors {
         RED(0xFF0000),
