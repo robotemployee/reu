@@ -34,6 +34,7 @@ public class ModSounds {
 
 
     public static final RegistryObject<SoundEvent> GREG_FLYING = registerNormalSound("entity.greg_flying");
+    public static final RegistryObject<SoundEvent> ASTEIRTO_HUM = registerNormalSound("entity.asteirto.idle");
 
     public static RegistryObject<SoundEvent> registerDiscSound(String location) {
         return registerNormalSound("music_disc." + location);

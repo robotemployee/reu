@@ -60,11 +60,11 @@ public class ModEntities {
     public static final EntityRegistryEntry<AsteirtoEntity> ASTEIRTO =
             new EntityBuilder<>(
                     () -> EntityType.Builder.of(AsteirtoEntity::new, MobCategory.MONSTER)
-                            .sized(3, 3))
-                    .withName("greg")
-                    .withAttributes(GregEntity::createAttributes)
+                            .sized(2, 3))
+                    .withName("asteirto")
+                    .withAttributes(AsteirtoEntity::createAttributes)
                     .customRenderer(AsteirtoRenderer::new)
-                    .eggColor(0xCC4141, BANANA_EGG_COLOR)
+                    .eggColor(0x9BE468, BANANA_EGG_COLOR)
                     .build();
 
 
@@ -84,7 +84,7 @@ public class ModEntities {
 
     @SubscribeEvent
     public static void onEntityAttributeCreation(EntityAttributeCreationEvent event) {
-        LOGGER.info(attributeCreationRequests.size() + " attributes were registered");
+        //LOGGER.info(attributeCreationRequests.size() + " attributes were registered");
         for (Consumer<EntityAttributeCreationEvent> consumer : attributeCreationRequests) consumer.accept(event);
     }
 }

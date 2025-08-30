@@ -7,7 +7,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import software.bernie.geckolib.model.GeoModel;
 
-// todo make greg entity
 @OnlyIn(Dist.CLIENT)
 public class GregEntityModel extends GeoModel<GregEntity> {
 

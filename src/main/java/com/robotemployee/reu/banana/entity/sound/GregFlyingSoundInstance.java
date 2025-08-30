@@ -13,7 +13,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class GregFlyingSoundInstance extends AbstractTickableSoundInstance {
     private final GregEntity greg;
     protected GregFlyingSoundInstance(GregEntity greg) {
-        super(ModSounds.GREG_FLYING.get(), SoundSource.NEUTRAL, SoundInstance.createUnseededRandom());
+        super(ModSounds.GREG_FLYING.get(), SoundSource.HOSTILE, SoundInstance.createUnseededRandom());
         this.greg = greg;
         this.looping = true;
         this.relative = false;
