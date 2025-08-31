@@ -7,17 +7,21 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public class TickingSoundInstance<T extends Entity> extends AbstractTickableSoundInstance {
-    private final T entity;
-    protected final Function<TickingSoundInstance<T>, Boolean> onTick;
+@OnlyIn(Dist.CLIENT)
+public class TickingSoundInstance extends AbstractTickableSoundInstance {
+    protected final Function<TickingSoundInstance, Boolean> onTick;
 
     protected TickingSoundInstance(
-            T entity,
             SoundEvent sound,
             SoundSource source,
             RandomSource random,
@@ -27,10 +31,9 @@ public class TickingSoundInstance<T extends Entity> extends AbstractTickableSoun
             float pitch,
             int delay,
             SoundInstance.Attenuation attenuation,
-            Function<TickingSoundInstance<T>, Boolean> onTick
+            Function<TickingSoundInstance, Boolean> onTick
     ) {
         super(sound, source, random);
-        this.entity = entity;
         this.looping = looping;
         this.relative = relative;
         this.volume = volume;
@@ -43,13 +46,9 @@ public class TickingSoundInstance<T extends Entity> extends AbstractTickableSoun
 
     @Override
     public void tick() {
-        boolean shouldStop = entity.isRemoved() || !onTick.apply(this);
+        boolean shouldStop = !onTick.apply(this);
 
         if (shouldStop) stop();
-    }
-
-    public T getEntity() {
-        return entity;
     }
 
     public void stopPlaying() {
@@ -74,35 +73,29 @@ public class TickingSoundInstance<T extends Entity> extends AbstractTickableSoun
         Minecraft.getInstance().getSoundManager().queueTickingSound(this);
     }
 
-    public static class Builder <T extends Entity> {
+    public class Builder {
+        protected SoundEvent sound = null;
+        protected SoundSource source = SoundSource.NEUTRAL;
+        protected Supplier<RandomSource> random = SoundInstance::createUnseededRandom;
+        protected boolean looping = false;
+        protected boolean relative = false;
+        protected float volume = 1;
+        protected float pitch = 1;
+        protected int delay = 0;
+        protected SoundInstance.Attenuation attenuation = Attenuation.LINEAR;
 
-        private final T entity;
-        private SoundEvent sound = null;
-        private SoundSource source = SoundSource.NEUTRAL;
-        private Supplier<RandomSource> random = SoundInstance::createUnseededRandom;
-        private boolean looping = false;
-        private boolean relative = false;
-        private float volume = 1;
-        private float pitch = 1;
-        private int delay = 0;
-        private SoundInstance.Attenuation attenuation = Attenuation.LINEAR;
+        protected Function<TickingSoundInstance, Boolean> onTick = null;
 
-        private Function<TickingSoundInstance<T>, Boolean> onTick = null;
+        protected Builder() {
 
-        private Builder(T entity) {
-            this.entity = entity;
         }
 
-        public static <T extends Entity> Builder<T> of(T entity) {
-            return new Builder<>(entity);
-        }
-
-        public Builder<T> withSound(SoundEvent sound) {
+        public Builder withSound(SoundEvent sound) {
             this.sound = sound;
             return this;
         }
 
-        public Builder<T> withSource(SoundSource source) {
+        public Builder withSource(SoundSource source) {
             this.source = source;
             return this;
         }
@@ -112,50 +105,49 @@ public class TickingSoundInstance<T extends Entity> extends AbstractTickableSoun
          * <p>If that function returns false, the sound is stopped.</p>
          * <p>The function will not be run if the entity is removed.</p>
          * */
-        public Builder<T> onTick(Function<TickingSoundInstance<T>, Boolean> onTick) {
+        public Builder onTick(Function<TickingSoundInstance, Boolean> onTick) {
             this.onTick = onTick;
             return this;
         }
 
-        public Builder<T> withRandom(RandomSource random) {
+        public Builder withRandom(RandomSource random) {
             this.random = () -> random;
             return this;
         }
 
-        public Builder<T> looping() {
+        public Builder looping() {
             this.looping = true;
             return this;
         }
 
-        public Builder<T> relative() {
+        public Builder relative() {
             this.relative = true;
             return this;
         }
 
-        public Builder<T> withVolume(float volume) {
+        public Builder withVolume(float volume) {
             this.volume = volume;
             return this;
         }
 
-        public Builder<T> withPitch(float pitch) {
+        public Builder withPitch(float pitch) {
             this.pitch = pitch;
             return this;
         }
 
-        public Builder<T> withDelay(int delay) {
+        public Builder withDelay(int delay) {
             this.delay = delay;
             return this;
         }
 
-        public Builder<T> withAttenuation(SoundInstance.Attenuation attenuation) {
+        public Builder withAttenuation(SoundInstance.Attenuation attenuation) {
             this.attenuation = attenuation;
             return this;
         }
 
-        public TickingSoundInstance<T> build() {
-            if (hasInsufficientParams()) throw new IllegalStateException("Had insufficient parameters");
-            return new TickingSoundInstance<>(
-                    entity,
+        public TickingSoundInstance build() {
+            checkForInsufficientParams();
+            return new TickingSoundInstance(
                     sound,
                     source,
                     random.get(),
@@ -169,24 +161,15 @@ public class TickingSoundInstance<T extends Entity> extends AbstractTickableSoun
             );
         }
 
-        public TickingSoundInstance<T> buildAndStart() {
-            TickingSoundInstance<T> instance = build();
+        public TickingSoundInstance buildAndStart() {
+            TickingSoundInstance instance = build();
             instance.start();
             return instance;
         }
 
-        private boolean hasInsufficientParams() {
-            return entity == null ||
-                    sound == null ||
-                    onTick == null;
+        private void checkForInsufficientParams() {
+            if (sound == null) throw new IllegalStateException("Ticking sound instance was not provided with a SoundEvent");
+            if (onTick == null) throw new IllegalStateException("Ticking sound instance was not provided with an onTick function");
         }
-    }
-
-    public static <T extends Entity> TickingSoundInstance<T> playAndFollow(T entity, SoundEvent sound, SoundSource source) {
-        return Builder.of(entity).withSound(sound).withSource(source).onTick(instance -> {
-            T target = instance.getEntity();
-            instance.setPosition(target.position());
-            return true;
-        }).buildAndStart();
     }
 }

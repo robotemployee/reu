@@ -6,8 +6,9 @@ import com.robotemployee.reu.banana.entity.ai.MultiGoal;
 import com.robotemployee.reu.banana.entity.ai.MultiMoveControl;
 import com.robotemployee.reu.banana.entity.ai.MultiPathNavigation;
 import com.robotemployee.reu.banana.entity.ai.StrictGroundPathNavigation;
-import com.robotemployee.reu.banana.entity.sound.GregFlyingSoundInstance;
+import com.robotemployee.reu.banana.entity.sound.TickingSoundInstance;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
+import com.robotemployee.reu.registry.ModSounds;
 import com.robotemployee.reu.util.LevelUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -17,6 +18,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -68,7 +70,7 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
     public static final int tickDurationOfLanding = 40;
     long timestampOfAnimationStarted;
 
-    public GregFlyingSoundInstance flyingSoundInstance;
+    public TickingSoundInstance<GregEntity> flyingSoundInstance;
 
     public GregEntity(EntityType<? extends Monster> entityType, Level level) {
         super(entityType, level);
@@ -258,7 +260,12 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
         // sure you can't speed up / slow down irrespective of pitch but yknow that's complicated
         if (flyingSoundInstance == null || flyingSoundInstance.isStopped()) {
             //LOGGER.info("Playing new flying sound");
-            flyingSoundInstance = GregFlyingSoundInstance.startFrom(this);
+            flyingSoundInstance = TickingSoundInstance.playAndFollow(
+                    this,
+                    ModSounds.GREG_FLYING.get(),
+                    SoundSource.HOSTILE,
+                    GregEntity::isInGroundMode
+            );
         }
 
         setNoGravity(true);

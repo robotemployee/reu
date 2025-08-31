@@ -2,8 +2,11 @@ package com.robotemployee.reu.registry;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
+import com.robotemployee.reu.registry.help.builder.SoundBuilder;
+import com.robotemployee.reu.registry.help.datagen.Datagen;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraftforge.common.data.SoundDefinition;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -28,25 +31,28 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> PROVIDENCE_DISC = registerDiscSound("providence");
     public static final RegistryObject<SoundEvent> I_WISH_DISC = registerDiscSound("i_wish");
 
-    public static final RegistryObject<SoundEvent> MEH_CHEERING = registerNormalSound("player.meh_cheering");
-    public static final RegistryObject<SoundEvent> GOOD_CHEERING = registerNormalSound("player.good_cheering");
-    public static final RegistryObject<SoundEvent> EPIC_CHEERING = registerNormalSound("player.epic_cheering");
+    public static final RegistryObject<SoundEvent> MEH_CHEERING = registerNormalSound("player.meh_cheering", "player/meh_cheering");
+    public static final RegistryObject<SoundEvent> GOOD_CHEERING = registerNormalSound("player.good_cheering", "player/good_cheering");
+    public static final RegistryObject<SoundEvent> EPIC_CHEERING = registerNormalSound("player.epic_cheering", "player/epic_cheering");
 
 
-    public static final RegistryObject<SoundEvent> GREG_FLYING = registerNormalSound("entity.greg_flying");
-    public static final RegistryObject<SoundEvent> ASTEIRTO_HUM = registerNormalSound("entity.asteirto.idle");
+    public static final RegistryObject<SoundEvent> GREG_FLYING = registerNormalSound("entity.greg.fly", "banana/greg_flying");
 
-    public static RegistryObject<SoundEvent> registerDiscSound(String location) {
-        return registerNormalSound("music_disc." + location);
+    public static final RegistryObject<SoundEvent> ASTEIRTO_HUM = registerNormalSound("entity.asteirto.idle", "banana/asteirto_hum");
+
+    public static RegistryObject<SoundEvent> registerDiscSound(String name) {
+        return new SoundBuilder()
+                .withName("music_disc." + name)
+                .soundLocation("music_disc/" + name)
+                .soundModifier(SoundDefinition.Sound::stream)
+                .build();
     }
 
-    public static RegistryObject<SoundEvent> registerNormalSound(String location) {
-        LOGGER.info(String.format("Registering sound %s", location));
-        return SOUNDS.register(
-                location,
-                () -> SoundEvent.createVariableRangeEvent(
-                        new ResourceLocation(RobotEmployeeUtils.MODID,location)
-                )
-        );
+    public static RegistryObject<SoundEvent> registerNormalSound(String name, String location) {
+        return new SoundBuilder()
+                .soundLocation(location)
+                .withName(name)
+                .build();
     }
+
 }

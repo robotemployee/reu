@@ -28,6 +28,13 @@ public class AsteirtoEntity extends FlyingBananaRaidMob implements GeoEntity {
     }
 
     // todo
+    // obviously implement this
+    // should probably start with temfur temfur
+    // also, create a sounds.json entry for the hum
+    // make sure it works
+    // and replace greg's logic with the same stuff that is used for this one
+    // good luck
+    // - 4:25AM carlos wearing the uncomfortable white palm tree shirt
 
     protected TickingSoundInstance<AsteirtoEntity> ambient_sound = null;
 
@@ -63,17 +70,17 @@ public class AsteirtoEntity extends FlyingBananaRaidMob implements GeoEntity {
     }
 
 
-    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-
     @Override
-    public void push(Entity p_21294_) {
-        //super.push(p_21294_);
+    public void push(Entity entity) {
+        //super.push(entity);
     }
+
 
     @Override
     public void baseTick() {
+        super.baseTick();
         if (canStartAmbientSound()) {
-
+            startNewAmbientSound();
         }
     }
 
@@ -87,6 +94,7 @@ public class AsteirtoEntity extends FlyingBananaRaidMob implements GeoEntity {
         ambient_sound = TickingSoundInstance.playAndFollow(this, ModSounds.ASTEIRTO_HUM.get(), SoundSource.HOSTILE);
     }
 
+    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return cache;

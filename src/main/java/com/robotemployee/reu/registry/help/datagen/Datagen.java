@@ -22,6 +22,7 @@ import net.minecraft.data.tags.TagsProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -34,6 +35,8 @@ import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraftforge.client.model.generators.ItemModelProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.common.data.ForgeAdvancementProvider;
+import net.minecraftforge.common.data.SoundDefinition;
+import net.minecraftforge.common.data.SoundDefinitionsProvider;
 import net.minecraftforge.data.event.GatherDataEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -77,6 +80,7 @@ public class Datagen {
         DataGenerator gen = event.getGenerator();
 
         gen.addProvider(event.includeClient(), new ModItemModelProvider(gen.getPackOutput(), event.getExistingFileHelper()));
+        gen.addProvider(event.includeClient(), new ModSoundProvider(gen.getPackOutput(), event.getExistingFileHelper()));
         ModTagsProvider.attach(event);
 
         gen.addProvider(event.includeServer(), ModLootTableProvider.create(gen.getPackOutput()));
@@ -442,6 +446,36 @@ public class Datagen {
 
                 for (Consumer<Consumer<Advancement>> request : requests) request.accept(saver);
             }
+        }
+    }
+
+    public static class ModSoundProvider extends SoundDefinitionsProvider {
+
+        private static final ArrayList<Consumer<ModSoundProvider>> requests = new ArrayList<>();
+
+        /**
+         * Creates a new instance of this data provider.
+         *
+         * @param output The {@linkplain PackOutput} instance provided by the data generator.
+         * @param helper The existing file helper provided by the event you are initializing this provider in.
+         */
+        protected ModSoundProvider(PackOutput output, ExistingFileHelper helper) {
+            super(output, RobotEmployeeUtils.MODID, helper);
+        }
+
+        protected static void queueRequest(Consumer<ModSoundProvider> request) {
+            requests.add(request);
+        }
+
+        public static void register(Supplier<SoundEvent> soundEvent, SoundDefinition definition) {
+            queueRequest(provider -> {
+                provider.add(soundEvent, definition);
+            });
+        }
+
+        @Override
+        public void registerSounds() {
+            requests.forEach(request -> request.accept(this));
         }
     }
 
