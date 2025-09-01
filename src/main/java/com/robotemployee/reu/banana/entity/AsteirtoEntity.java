@@ -1,7 +1,7 @@
 package com.robotemployee.reu.banana.entity;
 
 import com.robotemployee.reu.banana.BananaRaid;
-import com.robotemployee.reu.banana.entity.sound.TickingSoundInstance;
+import com.robotemployee.reu.banana.entity.sound.EntitySoundInstanceThatTicks;
 import com.robotemployee.reu.registry.ModSounds;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -12,6 +12,8 @@ import net.minecraft.world.entity.ai.control.FlyingMoveControl;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.constant.DefaultAnimations;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -36,7 +38,8 @@ public class AsteirtoEntity extends FlyingBananaRaidMob implements GeoEntity {
     // good luck
     // - 4:25AM carlos wearing the uncomfortable white palm tree shirt
 
-    protected TickingSoundInstance<AsteirtoEntity> ambient_sound = null;
+    @OnlyIn(Dist.CLIENT)
+    protected EntitySoundInstanceThatTicks<AsteirtoEntity> ambient_sound = null;
 
     @Override
     public float getAirliftWeight() {
@@ -85,13 +88,13 @@ public class AsteirtoEntity extends FlyingBananaRaidMob implements GeoEntity {
     }
 
     public boolean canStartAmbientSound() {
-        return ambient_sound == null || ambient_sound.isStopped();
+        return level().isClientSide() && (ambient_sound == null || ambient_sound.isStopped());
     }
 
     public void startNewAmbientSound() {
         if (ambient_sound != null) ambient_sound.stopPlaying();
 
-        ambient_sound = TickingSoundInstance.playAndFollow(this, ModSounds.ASTEIRTO_HUM.get(), SoundSource.HOSTILE);
+        ambient_sound = EntitySoundInstanceThatTicks.playAndFollow(this, ModSounds.ASTEIRTO_HUM.get(), SoundSource.HOSTILE);
     }
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);

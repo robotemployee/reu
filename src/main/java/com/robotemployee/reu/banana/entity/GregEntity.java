@@ -6,7 +6,7 @@ import com.robotemployee.reu.banana.entity.ai.MultiGoal;
 import com.robotemployee.reu.banana.entity.ai.MultiMoveControl;
 import com.robotemployee.reu.banana.entity.ai.MultiPathNavigation;
 import com.robotemployee.reu.banana.entity.ai.StrictGroundPathNavigation;
-import com.robotemployee.reu.banana.entity.sound.TickingSoundInstance;
+import com.robotemployee.reu.banana.entity.sound.EntitySoundInstanceThatTicks;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.registry.ModSounds;
 import com.robotemployee.reu.util.LevelUtils;
@@ -37,6 +37,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -70,11 +72,12 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
     public static final int tickDurationOfLanding = 40;
     long timestampOfAnimationStarted;
 
-    public TickingSoundInstance<GregEntity> flyingSoundInstance;
+    @OnlyIn(Dist.CLIENT)
+    public EntitySoundInstanceThatTicks<GregEntity> flyingSoundInstance;
 
     public GregEntity(EntityType<? extends Monster> entityType, Level level) {
         super(entityType, level);
-        entityData.define(IS_FLYING ,false);
+        entityData.define(IS_FLYING, false);
 
         HashMap<MoveControlMode, MoveControl> movements = new HashMap<>();
         movements.put(MoveControlMode.FLYING, new FlyingMoveControl(this, 20, true));
@@ -99,8 +102,8 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
     }
 
     @Override
-    public void baseTick() {
-        super.baseTick();
+    public void tick() {
+        super.tick();
 
         if (level().isClientSide()) return;
 
@@ -258,14 +261,20 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
     public void startFlying(boolean quietly) {
         // thank god for how capable minecraft's sound system is
         // sure you can't speed up / slow down irrespective of pitch but yknow that's complicated
-        if (flyingSoundInstance == null || flyingSoundInstance.isStopped()) {
+        if (level().isClientSide() && flyingSoundInstance == null || flyingSoundInstance.isStopped()) {
             //LOGGER.info("Playing new flying sound");
-            flyingSoundInstance = TickingSoundInstance.playAndFollow(
-                    this,
-                    ModSounds.GREG_FLYING.get(),
-                    SoundSource.HOSTILE,
-                    GregEntity::isInGroundMode
-            );
+            flyingSoundInstance = EntitySoundInstanceThatTicks.Builder.of(this)
+                    .withSound(ModSounds.GREG_FLYING.get())
+                    .withSource(SoundSource.HOSTILE)
+                    .withDelay(getRandom().nextInt(10))
+                    .onTick(instance -> {
+                        GregEntity greg = instance.getEntity();
+                        if (greg.isDeadOrDying() || greg.isInGroundMode()) return false;
+                        instance.setPosition(greg.position());
+                        return true;
+                    })
+                    .looping()
+                    .buildAndPlay();
         }
 
         setNoGravity(true);

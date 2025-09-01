@@ -65,7 +65,6 @@ public class EntityBuilder<T extends Entity> {
     @OnlyIn(Dist.CLIENT)
     public EntityBuilder<T> customRenderer(EntityRendererProvider<T> rendererProvider) {
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-            // implement later
             this.rendererProvider = rendererProvider;
         });
         return this;

@@ -4,12 +4,14 @@ import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.banana.entity.AsteirtoEntity;
 import com.robotemployee.reu.banana.entity.DevilEntity;
 import com.robotemployee.reu.banana.entity.GregEntity;
+import com.robotemployee.reu.banana.entity.ThrownSemisolidEntity;
 import com.robotemployee.reu.banana.render.AsteirtoRenderer;
 import com.robotemployee.reu.banana.render.DevilRenderer;
 import com.robotemployee.reu.banana.render.GregRenderer;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.registry.help.builder.EntityBuilder;
 import com.robotemployee.reu.registry.help.entry.EntityRegistryEntry;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobCategory;
@@ -60,14 +62,20 @@ public class ModEntities {
     public static final EntityRegistryEntry<AsteirtoEntity> ASTEIRTO =
             new EntityBuilder<>(
                     () -> EntityType.Builder.of(AsteirtoEntity::new, MobCategory.MONSTER)
-                            .sized(2, 3))
+                            .sized(2, 2.5f))
                     .withName("asteirto")
                     .withAttributes(AsteirtoEntity::createAttributes)
                     .customRenderer(AsteirtoRenderer::new)
                     .eggColor(0x9BE468, BANANA_EGG_COLOR)
                     .build();
 
-
+    public static final EntityRegistryEntry<ThrownSemisolidEntity> THROWN_SEMISOLID =
+            new EntityBuilder<>(
+                    () -> EntityType.Builder.of(ThrownSemisolidEntity::new, MobCategory.MISC)
+                            .sized(0.5f, 0.5f))
+                    .withName("thrown_item")
+                    .customRenderer(context -> new ThrownItemRenderer<>(context, 1, true))
+                    .build();
 
     private static void addAttributeRequest(Consumer<EntityAttributeCreationEvent> consumer) {
         attributeCreationRequests.add(consumer);

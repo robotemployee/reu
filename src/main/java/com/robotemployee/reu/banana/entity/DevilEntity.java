@@ -1,5 +1,6 @@
 package com.robotemployee.reu.banana.entity;
 
+import com.github.alexthe666.alexsmobs.effect.AMEffectRegistry;
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.banana.BananaRaid;
 import com.robotemployee.reu.banana.entity.ai.FlyingWanderGoal;
@@ -201,6 +202,8 @@ public class DevilEntity extends FlyingBananaRaidMob implements GeoEntity {
 
         protected void applyBuffs() {
             getTarget().addEffect(new MobEffectInstance(MobEffects.REGENERATION, BUFFS_INTERVAL + 40));
+            getTarget().addEffect(new MobEffectInstance(AMEffectRegistry.KNOCKBACK_RESISTANCE.get(), BUFFS_INTERVAL + 40, 1));
+            getTarget().addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, BUFFS_INTERVAL + 40));
             //LOGGER.info("Applying buffs to target at" + getTarget().blockPosition());
         }
 

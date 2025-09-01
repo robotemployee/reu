@@ -6,22 +6,18 @@ import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 @OnlyIn(Dist.CLIENT)
-public class TickingSoundInstance extends AbstractTickableSoundInstance {
-    protected final Function<TickingSoundInstance, Boolean> onTick;
+public abstract class ASoundInstanceThatTicks extends AbstractTickableSoundInstance {
+    protected final Function<ASoundInstanceThatTicks, Boolean> onTick;
 
-    protected TickingSoundInstance(
+    protected ASoundInstanceThatTicks(
             SoundEvent sound,
             SoundSource source,
             RandomSource random,
@@ -31,7 +27,7 @@ public class TickingSoundInstance extends AbstractTickableSoundInstance {
             float pitch,
             int delay,
             SoundInstance.Attenuation attenuation,
-            Function<TickingSoundInstance, Boolean> onTick
+            Function<ASoundInstanceThatTicks, Boolean> onTick
     ) {
         super(sound, source, random);
         this.looping = looping;
@@ -46,9 +42,8 @@ public class TickingSoundInstance extends AbstractTickableSoundInstance {
 
     @Override
     public void tick() {
-        boolean shouldStop = !onTick.apply(this);
-
-        if (shouldStop) stop();
+        if (isStopped()) return;
+        if (!onTick.apply(this)) stop();
     }
 
     public void stopPlaying() {
@@ -69,11 +64,11 @@ public class TickingSoundInstance extends AbstractTickableSoundInstance {
         this.z = pos.z();
     }
 
-    public void start() {
+    protected void start() {
         Minecraft.getInstance().getSoundManager().queueTickingSound(this);
     }
 
-    public class Builder {
+    public static abstract class Builder<B extends Builder<?, ?>, I extends ASoundInstanceThatTicks> {
         protected SoundEvent sound = null;
         protected SoundSource source = SoundSource.NEUTRAL;
         protected Supplier<RandomSource> random = SoundInstance::createUnseededRandom;
@@ -84,20 +79,24 @@ public class TickingSoundInstance extends AbstractTickableSoundInstance {
         protected int delay = 0;
         protected SoundInstance.Attenuation attenuation = Attenuation.LINEAR;
 
-        protected Function<TickingSoundInstance, Boolean> onTick = null;
+        protected Function<I, Boolean> onTick = null;
 
         protected Builder() {
 
         }
 
-        public Builder withSound(SoundEvent sound) {
+        protected B self() {
+            return (B)this;
+        };
+
+        public B withSound(SoundEvent sound) {
             this.sound = sound;
-            return this;
+            return self();
         }
 
-        public Builder withSource(SoundSource source) {
+        public B withSource(SoundSource source) {
             this.source = source;
-            return this;
+            return self();
         }
 
         /**
@@ -105,69 +104,55 @@ public class TickingSoundInstance extends AbstractTickableSoundInstance {
          * <p>If that function returns false, the sound is stopped.</p>
          * <p>The function will not be run if the entity is removed.</p>
          * */
-        public Builder onTick(Function<TickingSoundInstance, Boolean> onTick) {
+        public B onTick(Function<I, Boolean> onTick) {
             this.onTick = onTick;
-            return this;
+            return self();
         }
 
-        public Builder withRandom(RandomSource random) {
+        public B withRandom(RandomSource random) {
             this.random = () -> random;
-            return this;
+            return self();
         }
 
-        public Builder looping() {
+        public B looping() {
             this.looping = true;
-            return this;
+            return self();
         }
 
-        public Builder relative() {
+        public B relative() {
             this.relative = true;
-            return this;
+            return self();
         }
 
-        public Builder withVolume(float volume) {
+        public B withVolume(float volume) {
             this.volume = volume;
-            return this;
+            return self();
         }
 
-        public Builder withPitch(float pitch) {
+        public B withPitch(float pitch) {
             this.pitch = pitch;
-            return this;
+            return self();
         }
 
-        public Builder withDelay(int delay) {
+        public B withDelay(int delay) {
             this.delay = delay;
-            return this;
+            return self();
         }
 
-        public Builder withAttenuation(SoundInstance.Attenuation attenuation) {
+        public B withAttenuation(SoundInstance.Attenuation attenuation) {
             this.attenuation = attenuation;
-            return this;
+            return self();
         }
 
-        public TickingSoundInstance build() {
-            checkForInsufficientParams();
-            return new TickingSoundInstance(
-                    sound,
-                    source,
-                    random.get(),
-                    looping,
-                    relative,
-                    volume,
-                    pitch,
-                    delay,
-                    attenuation,
-                    onTick
-            );
-        }
+        public abstract I build();
 
-        public TickingSoundInstance buildAndStart() {
-            TickingSoundInstance instance = build();
+        public I buildAndPlay() {
+            I instance = build();
             instance.start();
             return instance;
         }
 
-        private void checkForInsufficientParams() {
+        protected void checkForInsufficientParams() {
             if (sound == null) throw new IllegalStateException("Ticking sound instance was not provided with a SoundEvent");
             if (onTick == null) throw new IllegalStateException("Ticking sound instance was not provided with an onTick function");
         }

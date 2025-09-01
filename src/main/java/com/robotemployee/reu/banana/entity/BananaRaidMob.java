@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public abstract class BananaRaidMob extends Monster {
 
@@ -77,19 +78,18 @@ public abstract class BananaRaidMob extends Monster {
         return getEntityData().get(DEVILS_PROTECTING_ME_IDS);
     }
 
-    public List<DevilEntity> getDevilsProtectingMe() {
+    public Stream<DevilEntity> getDevilsProtectingMe() {
         List<Integer> ids = getDevilsProtectingMeIds();
-        List<DevilEntity> devils = ids.stream().map(id -> (DevilEntity)level().getEntity(id)).toList();
-        return devils;
+        return ids.stream().map(id -> (DevilEntity)level().getEntity(id));
     }
     public boolean isBeingProtected() {
-        return getDevilsProtectingMe().size() > 0;
+        return getDevilsProtectingMeIds().size() > 0;
     }
 
     public void cleanDevilsProtectingMe() {
-        for (DevilEntity devil : getDevilsProtectingMe()) {
+        getDevilsProtectingMe().forEach(devil -> {
             if (!MobUtils.entityIsValidForTargeting(devil)) removeDevilProtectingMe(devil);
-        }
+        });
     }
 
     public boolean canDevilProtect() {

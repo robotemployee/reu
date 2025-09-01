@@ -38,7 +38,11 @@ public class ModSounds {
 
     public static final RegistryObject<SoundEvent> GREG_FLYING = registerNormalSound("entity.greg.fly", "banana/greg_flying");
 
-    public static final RegistryObject<SoundEvent> ASTEIRTO_HUM = registerNormalSound("entity.asteirto.idle", "banana/asteirto_hum");
+    public static final RegistryObject<SoundEvent> ASTEIRTO_HUM = new SoundBuilder()
+            .withName("entity.asteirto.idle")
+            .soundLocation("banana/asteirto_hum")
+            .soundModifier(sound -> sound.attenuationDistance(32))
+            .build();
 
     public static RegistryObject<SoundEvent> registerDiscSound(String name) {
         return new SoundBuilder()

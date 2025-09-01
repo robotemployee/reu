@@ -118,6 +118,7 @@ public class ModItems {
             .withName("semisolid")
             .withSupplier(() -> new SemisolidItem(new Item.Properties()
                     .durability(SemisolidItem.DECAY_SECONDS)
+                    .setNoRepair()
                     .rarity(Rarity.RARE)
             ))
             .build();
