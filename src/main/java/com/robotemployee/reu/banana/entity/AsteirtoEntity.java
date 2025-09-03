@@ -23,6 +23,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public class AsteirtoEntity extends FlyingBananaRaidMob implements GeoEntity {
 
     public static final int MAX_OWNED_TEMFUR_TEMFURS = 16;
+    public static final float RECYCLE_RANGE = 64;
     public AsteirtoEntity(EntityType<? extends Monster> entityType, Level level) {
         super(entityType, level);
         this.moveControl = new FlyingMoveControl(this, 20, true);
@@ -47,13 +48,18 @@ public class AsteirtoEntity extends FlyingBananaRaidMob implements GeoEntity {
     }
 
     @Override
-    public float getImportance() {
-        return 0;
+    public boolean canRecycle() {
+        return false;
     }
 
     @Override
-    public BananaRaid.EnemyTypes getBananaType() {
-        return null;
+    public float getPresenceImportance() {
+        return 8;
+    }
+
+    @Override
+    public BananaRaid.EnemyType getBananaType() {
+        return BananaRaid.EnemyType.ASTEIRTO;
     }
 
     @Override
@@ -102,4 +108,5 @@ public class AsteirtoEntity extends FlyingBananaRaidMob implements GeoEntity {
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return cache;
     }
+
 }

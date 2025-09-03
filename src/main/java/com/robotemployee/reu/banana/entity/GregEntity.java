@@ -377,13 +377,13 @@ public class GregEntity extends BananaRaidMob implements GeoEntity {
     }
 
     @Override
-    public float getImportance() {
+    public float getPresenceImportance() {
         return 1;
     }
 
     @Override
-    public BananaRaid.EnemyTypes getBananaType() {
-        return BananaRaid.EnemyTypes.GREG;
+    public BananaRaid.EnemyType getBananaType() {
+        return BananaRaid.EnemyType.GREG;
     }
 
     public static final RawAnimation TAKE_OFF_ANIM = RawAnimation.begin().thenPlay("misc.take_off");

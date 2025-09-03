@@ -84,8 +84,8 @@ public class DevilEntity extends FlyingBananaRaidMob implements GeoEntity {
     }
 
     @Override
-    public float getImportance() {
-        return 5;
+    public float getPresenceImportance() {
+        return 4;
     }
 
     @Override
@@ -99,8 +99,8 @@ public class DevilEntity extends FlyingBananaRaidMob implements GeoEntity {
     }
 
     @Override
-    public BananaRaid.EnemyTypes getBananaType() {
-        return BananaRaid.EnemyTypes.DEVIL;
+    public BananaRaid.EnemyType getBananaType() {
+        return BananaRaid.EnemyType.DEVIL;
     }
 
     @Override

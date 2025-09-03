@@ -1,5 +1,6 @@
 package com.robotemployee.reu.banana;
 
+import com.robotemployee.reu.banana.entity.AsteirtoEntity;
 import com.robotemployee.reu.banana.entity.BananaRaidMob;
 import com.robotemployee.reu.util.MobUtils;
 import net.minecraft.core.BlockPos;
@@ -10,16 +11,14 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.AABB;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class BananaRaid {
 
-    private BananaRaidSavedData manager;
+    private BananaRaidLevelManager manager;
 
     private final ArrayList<UUID> spawnedEntities = new ArrayList<>();
     private static final String SPAWNED_ENTITIES_PATH = "SpawnedEntityUUIDs";
@@ -34,7 +33,7 @@ public class BananaRaid {
     private static final HashMap<UUID, AirliftRequest> airliftRequests = new HashMap<>();
 
     // use this constructor if you are making a new raid
-    public BananaRaid(BananaRaidSavedData manager, ServerLevel level, BlockPos epicenter) {
+    public BananaRaid(BananaRaidLevelManager manager, ServerLevel level, BlockPos epicenter) {
         this(epicenter, UUID.randomUUID());
         init(level, manager);
     }
@@ -45,7 +44,7 @@ public class BananaRaid {
         this.epicenter = epicenter;
     }
 
-    public void init(ServerLevel level, BananaRaidSavedData manager) {
+    public void init(ServerLevel level, BananaRaidLevelManager manager) {
         this.level = level;
         this.manager = manager;
         for (UUID bananaUUID : spawnedEntities) {
@@ -105,6 +104,32 @@ public class BananaRaid {
         });
 
         requests.computeIfAbsent(requestUUID, uuid -> new AirliftRequest(this, requester, destination));
+    }
+
+    public void tick() {
+
+    }
+
+    // todo document
+    public Collection<BananaRaidMob> findRecycleTargets(BlockPos asteirtoPos, int maxValue) {
+        AABB aabb = new AABB(asteirtoPos).inflate(AsteirtoEntity.RECYCLE_RANGE);
+        List<BananaRaidMob> raw = getLevel().getEntitiesOfClass(BananaRaidMob.class, aabb)
+                .stream()
+                .filter(BananaRaidMob::canRecycle)
+                .sorted((raidMobA, raidMobB) ->
+                        // inverted on purpose; the higher the value, the more reluctant we are to recycle
+                        Float.compare(raidMobB.getRecycleImpedance(), raidMobA.getRecycleImpedance())
+                ).toList();
+
+        int totalValue = 0;
+
+        List<BananaRaidMob> output = new ArrayList<>();
+        for (BananaRaidMob raidMob : raw) {
+            int providedValue = (int)Math.floor(raidMob.getRecycleImpedance());
+            if (totalValue + providedValue > maxValue) break;
+            output.add(raidMob);
+        }
+        return output;
     }
 
     public void removeAirliftRequest(UUID requesterUUID) {
@@ -227,7 +252,7 @@ public class BananaRaid {
         }
     }
 
-    public enum EnemyTypes {
+    public enum EnemyType {
         GREG,
         DEVIL,
         ASTEIRTO,

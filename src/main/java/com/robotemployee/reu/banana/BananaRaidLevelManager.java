@@ -11,14 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.UUID;
 
-public class BananaRaidSavedData extends SavedData {
+public class BananaRaidLevelManager extends SavedData {
 
     private static final String SAVED_DATA_PATH = "BananaRaidData";
 
     private final HashMap<UUID, BananaRaid> RAIDS = new HashMap<>();
     private static final String ONGOING_RAIDS_PATH = "OngoingRaids";
 
-    public BananaRaidSavedData() {
+    public BananaRaidLevelManager() {
         this.setDirty();
     }
 
@@ -31,8 +31,8 @@ public class BananaRaidSavedData extends SavedData {
         return tag;
     }
 
-    private static BananaRaidSavedData loadFromTag(CompoundTag tag) {
-        BananaRaidSavedData savedData = new BananaRaidSavedData();
+    private static BananaRaidLevelManager loadFromTag(CompoundTag tag) {
+        BananaRaidLevelManager savedData = new BananaRaidLevelManager();
 
         ListTag list = tag.getList(ONGOING_RAIDS_PATH, Tag.TAG_COMPOUND);
         for (Tag value : list) savedData.registerRaid(BananaRaid.load((CompoundTag) value));
@@ -41,16 +41,16 @@ public class BananaRaidSavedData extends SavedData {
     }
 
     // call this method when the level loads
-    public static BananaRaidSavedData onLevelLoaded(ServerLevel level) {
-        BananaRaidSavedData data = getFromSaveData(level);
+    public static BananaRaidLevelManager onLevelLoaded(ServerLevel level) {
+        BananaRaidLevelManager data = getFromSaveData(level);
         data.init(level);
         return data;
     }
 
     // this one just gets you an instance from save data
-    private static BananaRaidSavedData getFromSaveData(ServerLevel level) {
+    private static BananaRaidLevelManager getFromSaveData(ServerLevel level) {
         DimensionDataStorage storage = level.getDataStorage();
-        return storage.computeIfAbsent(BananaRaidSavedData::loadFromTag, BananaRaidSavedData::new, SAVED_DATA_PATH);
+        return storage.computeIfAbsent(BananaRaidLevelManager::loadFromTag, BananaRaidLevelManager::new, SAVED_DATA_PATH);
     }
 
     // this one is for propagating "hey the server is loaded now" to every raid

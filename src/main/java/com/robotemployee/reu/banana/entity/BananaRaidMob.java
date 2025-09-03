@@ -99,10 +99,31 @@ public abstract class BananaRaidMob extends Monster {
         return 1f;
     }
 
-    // This is for recycling - the higher your value, the more reluctant things are to recycle you
-    public abstract float getImportance();
+    public abstract BananaRaid.EnemyType getBananaType();
 
-    public abstract BananaRaid.EnemyTypes getBananaType();
+    public boolean canRecycle() {
+        return true;
+    }
+
+    // This is for spawning in
+    // This value is also considered negatively - the higher it is, the less of them are spawned before the director is satisfied
+    public abstract float getPresenceImportance();
+
+    // presence importance * recycle importance factor = perceived value for recycling from asteirtos
+    protected float getRecycleImportanceFactor() {
+        return 1;
+    }
+
+    public final float getRecycleImpedance() {
+        return getPresenceImportance() * getRecycleImportanceFactor();
+    }
+
+    // This is for determining how effectively a creature is in fulfilling their role -
+    // if a creature is very badly wounded, it should report a lower fulfillment rating.
+    // 0 to 1.
+    public float getFulfillment() {
+        return (getHealth() / (2 * getMaxHealth())) + 0.5f;
+    }
 
     long lastAirliftRequestTime;
     public static final long AIRLIFT_REQUEST_COOLDOWN = 200;

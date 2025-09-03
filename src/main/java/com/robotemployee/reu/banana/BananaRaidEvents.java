@@ -1,14 +1,6 @@
 package com.robotemployee.reu.banana;
 
-import com.robotemployee.reu.banana.entity.BananaRaidMob;
-import com.robotemployee.reu.banana.entity.DevilEntity;
-import com.robotemployee.reu.registry.ModItems;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.level.Level;
-import net.minecraftforge.event.entity.living.LivingDamageEvent;
-import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
@@ -16,7 +8,13 @@ public class BananaRaidEvents {
     @SubscribeEvent
     public static void onLevelLoad(LevelEvent.Load event) {
         if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
-        BananaRaidSavedData bananaData = BananaRaidSavedData.onLevelLoaded(serverLevel);
+        BananaRaidServerManager.getManager(serverLevel);
+    }
+
+    @SubscribeEvent
+    public static void onLevelUnload(LevelEvent.Unload event) {
+        if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
+        BananaRaidServerManager.removeManager(serverLevel);
     }
 
     /*
