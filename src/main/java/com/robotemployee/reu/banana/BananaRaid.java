@@ -2,6 +2,7 @@ package com.robotemployee.reu.banana;
 
 import com.robotemployee.reu.banana.entity.AsteirtoEntity;
 import com.robotemployee.reu.banana.entity.BananaRaidMob;
+import com.robotemployee.reu.registry.ModEntities;
 import com.robotemployee.reu.util.MobUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -11,10 +12,12 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.phys.AABB;
 
 import java.lang.ref.WeakReference;
 import java.util.*;
+import java.util.function.Supplier;
 
 public class BananaRaid {
 
@@ -253,11 +256,20 @@ public class BananaRaid {
     }
 
     public enum EnemyType {
-        GREG,
-        DEVIL,
-        ASTEIRTO,
-        TEMFUR_TEMFUR,
-        POSTERBOY,
-        FLAPJACK
+        GREG(ModEntities.GREG::get),
+        DEVIL(ModEntities.DEVIL::get),
+        ASTEIRTO(ModEntities.ASTEIRTO::get),
+        TEMFUR_TEMFUR(ModEntities.GREG::get),
+        POSTERBOY(ModEntities.GREG::get),
+        AMELIE(ModEntities.GREG::get);
+
+        final Supplier<EntityType<? extends BananaRaidMob>> registry;
+        EnemyType(Supplier<EntityType<? extends BananaRaidMob>> registry) {
+            this.registry = registry;
+        }
+
+        public Supplier<EntityType<? extends BananaRaidMob>> getRegistry() {
+            return registry;
+        }
     }
 }
