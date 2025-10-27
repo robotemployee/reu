@@ -12,36 +12,6 @@
 			},
 			"bones": [
 				{
-					"name": "pike",
-					"pivot": [0, 20, -20],
-					"cubes": [
-						{
-							"origin": [-2, 0, -22],
-							"size": [4, 40, 4],
-							"uv": {
-								"north": {"uv": [0, 0], "uv_size": [4, 40]},
-								"east": {"uv": [0, 0], "uv_size": [4, 40]},
-								"south": {"uv": [0, 0], "uv_size": [4, 40]},
-								"west": {"uv": [4, 0], "uv_size": [-4, 40]},
-								"up": {"uv": [4, 44], "uv_size": [-4, -4]},
-								"down": {"uv": [4, 44], "uv_size": [-4, -4]}
-							}
-						},
-						{
-							"origin": [-7.5, 0, -20],
-							"size": [14, 40, 0],
-							"uv": {
-								"north": {"uv": [5, 0], "uv_size": [14, 40]},
-								"east": {"uv": [0, 2], "uv_size": [0, 40]},
-								"south": {"uv": [14, 2], "uv_size": [0, 0]},
-								"west": {"uv": [14, 2], "uv_size": [0, 40]},
-								"up": {"uv": [21, 2], "uv_size": [0, 0]},
-								"down": {"uv": [28, 2], "uv_size": [0, 0]}
-							}
-						}
-					]
-				},
-				{
 					"name": "rose",
 					"pivot": [0, 22.5, 0],
 					"cubes": [

@@ -1,13 +1,13 @@
 package com.robotemployee.reu.registry;
 
 import com.mojang.logging.LogUtils;
-import com.robotemployee.reu.banana.entity.AsteirtoEntity;
-import com.robotemployee.reu.banana.entity.DevilEntity;
-import com.robotemployee.reu.banana.entity.GregEntity;
-import com.robotemployee.reu.banana.entity.ThrownSemisolidEntity;
-import com.robotemployee.reu.banana.render.AsteirtoRenderer;
-import com.robotemployee.reu.banana.render.DevilRenderer;
-import com.robotemployee.reu.banana.render.GregRenderer;
+import com.robotemployee.reu.foliant.entity.AsteirtoEntity;
+import com.robotemployee.reu.foliant.entity.DevilEntity;
+import com.robotemployee.reu.foliant.entity.GregEntity;
+import com.robotemployee.reu.foliant.entity.ThrownSemisolidEntity;
+import com.robotemployee.reu.foliant.render.AsteirtoRenderer;
+import com.robotemployee.reu.foliant.render.DevilRenderer;
+import com.robotemployee.reu.foliant.render.GregRenderer;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.registry.help.builder.EntityBuilder;
 import com.robotemployee.reu.registry.help.entry.EntityRegistryEntry;

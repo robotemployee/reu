@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 public class MobUtils {
@@ -20,8 +21,8 @@ public class MobUtils {
         return pos.above(minHeightAboveGround - heightAboveGround);
     }
 
-    public static boolean entityIsValidForTargeting(LivingEntity entity) {
+    public static boolean entityIsValidForTargeting(@Nullable LivingEntity entity) {
         //LOGGER.info(String.format("Alive: %s, Present: %s", entity.isAlive(), entity.getRemovalReason() == null));
-        return entity.isAlive() && entity.getRemovalReason() == null;
+        return entity != null && entity.isAlive() && entity.getRemovalReason() == null;
     }
 }

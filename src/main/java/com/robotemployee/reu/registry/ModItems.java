@@ -1,7 +1,7 @@
 package com.robotemployee.reu.registry;
 
 import com.mojang.logging.LogUtils;
-import com.robotemployee.reu.banana.item.SemisolidItem;
+import com.robotemployee.reu.foliant.item.SemisolidItem;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.item.FryingPanItem;
 import com.robotemployee.reu.item.ReconstructorItem;

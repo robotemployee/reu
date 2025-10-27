@@ -3,7 +3,6 @@ package com.robotemployee.reu.util;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import com.robotemployee.reu.banana.entity.DevilEntity;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;

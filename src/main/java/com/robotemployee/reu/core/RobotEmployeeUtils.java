@@ -1,7 +1,7 @@
 package com.robotemployee.reu.core;
 
 import com.mojang.logging.LogUtils;
-import com.robotemployee.reu.banana.BananaRaidEvents;
+import com.robotemployee.reu.foliant.FoliantRaidEvents;
 import com.robotemployee.reu.extra.*;
 import com.robotemployee.reu.extra.music_disc_obtainment.ClientDiscEvents;
 import com.robotemployee.reu.extra.music_disc_obtainment.GenericDiscEvents;
@@ -90,7 +90,7 @@ public class RobotEmployeeUtils
             MinecraftForge.EVENT_BUS.register(GenericDiscEvents.class);
             MinecraftForge.EVENT_BUS.register(CuriosCompat.class);
             MinecraftForge.EVENT_BUS.register(TummyAcheEvents.class);
-            MinecraftForge.EVENT_BUS.register(BananaRaidEvents.class);
+            MinecraftForge.EVENT_BUS.register(FoliantRaidEvents.class);
 
             // only for the client :)
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
