@@ -79,11 +79,6 @@ public class DevilEntity extends FlyingFoliantRaidMob implements GeoEntity {
     }
 
     @Override
-    public float getAirliftWeight() {
-        return 0;
-    }
-
-    @Override
     public float getPresenceImportance() {
         return 4;
     }
@@ -99,7 +94,7 @@ public class DevilEntity extends FlyingFoliantRaidMob implements GeoEntity {
     }
 
     @Override
-    public FoliantRaid.EnemyType getBananaType() {
+    public FoliantRaid.EnemyType getEnemyType() {
         return FoliantRaid.EnemyType.DEVIL;
     }
 

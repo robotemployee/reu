@@ -6,6 +6,8 @@ import com.robotemployee.reu.util.MobUtils;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
@@ -13,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 public abstract class FoliantRaidMob extends Monster {
@@ -23,7 +26,8 @@ public abstract class FoliantRaidMob extends Monster {
         this.entityData.define(DEVILS_PROTECTING_ME_IDS, new ArrayList<>());
     }
 
-
+    long tickCreated;
+    public static final int TICKS_UNTIL_DIE_OF_OLD_AGE = 720000;
 
     protected FoliantRaid parentRaid;
     @Nullable
@@ -31,23 +35,69 @@ public abstract class FoliantRaidMob extends Monster {
         return parentRaid;
     }
 
+    public void setParentRaid(FoliantRaid raid) {
+        parentRaid = raid;
+    }
+
     public boolean isInRaid() {
         return getParentRaid() != null;
     }
 
-    public void init(FoliantRaid parentRaid) {
-        this.parentRaid = parentRaid;
+    public void init(@NotNull FoliantRaid parentRaid) {
+        setParentRaid(parentRaid);
+        if (isInRaid()) {
+            applyPowerBuffs(getParentRaid().getPowerFloat());
+            getParentRaid().incrementPopulation(getEnemyType());
+        }
+        tickCreated = level().getGameTime();
     }
 
-    // note that all of these weights are treated as multipliers
-    boolean canAirlift() {
-        return getAirliftWeight() > 0;
+    @Override
+    public void onRemovedFromWorld() {
+        super.onRemovedFromWorld();
+        if (isInRaid()) removeFromRaid();
     }
-    // when the raid is deciding what should be airlifted to where, this is the weight
-    // bananas with higher weight will be airlifted first
-    // additionally, this is specifically for when the raid is proactively looking for things to airlift
-    // if an entity wants to specifically request an airlift, it can do so with requestAirliftTo()
-    public abstract float getAirliftWeight();
+
+    @Override
+    public boolean removeWhenFarAway(double p_21542_) {
+        return !this.hasCustomName() && !this.isPersistenceRequired();
+    }
+
+    protected boolean canDieOfOldAge() {
+        return true;
+    }
+
+    // with overriding removeWhenFarAway and FoliantRaid's chunkloading, it is best to automatically remove us after a long time
+    protected boolean shouldDieOfOldAge() {
+        return canDieOfOldAge() && level().getGameTime() - tickCreated > TICKS_UNTIL_DIE_OF_OLD_AGE;
+    }
+
+    public void removeFromRaid() {
+        if (!isInRaid()) return;
+        getParentRaid().decrementPopulation(getEnemyType());
+        setParentRaid(null);
+    }
+
+    protected void applyPowerBuffs(float power) {
+        applyHealthBuff(power);
+    }
+
+    public static final UUID HEALTH_MODIFIER_UUID = UUID.fromString("4a2063fc-418d-40e2-adcb-e41011fca417");
+    protected void applyHealthBuff(float power) {
+        if (power < 1) return;
+        double multiplier = Math.min(6, 1 + (power * power) * 0.001);
+
+        float healthFraction = getHealth() / getMaxHealth();
+
+        getAttribute(Attributes.MAX_HEALTH).addPermanentModifier(new AttributeModifier(
+                HEALTH_MODIFIER_UUID,
+                "Health bonus from raid power",
+                multiplier - 1,
+                AttributeModifier.Operation.MULTIPLY_BASE
+        ));
+
+        setHealth(healthFraction * getMaxHealth());
+    }
 
     // Devil Protection
     public void startProtectionFrom(@NotNull DevilEntity devil) {
@@ -100,7 +150,7 @@ public abstract class FoliantRaidMob extends Monster {
         return 1f;
     }
 
-    public abstract FoliantRaid.EnemyType getBananaType();
+    public abstract FoliantRaid.EnemyType getEnemyType();
 
     public boolean canRecycle() {
         return true;
@@ -124,5 +174,17 @@ public abstract class FoliantRaidMob extends Monster {
     // 0 to 1.
     public float getFulfillment() {
         return (getHealth() / (2 * getMaxHealth())) + 0.5f;
+    }
+
+    // override this if you want something to be able to survive without a raid
+    public boolean shouldIDieRightNow() {
+        return (!isInRaid() || getParentRaid().isPoop());
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+
+        if (shouldIDieRightNow()) kill();
     }
 }

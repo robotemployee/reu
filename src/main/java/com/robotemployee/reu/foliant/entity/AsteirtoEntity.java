@@ -56,11 +56,6 @@ public class AsteirtoEntity extends FlyingFoliantRaidMob implements GeoEntity {
     }
 
     @Override
-    public float getAirliftWeight() {
-        return 0;
-    }
-
-    @Override
     public boolean canRecycle() {
         return false;
     }
@@ -71,7 +66,7 @@ public class AsteirtoEntity extends FlyingFoliantRaidMob implements GeoEntity {
     }
 
     @Override
-    public FoliantRaid.EnemyType getBananaType() {
+    public FoliantRaid.EnemyType getEnemyType() {
         return FoliantRaid.EnemyType.ASTEIRTO;
     }
 

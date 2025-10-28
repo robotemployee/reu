@@ -17,8 +17,6 @@ import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 public class FoliantRaidLevelManager extends SavedData {
 
@@ -37,6 +35,8 @@ public class FoliantRaidLevelManager extends SavedData {
     public Collection<FoliantRaid> getRaids() {
         return RAIDS.values();
     }
+
+    public static final int RAID_RADIUS = 256;
 
     @Override
     @NotNull
@@ -76,35 +76,43 @@ public class FoliantRaidLevelManager extends SavedData {
     }
 
     public void tick(ServerLevel level) {
-        for (FoliantRaid raid: getRaids()) {
-            raid.tick();
-        }
+        getRaids().forEach(FoliantRaid::tick);
     }
 
     @Nullable
-    public FoliantRaid createRaidOrNull(BlockPos epicenter) {
-        if (!canCreateRaid(epicenter)) return null;
+    public FoliantRaid startRaid(BlockPos epicenter) {
+        if (!canCreateRaidAt(epicenter)) return null;
         FoliantRaid newborn = FoliantRaid.create(this, epicenter);
         registerRaid(newborn);
         return newborn;
     }
 
-    public boolean canCreateRaid(BlockPos epicenter) {
-        return !RAIDS.containsKey(epicenter);
+    public static final int RAID_EXCLUSION_RADIUS = 300;
+    public boolean canCreateRaidAt(BlockPos epicenter) {
+        if (RAIDS.containsKey(epicenter)) return false;
+
+        RAIDS.values().stream().anyMatch(raid -> isRaidNearby(epicenter, RAID_EXCLUSION_RADIUS));
+
+        return true;
     }
 
-    public void registerRaid(FoliantRaid raid) {
+    protected void registerRaid(FoliantRaid raid) {
         RAIDS.put(raid.getEpicenter(), raid);
         this.setDirty();
     }
 
-    public void deregisterRaid(BlockPos epicenter) {
+    protected void deregisterRaid(BlockPos epicenter) {
         RAIDS.remove(epicenter);
         this.setDirty();
     }
 
-    public FoliantRaid getRaid(UUID uuid) {
-        return RAIDS.get(uuid);
+    protected void deregisterAllRaids() {
+        RAIDS.clear();
+        this.setDirty();
+    }
+
+    public FoliantRaid getRaid(BlockPos epicenter) {
+        return RAIDS.get(epicenter);
     }
 
     public ServerLevel getLevel() {
@@ -112,12 +120,33 @@ public class FoliantRaidLevelManager extends SavedData {
     }
 
     public void stopAll() {
-        for (Map.Entry<BlockPos, FoliantRaid> entry : RAIDS.entrySet()) {
-            BlockPos epicenter = entry.getKey();
-            FoliantRaid raid = entry.getValue();
-            raid.stop();
-            deregisterRaid(epicenter);
-            this.setDirty();
+        for (FoliantRaid raid : RAIDS.values()) {
+            raid.onStopped();
         }
+        deregisterAllRaids();
+    }
+
+    public void stopRaid(BlockPos epicenter) {
+        stopRaid(getRaid(epicenter));
+    }
+
+    public void stopRaid(FoliantRaid raid) {
+        BlockPos epicenter = raid.getEpicenter();
+        raid.onStopped();
+        deregisterRaid(epicenter);
+    }
+
+    public boolean isRaidNearby(BlockPos pos) {
+        return getRaids().stream().anyMatch(raid -> raid.isPositionContained(pos));
+    }
+
+    public boolean isRaidNearby(BlockPos pos, int radius) {
+        int radiusSqr = (int)Math.pow(radius, 2);
+        return getRaids().stream().anyMatch(raid -> pos.distSqr(raid.getEpicenter()) <= radiusSqr);
+    }
+
+    @Nullable
+    public FoliantRaid getRaidNearby(BlockPos pos) {
+        return getRaids().stream().filter(raid -> raid.isPositionContained(pos)).findFirst().orElse(null);
     }
 }

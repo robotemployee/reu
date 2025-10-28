@@ -1,6 +1,7 @@
 package com.robotemployee.reu.foliant;
 
 import com.mojang.logging.LogUtils;
+import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.foliant.entity.FoliantRaidMob;
 import com.robotemployee.reu.registry.ModEntities;
 import com.robotemployee.reu.util.LevelUtils;
@@ -14,30 +15,50 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.Pig;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.common.world.ForgeChunkManager;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
 
-import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.function.Supplier;
 
 public class FoliantRaid {
+
+    // todo
+    // TEST make it save spawners to the SavedData
+    // make it place spawners around
+    // determine rules for when it should make a second spawner
+    // make them mine or make an explosion or something if there are no valid paths anywhere
+    // ... though asteirto might help with that
+
+    // spawns per minute system: based on the power, there is a target "spawns per minute"
+    // spawners automatically adjust their spawn time by taking this rate and dividing it by the amount of spawners
+    // amount of spawners = power / 5 or something, max to 6 i'd say
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private FoliantRaidLevelManager manager;
 
     private final ArrayList<UUID> spawnedEntities = new ArrayList<>();
-    private static final String SPAWNED_ENTITIES_PATH = "SpawnedEntityUUIDs";
-
-    private static final String RAID_UUID_PATH = "RaidUUID";
 
     private ServerLevel level;
     private final BlockPos epicenter;
-    private static final String EPICENTER_PATH = "Epicenter";
 
-    private final HashMap<BlockPos, Spawner> SPAWNERS = new HashMap<>();
+    // gives attribute modifiers to spawned enemies, unlocks abilities
+    protected float power = 0;
+
+    // radius of the raid
+    protected float radius = 128;
+    // if this is true, the raid should end
+    protected boolean isPoop = false;
+
+    private final HashMap<BlockPos, Spawner> spawners = new HashMap<>();
+
+    private final HashMap<EnemyType, Integer> population = new HashMap<>();
+
+    private final HashSet<ChunkPos> loadedChunks = new HashSet<>();
 
     // use this constructor if you are making a new raid
     private FoliantRaid(FoliantRaidLevelManager manager, ServerLevel level, BlockPos epicenter) {
@@ -69,17 +90,22 @@ public class FoliantRaid {
             }
             raidMob.init(this);
         }
+
+        startForceloadingChunks();
     }
 
-    public void onFoliantMobRemoved(FoliantRaidMob raidMob) {
-
-    }
+    private static final String EPICENTER_PATH = "Epicenter";
+    private static final String SPAWNED_ENTITIES_PATH = "SpawnedEntityUUIDs";
+    private static final String SPAWNERS_PATH = "Spawners";
 
     public CompoundTag save(CompoundTag tag) {
-
         ListTag spawnedEntitiesTag = new ListTag();
         for (UUID uuid: spawnedEntities) spawnedEntitiesTag.add(NbtUtils.createUUID(uuid));
         tag.put(SPAWNED_ENTITIES_PATH, spawnedEntitiesTag);
+
+        ListTag spawnersTag = new ListTag();
+        for (BlockPos pos : getSpawners()) spawnersTag.add(NbtUtils.writeBlockPos(pos));
+        tag.put(SPAWNED_ENTITIES_PATH, spawnersTag);
 
         //tag.putUUID(RAID_UUID_PATH, raidUUID);
         tag.putLong(EPICENTER_PATH, epicenter.asLong());
@@ -96,54 +122,114 @@ public class FoliantRaid {
         ListTag spawnedEntities = tag.getList(SPAWNED_ENTITIES_PATH, Tag.TAG_INT_ARRAY);
         for (Tag value : spawnedEntities) newborn.registerSpawnedEntity(NbtUtils.loadUUID(value));
 
+        ListTag existingSpawners = tag.getList(SPAWNERS_PATH, Tag.TAG_COMPOUND);
+        for (Tag value : existingSpawners) newborn.createSpawner(NbtUtils.readBlockPos((CompoundTag) value));
+
         return newborn;
     }
 
     // gee guess when this is called.
     public void tick() {
-        // fixme logger
-        LOGGER.info("Ticking raid at epicenter " + getEpicenter());
+        tickSpawners();
+    }
 
+    protected void tickSpawners() {
+        Iterator<Map.Entry<BlockPos, Spawner>> iterator = spawners.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<BlockPos, Spawner> entry = iterator.next();
+            Spawner spawner = entry.getValue();
+            if (spawner.isPoop()) {
+                spawner.onRemoved();
+                iterator.remove();
+            }
+
+            if (!spawner.canReachEpicenter()) {
+                // fixme logger
+                LOGGER.info("Spawner can't reach epicenter :(");
+            }
+
+            spawner.tick();
+        }
+    }
+
+    @Nullable
+    protected BlockPos tryToFindValidSpawnerPosition() {
+        RandomSource random = level.getRandom();
+        int targetDistance = random.nextInt((int)(radius * 0.5), (int)(radius - 10));
+        double angle = random.nextFloat() * 2 * Math.PI;
+
+        BlockPos randomizedLocation = new BlockPos((int)(Math.cos(angle) * targetDistance), 0, (int)(Math.sin(angle) * targetDistance)).offset(epicenter);
+
+        BlockPos groundBelowPos = LevelUtils.findSolidGroundBelow(32, level, randomizedLocation);
+        BlockPos groundAbovePos = LevelUtils.iterateBlockWithTransformation(32, level, randomizedLocation,
+                (lvl, pos) -> {
+                    BlockState state = lvl.getBlockState(pos);
+                    return !state.isAir() && !state.getCollisionShape(lvl, pos).isEmpty();
+                },
+                BlockPos::above
+                );
+
+        // ignore this horrendous code
+
+        BlockPos result = null;
+
+        int distanceToGroundBelow = 0;
+        if (groundBelowPos != null) distanceToGroundBelow = randomizedLocation.getY() - groundBelowPos.getY();
+
+        int distanceToGroundAbove = 0;
+        if (groundAbovePos != null) distanceToGroundAbove = groundAbovePos.getY() - randomizedLocation.getY();
+
+        if ((groundBelowPos == null || distanceToGroundBelow > distanceToGroundAbove) && groundAbovePos != null) {
+            result = groundAbovePos;
+        } else if (groundBelowPos != null) {
+            result = groundBelowPos;
+        }
+        return result;
+    }
+
+    public void spawnAGodDamnPig() {
         if (level.getGameTime() % 100 > 0) return;
-
         Entity newborn = EntityType.PIG.create(level);
         newborn.moveTo(epicenter.getCenter());
         level.addFreshEntity(newborn);
     }
 
-    // todo document
-    /*
-    public Collection<BananaRaidMob> findRecycleTargets(BlockPos asteirtoPos, int maxValue) {
-        AABB aabb = new AABB(asteirtoPos).inflate(AsteirtoEntity.RECYCLE_RANGE);
-        List<BananaRaidMob> raw = getLevel().getEntitiesOfClass(BananaRaidMob.class, aabb)
-                .stream()
-                .filter(BananaRaidMob::canRecycle)
-                .sorted((raidMobA, raidMobB) ->
-                        // inverted on purpose; the higher the value, the more reluctant we are to recycle
-                        Float.compare(raidMobB.getRecycleImpedance(), raidMobA.getRecycleImpedance())
-                ).toList();
-
-        int totalValue = 0;
-
-        List<BananaRaidMob> output = new ArrayList<>();
-        for (BananaRaidMob raidMob : raw) {
-            int providedValue = (int)Math.floor(raidMob.getRecycleImpedance());
-            if (totalValue + providedValue > maxValue) break;
-            output.add(raidMob);
-        }
-        return output;
+    // These three are called by FoliantRaidMob, it is a way to keep track of population safely without WeakReference or anything like that
+    public void incrementPopulation(EnemyType type) {
+        population.compute(type, (key, value) -> value == null ? 1 : value + 1);
     }
-     */
+
+    public void decrementPopulation(EnemyType type) {
+        population.compute(type, (key, value) -> value == null ? 1 : value - 1);
+    }
+
+    public int getPopulation(EnemyType type) {
+        return population.computeIfAbsent(type, (key) -> 0);
+    }
+
+    protected void startForceloadingChunks() {
+        int chunkRadius = Math.min(1, (int)Math.ceil(radius / 16) - 1);
+
+        for (int x = -chunkRadius; x <= chunkRadius; x++) {
+            for (int z = -chunkRadius; z <= chunkRadius; z++) {
+                ChunkPos pos = new ChunkPos(x + epicenter.getX() / 16, z + epicenter.getZ() / 16);
+                loadedChunks.add(pos);
+                ForgeChunkManager.forceChunk(level, RobotEmployeeUtils.MODID, epicenter, pos.x, pos.z, true, true);
+            }
+        }
+    }
+
+    protected void stopForceloadingChunks() {
+        loadedChunks.forEach(pos -> {
+            // remove the forced chunk
+            ForgeChunkManager.forceChunk(level, RobotEmployeeUtils.MODID, epicenter, pos.x, pos.z, false, true);
+        });
+        loadedChunks.clear();
+    }
 
     public void registerSpawnedEntity(UUID uuid) {
         spawnedEntities.add(uuid);
     }
-
-    /*
-    public UUID getRaidUUID() {
-        return raidUUID;
-    }
-     */
 
     public BlockPos getEpicenter() {
         return epicenter;
@@ -153,86 +239,143 @@ public class FoliantRaid {
         return level;
     }
 
-    public void stop() {
-
+    // you stop raids through FoliantRaidLevelManager
+    // this is only to notify the raid that it's been stopped
+    void onStopped() {
+        isPoop = true;
+        stopForceloadingChunks();
     }
 
-    public static class Spawner {
+    public boolean isPoop() {
+        return isPoop;
+    }
 
-        public static final int RADIUS = 5;
+    public boolean isPositionContained(BlockPos pos) {
+        return pos.distSqr(epicenter) <= Math.pow(radius, 2);
+    }
 
-        // when it finds this amount of good positions, it'll stop looking for more
-        public static final int MAX_POSITIONS = 5;
-        // if it does this many random searches for a position
-        public static final int MAX_ITERATIONS = 10;
-        // if it can't find at least this many positions, it says it failed
-        public static final int MIN_POSITIONS = 3;
+    public boolean isSpawnerCenteredAt(BlockPos pos) {
+        return spawners.values().stream().anyMatch(spawner -> spawner.center == pos);
+    }
 
-        protected static ArrayList<BlockPos> positions = new ArrayList<>();
+    // does not create a spawner if there's one already there
 
-        public final BlockPos center;
-        public final ServerLevel level;
+    public boolean createSpawner(BlockPos center) {
+        if (isSpawnerCenteredAt(center)) return false;
+        Spawner spawner = new Spawner(this, center, level);
+        spawners.put(center, spawner);
+        return true;
+    }
 
-        protected int ticks = 0;
+    // wave-based system maybe??
+    public boolean isReadyToSpawn() {
+        return true;
+    }
 
-        // place the center in an already pretty neat spot
-        public Spawner(BlockPos center, ServerLevel level) {
-            this.center = center;
-            this.level = level;
-        }
+    public void refreshSpawnerCooldowns() {
+        spawners.forEach((pos, spawner) -> spawner.resetSpawnCooldown());
+    }
 
-        // returns whether or not it was able to generate positions
-        public boolean generatePositions() {
-            positions.clear();
+    public void removeSpawner(BlockPos center) {
+        spawners.remove(center).onRemoved();
+    }
 
-            Entity copeZombie = EntityType.ZOMBIE.create(level);
-            for (int i = 0; i < MAX_ITERATIONS; i++) {
-                if (positions.size() >= MAX_ITERATIONS) break;
-                RandomSource random = level.getRandom();
-                BlockPos tested = center
-                        .east(RADIUS).west(random.nextInt(RADIUS * 2))
-                        .north(RADIUS).south(random.nextInt(RADIUS * 2));
+    protected void removeSpawner(Spawner spawner) {
+        removeSpawner(spawner.center);
+    }
 
-                // don't spawn them inside a block
-                // todo put this all into a separate function for overriding GOODNIGHTHT
+    public void removeAllSpawners() {
+        spawners.replaceAll((pos, spawner) -> {
+            spawner.onRemoved();
+            return null;
+        });
+    }
 
-                if (level.getBlockState(tested).isSuffocating(level, tested)) continue;
+    @Nullable
+    public BlockPos getSpawnerNear(BlockPos center) {
+        return spawners.values().stream().filter(spawner -> spawner.isWithinRadius(center)).findFirst().map(spawner -> spawner.center).orElse(null);
+    }
 
-                BlockPos groundPos = LevelUtils.findSolidGroundBelow(5, level, tested);
+    public void addPower(int added) {
+        power += added;
+    }
 
-                if (groundPos == null) continue;
+    public void subtractPower(int subtracted) {
+        power -= subtracted;
+    }
 
-                BlockPos air1AboveGround = groundPos.above();
-                BlockPos air2AboveGround = air1AboveGround.above();
-                if (level.getBlockState(air1AboveGround).isSuffocating(level, air1AboveGround)) continue;
-                if (level.getBlockState(air2AboveGround).isSuffocating(level, air2AboveGround)) continue;
+    public void setPower(int newPower) {
+        power = newPower;
+    }
 
-                positions.add(tested);
-            }
+    // i know. im lazy
+    public int getPower() {
+        return (int)Math.floor(power);
+    }
 
-            return positions.size() >= MIN_POSITIONS;
-        }
+    public float getPowerFloat() {
+        return power;
+    }
 
-        public enum State {
-            INITIALIZIING,
-            WORKING
-        }
+    public Set<BlockPos> getSpawners() {
+        return spawners.keySet();
     }
 
     public enum EnemyType {
-        GREG(ModEntities.GREG::get),
-        DEVIL(ModEntities.DEVIL::get),
-        ASTEIRTO(ModEntities.ASTEIRTO::get),
-        POSTERBOY(ModEntities.GREG::get),
-        AMELIE(ModEntities.GREG::get);
+        GREG(ModEntities.GREG::get, 3, 8, 1, 4),
+        DEVIL(ModEntities.DEVIL::get, 1, 4, 5, 1),
+        ASTEIRTO(ModEntities.ASTEIRTO::get, 1, 2, 15, 0.66f),
+        // posterboy is a special enemy and does not spawn normally
+        POSTERBOY(ModEntities.GREG::get, 1, 0, 0, 0),
+        AMELIE(ModEntities.GREG::get, 1, 5, 5, 1);
 
         private final Supplier<EntityType<? extends FoliantRaidMob>> registry;
-        EnemyType(Supplier<EntityType<? extends FoliantRaidMob>> registry) {
+        // when it is decided that this thing will be spawned, this is the amount to spawn
+        // you can consider this as "how many of these is 1 unit?"
+        // population is divided by this in overpopulation calculations
+        private final int amountToSpawn;
+        // the higher this number, the more likely this is to be spawned when there is multiple options
+        private final int spawnWeight;
+        // if the raid power is at or above this amount, this entity can be spawned. also factors into overpopulation
+        private final int powerNeededToSpawn;
+        // as this number increases, less of this entity are needed for them to be considered overpopulated
+        private final float overpopulationWeight;
+        EnemyType(Supplier<EntityType<? extends FoliantRaidMob>> registry, int amountToSpawn, int spawnWeight, int powerToSpawn, float overpopulationWeight) {
             this.registry = registry;
+            this.amountToSpawn = amountToSpawn;
+            this.spawnWeight = spawnWeight;
+            this.powerNeededToSpawn = powerToSpawn;
+            this.overpopulationWeight = overpopulationWeight;
         }
 
-        public Supplier<EntityType<? extends FoliantRaidMob>> getRegistry() {
-            return registry;
+        public boolean spawnsNormally() {
+            return spawnWeight > 0 && powerNeededToSpawn > 0;
+        }
+
+        public int getSpawnWeight() {
+            return spawnWeight;
+        }
+
+        public int getPowerNeededToSpawn() {
+            return powerNeededToSpawn;
+        }
+
+        public int getAmountToSpawn() {
+            return amountToSpawn;
+        }
+
+        public boolean isOverpopulated(FoliantRaid raid) {
+            int power = raid.getPower();
+            int population = raid.getPopulation(this);
+            return ((population * getPowerNeededToSpawn() * overpopulationWeight) / getAmountToSpawn()) >= power;
+        }
+
+        public EntityType<? extends FoliantRaidMob> getEntityType() {
+            return registry.get();
+        }
+
+        public <T extends FoliantRaidMob> T create(ServerLevel level) {
+            return (T) getEntityType().create(level);
         }
     }
 }
