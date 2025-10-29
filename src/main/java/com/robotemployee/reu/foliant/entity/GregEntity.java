@@ -2,10 +2,7 @@ package com.robotemployee.reu.foliant.entity;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.foliant.FoliantRaid;
-import com.robotemployee.reu.foliant.entity.ai.MultiGoal;
-import com.robotemployee.reu.foliant.entity.ai.MultiMoveControl;
-import com.robotemployee.reu.foliant.entity.ai.MultiPathNavigation;
-import com.robotemployee.reu.foliant.entity.ai.StrictGroundPathNavigation;
+import com.robotemployee.reu.foliant.entity.ai.*;
 import com.robotemployee.reu.foliant.entity.sound.EntitySoundInstanceThatTicks;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.registry.ModSounds;
@@ -20,6 +17,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -214,6 +212,8 @@ public class GregEntity extends FoliantRaidMob implements GeoEntity {
         goalSelector.addGoal(goalIndex++, new GregLandIfIdleGoal(this));
         goalSelector.addGoal(goalIndex++, new GregLandIfCouldReachTargetAnywayGoal(this));
 
+        goalSelector.addGoal(goalIndex++, new ConvergeOnRaidEpicenterGoal(this, 1.25));
+
         goalSelector.addGoal(goalIndex++, new RandomLookAroundGoal(this));
         goalSelector.addGoal(goalIndex++, new WaterAvoidingRandomStrollGoal(this, 0.6));
 
@@ -227,7 +227,7 @@ public class GregEntity extends FoliantRaidMob implements GeoEntity {
         * */
     }
 
-    protected static final double MOVEMENT_SPEED = 0.24;
+    protected static final double MOVEMENT_SPEED = 0.27;
     public static AttributeSupplier.Builder createAttributes() {
         return createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 12)
@@ -235,6 +235,13 @@ public class GregEntity extends FoliantRaidMob implements GeoEntity {
                 .add(Attributes.FOLLOW_RANGE, 32)
                 .add(Attributes.FLYING_SPEED, 4)
                 .add(Attributes.ATTACK_DAMAGE, 4);
+    }
+
+    // 12x damage with a firework
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        if (!isBeingProtected() && source.is(DamageTypes.FIREWORKS)) amount += getMaxHealth() * 0.55;
+        return super.hurt(source, amount);
     }
 
     // takeOff() -> startFlying() -> startLanding() -> startLandingAnim() -> stopFlying()
@@ -852,6 +859,11 @@ public class GregEntity extends FoliantRaidMob implements GeoEntity {
     }
 
      */
+
+    @Override
+    public double getMeleeAttackRangeSqr(LivingEntity livingEntity) {
+        return Math.pow(1.5, 2);
+    }
 
     @Override
     protected SoundEvent getHurtSound(DamageSource p_33034_) {

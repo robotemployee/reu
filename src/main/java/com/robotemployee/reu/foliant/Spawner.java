@@ -1,10 +1,10 @@
 package com.robotemployee.reu.foliant;
 
+import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.foliant.entity.FoliantRaidMob;
 import com.robotemployee.reu.util.IntegerWeightedRandomList;
 import com.robotemployee.reu.util.LevelUtils;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
@@ -12,12 +12,15 @@ import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.ambient.Bat;
 import net.minecraft.world.level.pathfinder.Path;
+import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Spawner {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     protected static final int RADIUS = 5;
 
@@ -108,9 +111,11 @@ public class Spawner {
         switch (state) {
             case INITIALIZING -> {
                 if (isReadyToSwitch()) {
+                    /*
                     level.players().forEach(player ->
                             player.sendSystemMessage(Component.literal("Spawner @ " + center + " is initiating"))
                     );
+                     */
                     state = State.WORKING;
                     ticksUntilStateChange = 1200;
                 }
@@ -180,6 +185,9 @@ public class Spawner {
             int amountToSpawn = enemyTypeToSpawn.getAmountToSpawn();
 
             result.add(enemyTypeToSpawn.getEntityType(), amountToSpawn);
+            // fixme get rid of this SHITASS SOLUTION and put this somewhere it's actually being added to the queue
+            parentRaid.incrementPopulation(enemyTypeToSpawn, amountToSpawn);
+            parentRaid.addSpawnCooldownFor(enemyTypeToSpawn, amountToSpawn);
 
             power -= enemyTypeToSpawn.getPowerNeededToSpawn();
             if (power <= 0) break;
@@ -196,11 +204,7 @@ public class Spawner {
         list.clear();
         for (FoliantRaid.EnemyType type : FoliantRaid.EnemyType.values()) {
             //LOGGER.info("Examining enemy type " + type);
-            if (!type.spawnsNormally()) continue;
-            //LOGGER.info("Type can spawn normally");
-            if (type.getPowerNeededToSpawn() > power) continue;
-            //LOGGER.info("Type isn't too expensive");
-            if (type.isOverpopulated(parentRaid)) continue;
+            if (!type.overallCanBeSpawned(parentRaid)) continue;
             list.add(Map.entry(type, type.getSpawnWeight()));
         }
         //LOGGER.info(String.format("resulting list [%s]: %s", list.size(), list));

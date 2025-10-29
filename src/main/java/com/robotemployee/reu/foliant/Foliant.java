@@ -63,7 +63,7 @@ public class Foliant {
                                     return Command.SINGLE_SUCCESS;
                                 })
                         )
-                        .then(Commands.literal("controls")
+                        .then(Commands.literal("ctl")
                                 .then(Commands.argument("pos", BlockPosArgument.blockPos())
                                         .then(Commands.literal("stop")
                                                 .requires(source -> source.hasPermission(2))
@@ -132,6 +132,29 @@ public class Foliant {
                                                                 })
                                                         )
                                                 )
+                                                .then(Commands.literal("set")
+                                                        .requires(source -> source.hasPermission(2))
+                                                        .then(Commands.argument("amount", IntegerArgumentType.integer(0))
+                                                                .executes(context -> {
+                                                                    CommandSourceStack stack = context.getSource();
+                                                                    FoliantRaidLevelManager manager = FoliantRaidServerManager.getLevelManager(stack.getLevel());
+                                                                    BlockPos blockPos = BlockPosArgument.getBlockPos(context, "pos");
+                                                                    FoliantRaid raid = manager.getRaidNearby(blockPos);
+
+                                                                    if (raid == null) {
+                                                                        stack.sendFailure(Component.literal("No raid found nearby"));
+                                                                        return Command.SINGLE_SUCCESS;
+                                                                    }
+
+                                                                    int amount = IntegerArgumentType.getInteger(context, "amount");
+
+                                                                    raid.setPower(amount);
+                                                                    stack.sendSuccess(() -> Component.literal(String.format("Power set to %s", amount)), false);
+
+                                                                    return Command.SINGLE_SUCCESS;
+                                                                })
+                                                        )
+                                                )
                                                 .then(Commands.literal("query")
                                                         .requires(source -> source.hasPermission(2))
                                                         .executes(context -> {
@@ -146,6 +169,34 @@ public class Foliant {
                                                             }
 
                                                             stack.sendSuccess(() -> Component.literal(raid.getPower() + " power"), false);
+
+                                                            return Command.SINGLE_SUCCESS;
+                                                        })
+                                                )
+                                        )
+                                        .then(Commands.literal("entities")
+                                                .then(Commands.literal("list")
+                                                        .executes(context -> {
+                                                            CommandSourceStack stack = context.getSource();
+                                                            FoliantRaidLevelManager manager = FoliantRaidServerManager.getLevelManager(stack.getLevel());
+                                                            BlockPos blockPos = BlockPosArgument.getBlockPos(context, "pos");
+                                                            FoliantRaid raid = manager.getRaidNearby(blockPos);
+
+                                                            if (raid == null) {
+                                                                stack.sendFailure(Component.literal("No raid found nearby"));
+                                                                return Command.SINGLE_SUCCESS;
+                                                            }
+
+                                                            StringBuilder output = new StringBuilder();
+                                                            int total = raid.getPopulation();
+                                                            output.append(total).append("x total population\n");
+                                                            for (FoliantRaid.EnemyType type : FoliantRaid.EnemyType.values()) {
+                                                                // i don't like the yllow line :(
+                                                                output.append(type).append(" ... ").append(raid.getPopulation(type))
+                                                                        .append("x, overpop:").append(type.isOverpopulated(raid)).append("\n");
+                                                            }
+
+                                                            stack.sendSuccess(() -> Component.literal(output.toString()), false);
 
                                                             return Command.SINGLE_SUCCESS;
                                                         })

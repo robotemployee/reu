@@ -1,35 +1,39 @@
 package com.robotemployee.reu.foliant.entity;
 
 import com.robotemployee.reu.foliant.FoliantRaid;
-import com.robotemployee.reu.core.ModEntityDataSerializers;
 import com.robotemployee.reu.util.MobUtils;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 public abstract class FoliantRaidMob extends Monster {
 
-    protected static final EntityDataAccessor<List<Integer>> DEVILS_PROTECTING_ME_IDS = SynchedEntityData.defineId(FoliantRaidMob.class, ModEntityDataSerializers.INTEGER_LIST.get());
     protected FoliantRaidMob(EntityType<? extends Monster> entityType, Level level) {
         super(entityType, level);
-        this.entityData.define(DEVILS_PROTECTING_ME_IDS, new ArrayList<>());
     }
 
     long tickCreated;
     public static final int TICKS_UNTIL_DIE_OF_OLD_AGE = 720000;
 
     protected FoliantRaid parentRaid;
+    protected boolean needsRaidParent = true;
+
+    // im spaced out okay
+    protected final ArrayList<WeakReference<DevilEntity>> devilsProtectingMe = new ArrayList<>();
     @Nullable
     public FoliantRaid getParentRaid() {
         return parentRaid;
@@ -47,7 +51,6 @@ public abstract class FoliantRaidMob extends Monster {
         setParentRaid(parentRaid);
         if (isInRaid()) {
             applyPowerBuffs(getParentRaid().getPowerFloat());
-            getParentRaid().incrementPopulation(getEnemyType());
         }
         tickCreated = level().getGameTime();
     }
@@ -79,24 +82,41 @@ public abstract class FoliantRaidMob extends Monster {
     }
 
     protected void applyPowerBuffs(float power) {
-        applyHealthBuff(power);
+        applyPowerHealthBuff(power);
     }
 
-    public static final UUID HEALTH_MODIFIER_UUID = UUID.fromString("4a2063fc-418d-40e2-adcb-e41011fca417");
-    protected void applyHealthBuff(float power) {
+    public static final UUID HEALTH_POWER_MODIFIER_UUID = UUID.fromString("4a2063fc-418d-40e2-adcb-e41011fca417");
+    protected void applyPowerHealthBuff(float power) {
         if (power < 1) return;
         double multiplier = Math.min(6, 1 + (power * power) * 0.001);
 
         float healthFraction = getHealth() / getMaxHealth();
 
         getAttribute(Attributes.MAX_HEALTH).addPermanentModifier(new AttributeModifier(
-                HEALTH_MODIFIER_UUID,
+                HEALTH_POWER_MODIFIER_UUID,
                 "Health bonus from raid power",
                 multiplier - 1,
                 AttributeModifier.Operation.MULTIPLY_BASE
         ));
 
         setHealth(healthFraction * getMaxHealth());
+    }
+
+    public static final UUID DAMAGE_POWER_MODIFIER_UUID = UUID.fromString("7470fc32-423b-4f09-a95e-64a53426bcde");
+    protected void applyPowerDamageBuff(int power) {
+        if (power < 1) return;
+        double multiplier = Math.min(6, 1 + (power * power) * 0.001);
+
+        AttributeInstance attackDamage = getAttribute(Attributes.ATTACK_DAMAGE);
+
+        if (attackDamage == null) return;
+
+        attackDamage.addPermanentModifier(new AttributeModifier(
+                DAMAGE_POWER_MODIFIER_UUID,
+                "Damage bonus from raid power",
+                multiplier - 1,
+                AttributeModifier.Operation.MULTIPLY_BASE
+        ));
     }
 
     // Devil Protection
@@ -110,37 +130,30 @@ public abstract class FoliantRaidMob extends Monster {
     }
 
     private void addDevilProtectingMe(@NotNull DevilEntity devil) {
-        List<Integer> ids = getDevilsProtectingMeIds();
-        ids.add(devil.getId());
-        saveDevilsProtectingMe(ids);
+        cleanDevilsProtectingMe();
+        devilsProtectingMe.add(new WeakReference<>(devil));
     }
 
     private void removeDevilProtectingMe(@NotNull DevilEntity devil) {
-        List<Integer> ids = getDevilsProtectingMeIds();
-        ids.remove((Object)devil.getId());
-        saveDevilsProtectingMe(ids);
+        cleanDevilsProtectingMe();
+        devilsProtectingMe.removeIf(reference -> reference.refersTo(devil));
     }
 
-    private void saveDevilsProtectingMe(List<Integer> ids) {
-        getEntityData().set(DEVILS_PROTECTING_ME_IDS, ids);
+    private void cleanDevilsProtectingMe() {
+        devilsProtectingMe.removeIf(reference -> {
+            DevilEntity devil = reference.get();
+            if (devil == null) return true;
+            if (!MobUtils.entityIsValidForTargeting(devil)) return true;
+            return false;
+        });
     }
-
-    public List<Integer> getDevilsProtectingMeIds() {
-        return getEntityData().get(DEVILS_PROTECTING_ME_IDS);
-    }
-
-    public Stream<DevilEntity> getDevilsProtectingMe() {
-        List<Integer> ids = getDevilsProtectingMeIds();
-        return ids.stream().map(id -> (DevilEntity)level().getEntity(id));
+    public ArrayList<WeakReference<DevilEntity>> getDevilsProtectingMe() {
+        cleanDevilsProtectingMe();
+        return devilsProtectingMe;
     }
     public boolean isBeingProtected() {
-        return getDevilsProtectingMeIds().size() > 0;
-    }
-
-    public void cleanDevilsProtectingMe() {
-        getDevilsProtectingMe().forEach(devil -> {
-            if (!MobUtils.entityIsValidForTargeting(devil)) removeDevilProtectingMe(devil);
-        });
+        cleanDevilsProtectingMe();
+        return devilsProtectingMe.size() > 0;
     }
 
     public boolean canDevilProtect() {
@@ -177,8 +190,25 @@ public abstract class FoliantRaidMob extends Monster {
     }
 
     // override this if you want something to be able to survive without a raid
+    int ticksWantedParentRaidButAlone = 0;
     public boolean shouldIDieRightNow() {
-        return (!isInRaid() || getParentRaid().isPoop());
+        if (needsRaidParent && !isInRaid()) ticksWantedParentRaidButAlone++;
+
+        return needsRaidParent && (!isInRaid() || getParentRaid().isPoop());
+    }
+
+    @Nullable
+    @Override
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, @Nullable SpawnGroupData groupData, @Nullable CompoundTag tag) {
+        // this is horrible logic, the raid should tell its spawned entities that they need a raid parent
+        // but whatever
+        if (spawnType == MobSpawnType.SPAWN_EGG ||
+                spawnType == MobSpawnType.COMMAND ||
+                spawnType == MobSpawnType.DISPENSER ||
+                spawnType == MobSpawnType.SPAWNER) {
+            needsRaidParent = false;
+        }
+        return super.finalizeSpawn(level, difficulty, spawnType, groupData, tag);
     }
 
     @Override

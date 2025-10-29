@@ -65,13 +65,13 @@ public class DevilEntity extends FlyingFoliantRaidMob implements GeoEntity {
         return protectionTarget;
     }
 
-    public void setProtectionTarget(@Nullable LivingEntity target) {
-        getEntityData().set(TRACKED_TARGET_ID, target == null ? OptionalInt.empty() : OptionalInt.of(target.getId()));
-        if (protectionTarget instanceof FoliantRaidMob banana) {
-            if (target == null) banana.stopProtectionFrom(this);
-            else banana.startProtectionFrom(this);
+    public void setProtectionTarget(@Nullable LivingEntity newTarget) {
+        getEntityData().set(TRACKED_TARGET_ID, newTarget == null ? OptionalInt.empty() : OptionalInt.of(newTarget.getId()));
+        if (protectionTarget instanceof FoliantRaidMob foliant) {
+            if (newTarget == null) foliant.stopProtectionFrom(this);
+            else foliant.startProtectionFrom(this);
         }
-        protectionTarget = target;
+        protectionTarget = newTarget;
     }
 
     public boolean isProtecting() {
@@ -124,7 +124,7 @@ public class DevilEntity extends FlyingFoliantRaidMob implements GeoEntity {
 
     public static AttributeSupplier.Builder createAttributes() {
         return createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 20)
+                .add(Attributes.MAX_HEALTH, 2)
                 .add(Attributes.MOVEMENT_SPEED, 10)
                 .add(Attributes.FLYING_SPEED, 10)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.5);
@@ -196,9 +196,12 @@ public class DevilEntity extends FlyingFoliantRaidMob implements GeoEntity {
         }
 
         protected void applyBuffs() {
+            //getTarget().addEffect(new MobEffectInstance(MobEffects.REGENERATION, BUFFS_INTERVAL + 40));
+            if (follower.level().getGameTime() % 20 == 0) getTarget().heal(1);
             getTarget().addEffect(new MobEffectInstance(MobEffects.REGENERATION, BUFFS_INTERVAL + 40));
             getTarget().addEffect(new MobEffectInstance(AMEffectRegistry.KNOCKBACK_RESISTANCE.get(), BUFFS_INTERVAL + 40, 1));
             getTarget().addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, BUFFS_INTERVAL + 40));
+            getTarget().addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, BUFFS_INTERVAL + 40, 1));
             //LOGGER.info("Applying buffs to target at" + getTarget().blockPosition());
         }
 
@@ -250,7 +253,6 @@ public class DevilEntity extends FlyingFoliantRaidMob implements GeoEntity {
 
         @Override
         public boolean isValidTarget(@NotNull LivingEntity entity) {
-            // todo: uncomment
 
             if (!((FoliantRaidMob)entity).canDevilProtect()) return false;
             return super.isValidTarget(entity);

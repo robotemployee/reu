@@ -27,9 +27,9 @@ import java.util.function.Supplier;
 public class FoliantRaid {
 
     // todo
-    // TEST make it save spawners to the SavedData
-    // make it place spawners around
-    // determine rules for when it should make a second spawner
+    // TEST make it save spawners to the SavedData DONE
+    // make it place spawners around DONE
+    // determine rules for when it should make a second spawner DONE
     // make them mine or make an explosion or something if there are no valid paths anywhere
     // ... though asteirto might help with that
 
@@ -50,11 +50,12 @@ public class FoliantRaid {
     protected float power = 0;
 
     // radius of the raid
-    protected float radius = 128;
+    protected float radius = 32;
     // if this is true, the raid should end
     protected boolean isPoop = false;
 
     private final HashMap<BlockPos, Spawner> spawners = new HashMap<>();
+    private final HashMap<EnemyType, ReplacementCooldown> replacementCooldowns = new HashMap<>();
 
     private final HashMap<EnemyType, Integer> population = new HashMap<>();
 
@@ -131,9 +132,14 @@ public class FoliantRaid {
     // gee guess when this is called.
     public void tick() {
         tickSpawners();
+        tickReplacementCooldowns();
     }
 
     protected void tickSpawners() {
+        // this function is responsible for placing new spawners and ticking existing ones
+
+
+
         Iterator<Map.Entry<BlockPos, Spawner>> iterator = spawners.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<BlockPos, Spawner> entry = iterator.next();
@@ -144,11 +150,32 @@ public class FoliantRaid {
             }
 
             if (!spawner.canReachEpicenter()) {
-                // fixme logger
-                LOGGER.info("Spawner can't reach epicenter :(");
+                //LOGGER.info("Spawner can't reach epicenter :(");
             }
 
             spawner.tick();
+        }
+
+        int amountOfSpawners = spawners.size();
+        // amount of spawners = power / 10
+        int desiredSpawners = ((int)power / 10) + 1;
+        //LOGGER.info("desiredSpawners: " + desiredSpawners + " amountOfSpawners: " + amountOfSpawners);
+        if (amountOfSpawners < desiredSpawners) {
+            int spawnersLeftToCreate = desiredSpawners - amountOfSpawners;
+            int maxIterations = spawnersLeftToCreate * 3;
+            for (int i = 0; i < maxIterations; i++) {
+                BlockPos potentialPosition = tryToFindValidSpawnerPosition();
+                if (potentialPosition == null) continue;
+                //LOGGER.info("Successfully created spawner at " + potentialPosition);
+                createSpawner(potentialPosition);
+                if (--spawnersLeftToCreate <= 0) break;
+            }
+        }
+    }
+
+    protected void tickReplacementCooldowns() {
+        for (ReplacementCooldown cooldown : replacementCooldowns.values()) {
+            cooldown.tick();
         }
     }
 
@@ -164,7 +191,8 @@ public class FoliantRaid {
         BlockPos groundAbovePos = LevelUtils.iterateBlockWithTransformation(32, level, randomizedLocation,
                 (lvl, pos) -> {
                     BlockState state = lvl.getBlockState(pos);
-                    return !state.isAir() && !state.getCollisionShape(lvl, pos).isEmpty();
+                    BlockState aboveState = lvl.getBlockState(pos.above());
+                    return (!state.isAir() && !state.getCollisionShape(lvl, pos).isEmpty()) && (!aboveState.isAir() && !aboveState.getCollisionShape(lvl, pos).isEmpty());
                 },
                 BlockPos::above
                 );
@@ -180,31 +208,38 @@ public class FoliantRaid {
         if (groundAbovePos != null) distanceToGroundAbove = groundAbovePos.getY() - randomizedLocation.getY();
 
         if ((groundBelowPos == null || distanceToGroundBelow > distanceToGroundAbove) && groundAbovePos != null) {
-            result = groundAbovePos;
+            result = groundAbovePos.above();
         } else if (groundBelowPos != null) {
-            result = groundBelowPos;
+            result = groundBelowPos.above();
         }
         return result;
     }
 
-    public void spawnAGodDamnPig() {
-        if (level.getGameTime() % 100 > 0) return;
-        Entity newborn = EntityType.PIG.create(level);
-        newborn.moveTo(epicenter.getCenter());
-        level.addFreshEntity(newborn);
+    // These three are called by FoliantRaidMob, it is a way to keep track of population safely without WeakReference or anything like that
+    // population is INCREMENTED when a Spawner adds them to the queue. this is so that multiple spawners don't cover the same basis
+    // population is DECREMENTED when the entity is removed from the raid.
+    public void incrementPopulation(EnemyType type) {
+        incrementPopulation(type, 1);
     }
 
-    // These three are called by FoliantRaidMob, it is a way to keep track of population safely without WeakReference or anything like that
-    public void incrementPopulation(EnemyType type) {
-        population.compute(type, (key, value) -> value == null ? 1 : value + 1);
+    public void incrementPopulation(EnemyType type, int amount) {
+        population.compute(type, (key, value) -> value == null ? amount : value + amount);
     }
 
     public void decrementPopulation(EnemyType type) {
-        population.compute(type, (key, value) -> value == null ? 1 : value - 1);
+        decrementPopulation(type, 1);
+    }
+
+    public void decrementPopulation(EnemyType type, int amount) {
+        population.compute(type, (key, value) -> value == null ? 0 : value - amount);
     }
 
     public int getPopulation(EnemyType type) {
         return population.computeIfAbsent(type, (key) -> 0);
+    }
+
+    public int getPopulation() {
+        return Arrays.stream(EnemyType.values()).mapToInt(this::getPopulation).sum();
     }
 
     protected void startForceloadingChunks() {
@@ -272,6 +307,21 @@ public class FoliantRaid {
         return true;
     }
 
+    public boolean isSpawnOffCooldown(EnemyType type) {
+        ReplacementCooldown cooldown = replacementCooldowns.computeIfAbsent(type, key -> {
+            return new ReplacementCooldown(key, this);
+        });
+
+        return cooldown.isCooldownOver();
+    }
+
+    public void addSpawnCooldownFor(EnemyType type, int amount) {
+        ReplacementCooldown cooldown = replacementCooldowns.computeIfAbsent(type, key -> {
+            return new ReplacementCooldown(key, this);
+        });
+        cooldown.onSpawned();
+    }
+
     public void refreshSpawnerCooldowns() {
         spawners.forEach((pos, spawner) -> spawner.resetSpawnCooldown());
     }
@@ -322,12 +372,12 @@ public class FoliantRaid {
     }
 
     public enum EnemyType {
-        GREG(ModEntities.GREG::get, 3, 8, 1, 4),
-        DEVIL(ModEntities.DEVIL::get, 1, 4, 5, 1),
-        ASTEIRTO(ModEntities.ASTEIRTO::get, 1, 2, 15, 0.66f),
+        GREG(ModEntities.GREG::get, 3, 8, 1, 4, 60),
+        DEVIL(ModEntities.DEVIL::get, 1, 4, 5, 1, 300),
+        ASTEIRTO(ModEntities.ASTEIRTO::get, 1, 2, 15, 2, 1600),
         // posterboy is a special enemy and does not spawn normally
-        POSTERBOY(ModEntities.GREG::get, 1, 0, 0, 0),
-        AMELIE(ModEntities.GREG::get, 1, 5, 5, 1);
+        POSTERBOY(ModEntities.GREG::get, 1, 0, 0, 0, 0),
+        AMELIE(ModEntities.GREG::get, 1, -5, -5, 1, 300);
 
         private final Supplier<EntityType<? extends FoliantRaidMob>> registry;
         // when it is decided that this thing will be spawned, this is the amount to spawn
@@ -340,12 +390,14 @@ public class FoliantRaid {
         private final int powerNeededToSpawn;
         // as this number increases, less of this entity are needed for them to be considered overpopulated
         private final float overpopulationWeight;
-        EnemyType(Supplier<EntityType<? extends FoliantRaidMob>> registry, int amountToSpawn, int spawnWeight, int powerToSpawn, float overpopulationWeight) {
+        private final int baseRespawnCooldownTicks;
+        EnemyType(Supplier<EntityType<? extends FoliantRaidMob>> registry, int amountToSpawn, int spawnWeight, int powerToSpawn, float overpopulationWeight, int baseRespawnCooldownTicks) {
             this.registry = registry;
             this.amountToSpawn = amountToSpawn;
             this.spawnWeight = spawnWeight;
             this.powerNeededToSpawn = powerToSpawn;
             this.overpopulationWeight = overpopulationWeight;
+            this.baseRespawnCooldownTicks = baseRespawnCooldownTicks;
         }
 
         public boolean spawnsNormally() {
@@ -360,6 +412,10 @@ public class FoliantRaid {
             return powerNeededToSpawn;
         }
 
+        public boolean raidHasEnoughPowerToSpawn(FoliantRaid raid) {
+            return getPowerNeededToSpawn() <= raid.getPower();
+        }
+
         public int getAmountToSpawn() {
             return amountToSpawn;
         }
@@ -367,7 +423,35 @@ public class FoliantRaid {
         public boolean isOverpopulated(FoliantRaid raid) {
             int power = raid.getPower();
             int population = raid.getPopulation(this);
+            //LOGGER.info(String.format("pee:%s pop:%s cost:%s weight:%s amt:%s pow:%s res:%s", this, population, getPowerNeededToSpawn(), overpopulationWeight, getAmountToSpawn(), power, ((population * getPowerNeededToSpawn() * overpopulationWeight) / getAmountToSpawn()) >= power));
             return ((population * getPowerNeededToSpawn() * overpopulationWeight) / getAmountToSpawn()) >= power;
+        }
+
+        public boolean isOffCooldown(FoliantRaid raid) {
+            // there are no cooldowns when you get to 100 power. die
+            if (raid.getPower() >= 100) return true;
+            return raid.isSpawnOffCooldown(this);
+        }
+
+        // shut up shut up shut up shut up shut p supt shut up shut up
+        public boolean overallCanBeSpawned(FoliantRaid raid) {
+            //fixme logger
+            LOGGER.info(this + " " + spawnsNormally() + raidHasEnoughPowerToSpawn(raid) + !isOverpopulated(raid) + isOffCooldown(raid));
+            return spawnsNormally() &&
+                    raidHasEnoughPowerToSpawn(raid) &&
+                    !isOverpopulated(raid) &&
+                    isOffCooldown(raid);
+        }
+
+        public int getTicksBetweenRespawns(FoliantRaid raid) {
+            int power = raid.getPower();
+            //double cooldownSpeedCoefficient = Math.pow(power, 1.2) * 0.02 + 1; i forgot
+            //double cooldownSpeedCoefficient = Math.pow(power, 3) * 0.00005 + 1; too exponential
+
+            // 8% faster respawns for each unit of power; by 40 power, respawns will be 4x as fast. sounds fine enough to me
+            // i think 40 is a good "you are very far" point
+            double cooldownSpeedCoefficient = power * 0.08 + 1;
+            return (int) Math.ceil(baseRespawnCooldownTicks / cooldownSpeedCoefficient);
         }
 
         public EntityType<? extends FoliantRaidMob> getEntityType() {
@@ -376,6 +460,57 @@ public class FoliantRaid {
 
         public <T extends FoliantRaidMob> T create(ServerLevel level) {
             return (T) getEntityType().create(level);
+        }
+    }
+
+    // when something is removed from the raid by death or something else, the raid wants to replace them
+    // since there will no longer be enough of them
+    // when the thing is
+    public static class ReplacementCooldown {
+        private final FoliantRaid raid;
+        private final EnemyType type;
+        private final ArrayList<Integer> cooldowns = new ArrayList<>();
+
+        public ReplacementCooldown(EnemyType type, FoliantRaid raid) {
+            this.type = type;
+            this.raid = raid;
+        }
+
+        public void addCooldown() {
+            int cooldown = getTicksBetweenRespawns();
+            cooldowns.add(cooldown);
+        }
+
+        public int getTicksBetweenRespawns() {
+            return type.getTicksBetweenRespawns(raid);
+        }
+
+        public boolean isCooldownOver() {
+            return getCount() == 0 || cooldowns.stream().anyMatch(cooldown -> cooldown <= 0);
+        }
+
+        public void tick() {
+            cooldowns.replaceAll(old -> old - 1);
+        }
+
+        public void onSpawned() {
+            Iterator<Integer> iterator = cooldowns.iterator();
+            while (iterator.hasNext()) {
+                if (iterator.next() <= 0) {
+                    iterator.remove();
+                    break;
+                }
+            }
+            addCooldown();
+        }
+
+        protected int getCount() {
+            return cooldowns.size();
+        }
+
+        @Override
+        public String toString() {
+            return super.toString() + " " + cooldowns;
         }
     }
 }

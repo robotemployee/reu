@@ -5,40 +5,33 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.ai.goal.Goal;
 
 public class ConvergeOnRaidEpicenterGoal extends Goal {
-
-    public final FoliantRaidMob banana;
+    public final FoliantRaidMob foliant;
     public final double speedMod;
-    public final double maxDistanceSqr;
-    public ConvergeOnRaidEpicenterGoal(FoliantRaidMob banana, double speedMod, double maxDistance) {
-        this.banana = banana;
+    public static final int TARGET_DISTANCE_SQR = (int)Math.pow(128, 2);
+    public ConvergeOnRaidEpicenterGoal(FoliantRaidMob foliant, double speedMod) {
+        this.foliant = foliant;
         this.speedMod = speedMod;
-        this.maxDistanceSqr = Math.pow(maxDistance, 2);
     }
 
     @Override
     public boolean canUse() {
-        if (!banana.isInRaid()) return false;
-        if (banana.getRandom().nextInt(8) > 0) return false;
-        if (banana.getTarget() != null) return false;
+        if (!foliant.isInRaid()) return false;
+        if (foliant.getRandom().nextInt(8) > 0) return false;
+        if (foliant.getTarget() != null) return false;
 
         return true;
     }
 
     @Override
     public void start() {
-        BlockPos raidPos = banana.getParentRaid().getEpicenter();
-        banana.getNavigation().moveTo(raidPos.getX(), raidPos.getY(), raidPos.getZ(), speedMod);
+        BlockPos raidPos = foliant.getParentRaid().getEpicenter();
+        foliant.getNavigation().moveTo(raidPos.getX(), raidPos.getY(), raidPos.getZ(), speedMod);
     }
 
     @Override
     public boolean canContinueToUse() {
-        if (!banana.isInRaid()) return false;
-        BlockPos raidPos = banana.getParentRaid().getEpicenter();
-        return banana.blockPosition().distSqr(raidPos) > maxDistanceSqr;
-    }
-
-    @Override
-    public boolean requiresUpdateEveryTick() {
-        return false;
+        if (!foliant.isInRaid()) return false;
+        BlockPos raidPos = foliant.getParentRaid().getEpicenter();
+        return foliant.blockPosition().distSqr(raidPos) > TARGET_DISTANCE_SQR;
     }
 }

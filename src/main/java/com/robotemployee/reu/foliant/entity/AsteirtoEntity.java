@@ -38,6 +38,8 @@ public class AsteirtoEntity extends FlyingFoliantRaidMob implements GeoEntity {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
+    public static final double ATTACK_RANGE = 1;
+
     public AsteirtoEntity(EntityType<? extends Monster> entityType, Level level) {
         super(entityType, level);
         this.moveControl = new AsteirtoMoveControl(this); //new FlyingMoveControl(this, 20, true);
@@ -213,7 +215,7 @@ public class AsteirtoEntity extends FlyingFoliantRaidMob implements GeoEntity {
                 double distSqr = asteirto.distanceToSqr(target);
                 Vec3 targetPos = target.getEyePosition().add(0, -asteirto.getBbHeight() * 0.5, 0);
 
-                if (distSqr < Math.pow(2.5, 2)) {
+                if (distSqr < Math.pow(AsteirtoEntity.ATTACK_RANGE, 2)) {
                     double xOffset = asteirto.getTarget().getX() - asteirto.getX();
                     double zOffset = asteirto.getTarget().getZ() - asteirto.getZ();
                     asteirto.setYRot(-((float)Mth.atan2(xOffset, zOffset)) * (180F / (float)Math.PI));
