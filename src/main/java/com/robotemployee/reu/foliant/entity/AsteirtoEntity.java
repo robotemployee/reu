@@ -7,6 +7,8 @@ import com.robotemployee.reu.registry.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -58,16 +60,6 @@ public class AsteirtoEntity extends FlyingFoliantRaidMob implements GeoEntity {
     }
 
     @Override
-    public boolean canRecycle() {
-        return false;
-    }
-
-    @Override
-    public float getPresenceImportance() {
-        return 8;
-    }
-
-    @Override
     public FoliantRaid.EnemyType getEnemyType() {
         return FoliantRaid.EnemyType.ASTEIRTO;
     }
@@ -85,9 +77,11 @@ public class AsteirtoEntity extends FlyingFoliantRaidMob implements GeoEntity {
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0)
                 .add(Attributes.ATTACK_KNOCKBACK, 8)
                 .add(Attributes.FOLLOW_RANGE, 32)
-                .add(Attributes.FLYING_SPEED, 2)
+                .add(Attributes.FLYING_SPEED, 0.008D)
                 .add(Attributes.ATTACK_DAMAGE, 4);
     }
+
+
 
     @Override
     protected void registerGoals() {
@@ -101,7 +95,7 @@ public class AsteirtoEntity extends FlyingFoliantRaidMob implements GeoEntity {
 
     @Override
     public void knockback(double strength, double x, double y) {
-        super.knockback(strength * 1.25, x, y);
+        super.knockback(strength * 1.6, x, y);
     }
 
     @Override
@@ -109,13 +103,9 @@ public class AsteirtoEntity extends FlyingFoliantRaidMob implements GeoEntity {
         //super.push(entity);
     }
 
-
     @Override
-    public void baseTick() {
-        super.baseTick();
-        if (canStartAmbientSound()) {
-            startNewAmbientSound();
-        }
+    public boolean canDevilGrantKnockbackResistance() {
+        return false;
     }
 
     @Override
@@ -124,6 +114,20 @@ public class AsteirtoEntity extends FlyingFoliantRaidMob implements GeoEntity {
         super.tick();
         this.noPhysics = false;
         this.setNoGravity(true);
+
+        if (canStartAmbientSound()) {
+            startNewAmbientSound();
+        }
+
+        managePoison();
+    }
+
+    public void managePoison() {
+        if (level().getGameTime() % 20 > 8) return;
+        if (!hasEffect(MobEffects.POISON)) return;
+
+        MobEffectInstance poison = getEffect(MobEffects.POISON);
+        addEffect(new MobEffectInstance(MobEffects.POISON, poison.getDuration(), poison.getAmplifier() + 1));
     }
 
     public boolean canStartAmbientSound() {
@@ -161,7 +165,7 @@ public class AsteirtoEntity extends FlyingFoliantRaidMob implements GeoEntity {
                 return;
             }
 
-            mob.setDeltaMovement(mob.getDeltaMovement().add(offset.scale(this.speedModifier * 0.011D / distance)));
+            mob.setDeltaMovement(mob.getDeltaMovement().add(offset.scale(this.speedModifier * mob.getAttributeValue(Attributes.FLYING_SPEED) / distance)));
             mob.setYRot(0);
         }
         public void justHit() {

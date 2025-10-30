@@ -378,11 +378,6 @@ public class GregEntity extends FoliantRaidMob implements GeoEntity {
     }
 
     @Override
-    public float getPresenceImportance() {
-        return 1;
-    }
-
-    @Override
     public FoliantRaid.EnemyType getEnemyType() {
         return FoliantRaid.EnemyType.GREG;
     }

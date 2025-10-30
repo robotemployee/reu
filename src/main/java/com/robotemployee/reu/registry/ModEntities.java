@@ -1,10 +1,8 @@
 package com.robotemployee.reu.registry;
 
 import com.mojang.logging.LogUtils;
-import com.robotemployee.reu.foliant.entity.AsteirtoEntity;
-import com.robotemployee.reu.foliant.entity.DevilEntity;
-import com.robotemployee.reu.foliant.entity.GregEntity;
-import com.robotemployee.reu.foliant.entity.ThrownSemisolidEntity;
+import com.robotemployee.reu.foliant.entity.*;
+import com.robotemployee.reu.foliant.render.AmelieRenderer;
 import com.robotemployee.reu.foliant.render.AsteirtoRenderer;
 import com.robotemployee.reu.foliant.render.DevilRenderer;
 import com.robotemployee.reu.foliant.render.GregRenderer;
@@ -66,6 +64,16 @@ public class ModEntities {
                     .withName("asteirto")
                     .withAttributes(AsteirtoEntity::createAttributes)
                     .customRenderer(AsteirtoRenderer::new)
+                    .eggColor(0x9BE468, BANANA_EGG_COLOR)
+                    .build();
+
+    public static final EntityRegistryEntry<AmelieEntity> AMELIE =
+            new EntityBuilder<>(
+                    () -> EntityType.Builder.of(AmelieEntity::new, MobCategory.MONSTER)
+                            .sized(2, 2.5f))
+                    .withName("amelie")
+                    .withAttributes(AmelieEntity::createAttributes)
+                    .customRenderer(AmelieRenderer::new)
                     .eggColor(0x9BE468, BANANA_EGG_COLOR)
                     .build();
 

@@ -79,11 +79,6 @@ public class DevilEntity extends FlyingFoliantRaidMob implements GeoEntity {
     }
 
     @Override
-    public float getPresenceImportance() {
-        return 4;
-    }
-
-    @Override
     public boolean canDevilProtect() {
         return false;
     }
@@ -199,7 +194,9 @@ public class DevilEntity extends FlyingFoliantRaidMob implements GeoEntity {
             //getTarget().addEffect(new MobEffectInstance(MobEffects.REGENERATION, BUFFS_INTERVAL + 40));
             if (follower.level().getGameTime() % 20 == 0) getTarget().heal(1);
             getTarget().addEffect(new MobEffectInstance(MobEffects.REGENERATION, BUFFS_INTERVAL + 40));
-            getTarget().addEffect(new MobEffectInstance(AMEffectRegistry.KNOCKBACK_RESISTANCE.get(), BUFFS_INTERVAL + 40, 1));
+            if (!(getTarget() instanceof FoliantRaidMob foliant) || foliant.canDevilGrantKnockbackResistance()) {
+                getTarget().addEffect(new MobEffectInstance(AMEffectRegistry.KNOCKBACK_RESISTANCE.get(), BUFFS_INTERVAL + 40, 1));
+            }
             getTarget().addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, BUFFS_INTERVAL + 40));
             getTarget().addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, BUFFS_INTERVAL + 40, 1));
             //LOGGER.info("Applying buffs to target at" + getTarget().blockPosition());

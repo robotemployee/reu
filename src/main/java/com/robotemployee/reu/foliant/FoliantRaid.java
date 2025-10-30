@@ -373,11 +373,12 @@ public class FoliantRaid {
 
     public enum EnemyType {
         GREG(ModEntities.GREG::get, 3, 8, 1, 4, 60),
-        DEVIL(ModEntities.DEVIL::get, 1, 4, 5, 1, 300),
+        DEVIL(ModEntities.DEVIL::get, 1, 4, 5, 1, 400),
         ASTEIRTO(ModEntities.ASTEIRTO::get, 1, 2, 15, 2, 1600),
         // posterboy is a special enemy and does not spawn normally
         POSTERBOY(ModEntities.GREG::get, 1, 0, 0, 0, 0),
-        AMELIE(ModEntities.GREG::get, 1, -5, -5, 1, 300);
+        // todo add amelie
+        AMELIE(ModEntities.GREG::get, 1, -5, -5, 1, 400);
 
         private final Supplier<EntityType<? extends FoliantRaidMob>> registry;
         // when it is decided that this thing will be spawned, this is the amount to spawn
@@ -391,6 +392,7 @@ public class FoliantRaid {
         // as this number increases, less of this entity are needed for them to be considered overpopulated
         private final float overpopulationWeight;
         private final int baseRespawnCooldownTicks;
+
         EnemyType(Supplier<EntityType<? extends FoliantRaidMob>> registry, int amountToSpawn, int spawnWeight, int powerToSpawn, float overpopulationWeight, int baseRespawnCooldownTicks) {
             this.registry = registry;
             this.amountToSpawn = amountToSpawn;

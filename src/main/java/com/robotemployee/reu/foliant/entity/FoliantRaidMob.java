@@ -83,6 +83,7 @@ public abstract class FoliantRaidMob extends Monster {
 
     protected void applyPowerBuffs(float power) {
         applyPowerHealthBuff(power);
+        applyPowerDamageBuff(power);
     }
 
     public static final UUID HEALTH_POWER_MODIFIER_UUID = UUID.fromString("4a2063fc-418d-40e2-adcb-e41011fca417");
@@ -103,7 +104,7 @@ public abstract class FoliantRaidMob extends Monster {
     }
 
     public static final UUID DAMAGE_POWER_MODIFIER_UUID = UUID.fromString("7470fc32-423b-4f09-a95e-64a53426bcde");
-    protected void applyPowerDamageBuff(int power) {
+    protected void applyPowerDamageBuff(float power) {
         if (power < 1) return;
         double multiplier = Math.min(6, 1 + (power * power) * 0.001);
 
@@ -159,28 +160,14 @@ public abstract class FoliantRaidMob extends Monster {
     public boolean canDevilProtect() {
         return !isBeingProtected() && getDevilProtectionWeight() > 0;
     }
-    public float getDevilProtectionWeight() {
-        return 1f;
+    public boolean canDevilGrantKnockbackResistance() {
+        return canDevilProtect();
     }
-
-    public abstract FoliantRaid.EnemyType getEnemyType();
-
-    public boolean canRecycle() {
-        return true;
-    }
-
-    // This is for spawning in
-    // This value is also considered negatively - the higher it is, the less of them are spawned before the director is satisfied
-    public abstract float getPresenceImportance();
-
-    // presence importance * recycle importance factor = perceived value for recycling from asteirtos
-    protected float getRecycleImportanceFactor() {
+    public int getDevilProtectionWeight() {
         return 1;
     }
 
-    public final float getRecycleImpedance() {
-        return getPresenceImportance() * getRecycleImportanceFactor();
-    }
+    public abstract FoliantRaid.EnemyType getEnemyType();
 
     // This is for determining how effectively a creature is in fulfilling their role -
     // if a creature is very badly wounded, it should report a lower fulfillment rating.
@@ -191,10 +178,11 @@ public abstract class FoliantRaidMob extends Monster {
 
     // override this if you want something to be able to survive without a raid
     int ticksWantedParentRaidButAlone = 0;
+    public static final int TICKS_UNTIL_DIE_OF_LONELINESS = 20;
     public boolean shouldIDieRightNow() {
         if (needsRaidParent && !isInRaid()) ticksWantedParentRaidButAlone++;
-
-        return needsRaidParent && (!isInRaid() || getParentRaid().isPoop());
+        else ticksWantedParentRaidButAlone = 0;
+        return ticksWantedParentRaidButAlone > TICKS_UNTIL_DIE_OF_LONELINESS && needsRaidParent && (!isInRaid() || getParentRaid().isPoop());
     }
 
     @Nullable
