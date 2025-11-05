@@ -1,6 +1,0 @@
-{
-  "parent": "item/generated",
-  "textures": {
-    "layer0": "reu:item/sculk_reconstructor_on"
-  }
-}

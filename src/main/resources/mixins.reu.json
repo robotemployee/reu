@@ -7,29 +7,6 @@
     "defaultRequire": 1
   },
   "mixins": [
-    "base.MoveControlAccessor",
-    "base.NoteBlockMixin",
-    "base.PathNavigationAccessor",
-    "create.RecipeApplierMixin",
-    "mimi.MIMIChannelMixin",
-    "mimi.MIMISynthUtilsMixin",
-    "mimi.NoteEventMixin",
-    "sculkhorde.BlockInfestationSystemMixin",
-    "sculkhorde.ChunkCursorBaseMixin",
-    "sculkhorde.ChunkCursorHelperMixin",
-    "sculkhorde.ChunkCursorInfectorMixin",
-    "sculkhorde.CursorSystemMixin",
-    "sculkhorde.GravemindMixin",
-    "sculkhorde.HitSquadDispatcherSystemMixin",
-    "sculkhorde.ModSavedDataMixin",
-    "sculkhorde.RaidDataMixin",
-    "sculkhorde.SculkBurrowedEffectMixin",
-    "sculkhorde.SculkPhantomEntityMixin",
-    "sculkhorde.SortedCursorListMixin",
-    "sculkhorde.SortedVirtualCursorListMixin",
-    "sculkhorde.TargetParametersMixin",
-    "sculkhorde.VirtualCursorMixin",
-    "sculkhorde.VirtualOreMinerCursorMixin",
-    "sculkhorde.VirtualSurfaceInfestorCursorMixin"
+
   ]
 }

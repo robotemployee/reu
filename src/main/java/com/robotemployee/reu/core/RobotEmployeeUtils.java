@@ -1,11 +1,6 @@
 package com.robotemployee.reu.core;
 
 import com.mojang.logging.LogUtils;
-import com.robotemployee.reu.foliant.FoliantRaidEvents;
-import com.robotemployee.reu.extra.*;
-import com.robotemployee.reu.extra.music_disc_obtainment.ClientDiscEvents;
-import com.robotemployee.reu.extra.music_disc_obtainment.GenericDiscEvents;
-import com.robotemployee.reu.item.ReconstructorItem;
 import com.robotemployee.reu.registry.*;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -59,9 +54,6 @@ public class RobotEmployeeUtils
     {
         IEventBus modEventBus = context.getModEventBus();
 
-        // Register the commonSetup method for modloading
-        modEventBus.addListener(this::commonSetup);
-
         ModEntityDataSerializers.SERIALIZERS.register(modEventBus);
         ModMobEffects.EFFECTS.register(modEventBus);
         ModSounds.SOUNDS.register(modEventBus);
@@ -80,35 +72,11 @@ public class RobotEmployeeUtils
 
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
-        if (!developmentEnvironment) {
-            // same for eeeverything else that wants to hook into events
-            MinecraftForge.EVENT_BUS.register(SculkHordeCompat.class);
-            //MinecraftForge.EVENT_BUS.register(BornInChaosCompat.class); // born in chaos is being removed from the pack
-            MinecraftForge.EVENT_BUS.register(BaseGame.class);
-            MinecraftForge.EVENT_BUS.register(FriendsAndFoesCompat.class);
-            MinecraftForge.EVENT_BUS.register(AlexsCavesCompat.class);
-            MinecraftForge.EVENT_BUS.register(GenericDiscEvents.class);
-            MinecraftForge.EVENT_BUS.register(CuriosCompat.class);
-            MinecraftForge.EVENT_BUS.register(TummyAcheEvents.class);
-            MinecraftForge.EVENT_BUS.register(FoliantRaidEvents.class);
-
-            // only for the client :)
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                modEventBus.addListener(ClientModEvents::onClientSetup);
-                MinecraftForge.EVENT_BUS.register(ClientModEvents.class);
-                MinecraftForge.EVENT_BUS.register(ClientDiscEvents.class);
-            });
-        }
 
         //MinecraftForge.EVENT_BUS.register(Datagen.class);
 
         // Register our mod's ForgeConfigSpec so that Forge can create and load the config file for us
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
-    }
-
-
-    private void commonSetup(final FMLCommonSetupEvent event) {
-        ServerboundPreciseArrowPacket.register();
     }
 
     @SubscribeEvent
@@ -124,63 +92,13 @@ public class RobotEmployeeUtils
 
     // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
     @OnlyIn(Dist.CLIENT)
-    public static class ClientModEvents
-    {
+    public static class ClientModEvents {
         private static final ArrayList<Consumer<FMLClientSetupEvent>> CLIENT_SETUP_REQUESTS = new ArrayList<>();
 
         public static <T extends Entity> void addCustomRenderer(Supplier<EntityType<T>> entity, EntityRendererProvider<T> renderer) {
             CLIENT_SETUP_REQUESTS.add(fmlClientSetupEvent -> {
                 EntityRenderers.register(entity.get(), renderer);
             });
-        }
-
-        @SubscribeEvent
-        public static void onClientSetup(FMLClientSetupEvent event)
-        {
-            ItemProperties.register(ModItems.RECONSTRUCTOR.get(), new ResourceLocation(MODID, "is_auto_repairing"), (stack, level, entity, seed) -> {
-                boolean isActivated = stack.getOrCreateTag().getInt(ReconstructorItem.LAST_AUTO_REPAIR_TAG) > 0;
-                return isActivated ? 1.0f : 0.0f;
-            });
-            ItemProperties.register(ModItems.SCULK_RECONSTRUCTOR.get(), new ResourceLocation(MODID, "is_auto_repairing"), (stack, level, entity, seed) -> {
-                boolean isActivated = stack.getOrCreateTag().getInt(ReconstructorItem.LAST_AUTO_REPAIR_TAG) > 0;
-                return isActivated ? 1.0f : 0.0f;
-            });
-
-            for (Consumer<FMLClientSetupEvent> requests : CLIENT_SETUP_REQUESTS) {
-                requests.accept(event);
-            }
-            //EntityRenderers.register(ModEntities.DEVIL.get(), DevilRenderer::new);
-        }
-
-        @SubscribeEvent
-        public static void onToolTip(ItemTooltipEvent event) {
-            ItemStack stack = event.getItemStack();
-            Item item = stack.getItem();
-            if (item == ModItems.ONE_DAY_BLINDING_STEW.get()) {
-                Component translatable = Component.translatable("item.reu.one_day_blinding_stew.tooltip");
-                List<Component> lines = Arrays.stream(translatable.getString().split("\n"))
-                        .map(Component::literal)
-                        .collect(Collectors.toList());
-
-                event.getToolTip().addAll(1, lines);
-                return;
-            }
-
-            if (item == ModItems.MUSIC_DISC_KOKOROTOLUNANOFUKAKAI.get()) {
-                boolean showShotData = Screen.hasShiftDown();
-                List<Component> tooltip = GenericDiscEvents.ArrowShotStatistics.getTooltip(stack, showShotData);
-                if (tooltip != null) {
-                    event.getToolTip().addAll(tooltip);
-                } else {
-                    event.getToolTip().add(Component.empty());
-                    event.getToolTip().add(Component.literal("§8(No shot information.)"));
-                }
-                return;
-            }
-
-            if (item == ModItems.MIRACLE_PILL.get()) {
-                event.getToolTip().add(Component.literal("§3Creative-only tummy ache removal."));
-            }
         }
     }
 }

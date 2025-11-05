@@ -1,6 +1,0 @@
-{
-  "parent": "item/stick",
-  "textures": {
-    "layer0": "reu:item/frying_pan"
-  }
-}
