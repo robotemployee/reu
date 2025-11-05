@@ -1,11 +1,11 @@
 package com.robotemployee.reu.util.registry.builder;
 
 import com.robotemployee.reu.core.RobotEmployeeUtils;
-import com.robotemployee.reu.registry.ModSounds;
-import com.robotemployee.reu.util.datagen.Datagen;
+import com.robotemployee.reu.util.datagen.DatagenInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraftforge.common.data.SoundDefinition;
+import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.function.Consumer;
@@ -20,6 +20,26 @@ public class SoundBuilder {
     private Mode mode = Mode.NORMAL;
     private boolean isFixedRange = false;
     private float range = 0;
+
+    private final DatagenInstance datagenInstance;
+    private final DeferredRegister<SoundEvent> register;
+
+    public static class Manager {
+        public final DatagenInstance datagenInstance;
+        public final DeferredRegister<SoundEvent> register;
+        public Manager(DatagenInstance datagenInstance, DeferredRegister<SoundEvent> register)  {
+            this.datagenInstance = datagenInstance;
+            this.register = register;
+        }
+        public SoundBuilder createBuilder() {
+            return new SoundBuilder(datagenInstance, register);
+        }
+    }
+
+    protected SoundBuilder(DatagenInstance datagenInstance, DeferredRegister<SoundEvent> register) {
+        this.datagenInstance = datagenInstance;
+        this.register = register;
+    }
 
     public SoundBuilder withName(String name) {
         this.name = name;
@@ -62,12 +82,12 @@ public class SoundBuilder {
         RegistryObject<SoundEvent> newborn;
 
         if (isFixedRange) {
-            newborn = ModSounds.SOUNDS.register(
+            newborn = register.register(
                     name,
                     () -> SoundEvent.createFixedRangeEvent(new ResourceLocation(RobotEmployeeUtils.MODID, name), range)
             );
         } else {
-            newborn = ModSounds.SOUNDS.register(
+            newborn = register.register(
                     name,
                     () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(RobotEmployeeUtils.MODID, name))
             );
@@ -85,7 +105,7 @@ public class SoundBuilder {
             if (soundModifier != null) soundModifier.accept(sound);
             definition = SoundDefinition.definition().with(sound);
         }
-        Datagen.ModSoundProvider.register(newborn, definition);
+        datagenInstance.modSoundProviderManager.register(newborn, definition);
     }
 
     private void checkForInsufficientParams() {

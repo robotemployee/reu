@@ -15,16 +15,16 @@ public class ModSounds {
     static Logger LOGGER = LogUtils.getLogger();
     public static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, RobotEmployeeUtils.MODID);
 
-    public static RegistryObject<SoundEvent> registerDiscSound(String name) {
-        return new SoundBuilder()
+    public static RegistryObject<SoundEvent> registerDiscSound(String name, SoundBuilder.Manager manager) {
+        return manager.createBuilder()
                 .withName("music_disc." + name)
                 .soundLocation("music_disc/" + name)
                 .soundModifier(SoundDefinition.Sound::stream)
                 .build();
     }
 
-    public static RegistryObject<SoundEvent> registerNormalSound(String name, String location) {
-        return new SoundBuilder()
+    public static RegistryObject<SoundEvent> registerNormalSound(String name, String location, SoundBuilder.Manager manager) {
+        return manager.createBuilder()
                 .soundLocation(location)
                 .withName(name)
                 .build();

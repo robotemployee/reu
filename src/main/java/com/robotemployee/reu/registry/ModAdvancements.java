@@ -2,7 +2,7 @@ package com.robotemployee.reu.registry;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
-import com.robotemployee.reu.util.datagen.Datagen;
+import com.robotemployee.reu.util.datagen.DatagenInstance;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.client.Minecraft;
@@ -13,7 +13,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -32,9 +31,9 @@ public class ModAdvancements {
 
     private static ResourceLocation lastDiscLoc = null;
 
-    public static ResourceLocation createDiscAdvancement(String id, Supplier<Item> supplier, Component desc) {
+    public static ResourceLocation createDiscAdvancement(DatagenInstance datagenInstance, String id, Supplier<Item> supplier, Component desc) {
         //LOGGER.info("Creating disc advancement with ID " + id);
-        ResourceLocation newborn = Datagen.ModAdvancementProvider.simpleItemObtainedAdvancement(new ResourceLocation(RobotEmployeeUtils.MODID, id), supplier, desc, lastDiscLoc);
+        ResourceLocation newborn = datagenInstance.modAdvancementProviderManager.simpleItemObtainedAdvancement(new ResourceLocation(RobotEmployeeUtils.MODID, id), supplier, desc, lastDiscLoc);
         lastDiscLoc = newborn;
         return newborn;
     }

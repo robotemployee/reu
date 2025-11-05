@@ -26,11 +26,10 @@ public class ModItems {
     //public static final RegistryObject<Item> SCULK_RECONSTRUCTOR = ITEMS.register("sculk_reconstructor", () -> new SculkReconstructorItem(new Item.Properties().rarity(Rarity.EPIC)));
     //public static final RegistryObject<Item> INJECTOR = ITEMS.register("injector", () -> new InjectorItem(new Item.Properties()));
 
-
     static Logger LOGGER = LogUtils.getLogger();
 
-    public static RegistryObject<Item> createSimpleItem(String id) {
-        return new ItemBuilder()
+    public static RegistryObject<Item> createSimpleItem(ItemBuilder.Manager manager, String id) {
+        return manager.createBuilder()
                 .withName(id)
                 .withSupplier(() -> new Item(
                         new Item.Properties()
@@ -38,8 +37,8 @@ public class ModItems {
                 .build();
     }
 
-    public static RegistryObject<Item> createSimpleFoodItem(String id, FoodProperties properties) {
-        return new ItemBuilder()
+    public static RegistryObject<Item> createSimpleFoodItem(ItemBuilder.Manager manager, String id, FoodProperties properties) {
+        return manager.createBuilder()
                 .withName(id)
                 .withSupplier(() -> new Item(
                         new Item.Properties().food(properties)
@@ -48,10 +47,10 @@ public class ModItems {
     }
 
     // note that the resulting item id will have "music_disc_" appended to the start of the itemId input
-    public static RegistryObject<Item> createDiscItem(String itemId, Supplier<SoundEvent> sound, int ticks) {
+    public static RegistryObject<Item> createDiscItem(ItemBuilder.Manager manager, String itemId, Supplier<SoundEvent> sound, int ticks) {
         String finalItemId = "music_disc_" + itemId;
 
-        return new ItemBuilder()
+        return manager.createBuilder()
                 .withName(finalItemId)
                 .withSupplier(() -> {
                         assert sound.get() != null;

@@ -2,8 +2,8 @@ package com.robotemployee.reu.util.registry.builder;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
-import com.robotemployee.reu.registry.ModBlocks;
 import com.robotemployee.reu.registry.ModItems;
+import com.robotemployee.reu.util.datagen.DatagenInstance;
 import com.robotemployee.reu.util.registry.entry.BlockRegistryEntry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
@@ -24,7 +24,32 @@ public class BlockBuilder {
     private String name;
     private Supplier<? extends Block> supplier;
 
-    private ItemBuilder itemBuilder = new ItemBuilder();
+    private ItemBuilder itemBuilder;
+
+    public static class Manager {
+        public final DatagenInstance datagenInstance;
+        public final DeferredRegister<Block> blockRegister;
+        public final ItemBuilder.Manager itemManager;
+
+        public Manager(DatagenInstance datagenInstance, DeferredRegister<Block> blockRegister, ItemBuilder.Manager itemManager) {
+            this.datagenInstance = datagenInstance;
+            this.blockRegister = blockRegister;
+            this.itemManager = itemManager;
+        }
+
+        public BlockBuilder createBuilder() {
+            return new BlockBuilder(datagenInstance, blockRegister, itemManager);
+        }
+    }
+
+    private final DatagenInstance datagenInstance;
+    private final DeferredRegister<Block> register;
+    private final ItemBuilder.Manager itemManager;
+    private BlockBuilder(DatagenInstance datagenInstance, DeferredRegister<Block> register, ItemBuilder.Manager itemManager) {
+        this.datagenInstance = datagenInstance;
+        this.register = register;
+        this.itemManager = itemManager;
+    }
 
     public BlockBuilder withName(String name) {
         this.name = name;
@@ -39,8 +64,7 @@ public class BlockBuilder {
     // Build
 
     public BlockRegistryEntry build() {
-        DeferredRegister<Block> BLOCKS = ModBlocks.BLOCKS;
-        DeferredRegister<Item> ITEMS = ModItems.ITEMS;
+        DeferredRegister<Block> BLOCKS = register;
 
         LOGGER.info("Registering block " + new ResourceLocation(RobotEmployeeUtils.MODID, name));
         checkForInsufficientParams();
@@ -50,6 +74,7 @@ public class BlockBuilder {
         //LOGGER.info("Blocky block block block" + block.get());
 
         if (hasItem()) {
+            itemBuilder = itemManager.createBuilder();
             //RegistryObject<Item> item = ITEMS.register(getName(), () -> new BlockItem(block.get(), new Item.Properties()));
             if (!itemBuilder.hasName()) itemBuilder.withName(getName());
             if (!itemBuilder.hasSupplier()) itemBuilder.withSupplier(() -> new BlockItem(block.get(), new Item.Properties()));

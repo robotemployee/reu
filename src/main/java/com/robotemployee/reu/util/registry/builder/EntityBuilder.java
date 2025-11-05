@@ -2,7 +2,7 @@ package com.robotemployee.reu.util.registry.builder;
 
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.registry.ModEntities;
-import com.robotemployee.reu.util.datagen.Datagen;
+import com.robotemployee.reu.util.datagen.DatagenInstance;
 import com.robotemployee.reu.util.registry.entry.EntityRegistryEntry;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.world.entity.Entity;
@@ -15,6 +15,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.function.Supplier;
@@ -22,15 +23,20 @@ import java.util.function.Supplier;
 public class EntityBuilder<T extends Entity> {
 
     private String name;
-    private final Supplier<EntityType.Builder<T>> entityTypeBuilderSupplier;
+    private Supplier<EntityType.Builder<T>> entityTypeBuilderSupplier;
     private Supplier<AttributeSupplier.Builder> attributesBuilderSupplier;
 
     boolean hasEgg = false;
     private int eggColorA;
     private int eggColorB;
+    private ItemBuilder itemBuilder;
 
-    public EntityBuilder(Supplier<EntityType.Builder<T>> builder) {
-        this.entityTypeBuilderSupplier = builder;
+    private final DatagenInstance datagenInstance;
+    private final DeferredRegister<EntityType<?>> register;
+
+    private EntityBuilder(DatagenInstance datagenInstance, DeferredRegister<EntityType<?>> register) {
+        this.datagenInstance = datagenInstance;
+        this.register = register;
     }
 
     /*
@@ -40,6 +46,11 @@ public class EntityBuilder<T extends Entity> {
         return newborn;
     }
      */
+
+    public EntityBuilder<T> withTypeSupplier(Supplier<EntityType.Builder<T>> entityTypeBuilderSupplier) {
+        this.entityTypeBuilderSupplier = entityTypeBuilderSupplier;
+        return this;
+    }
 
     public EntityBuilder<T> withName(String name) {
         this.name = name;
@@ -51,10 +62,11 @@ public class EntityBuilder<T extends Entity> {
         return this;
     }
 
-    public EntityBuilder<T> eggColor(int eggColorA, int eggColorB) {
+    public EntityBuilder<T> eggColor(ItemBuilder.Manager manager, int eggColorA, int eggColorB) {
         hasEgg = true;
         this.eggColorA = eggColorA;
         this.eggColorB = eggColorB;
+        this.itemBuilder = manager.createBuilder();
         return this;
     }
 
@@ -73,7 +85,7 @@ public class EntityBuilder<T extends Entity> {
     public EntityRegistryEntry<T> build() {
         checkForInsufficientParams();
         Supplier<EntityType<T>> entityTypeSupplier = () -> entityTypeBuilderSupplier.get().build(name);
-        RegistryObject<EntityType<T>> newborn = ModEntities.ENTITIES.register(name, entityTypeSupplier);
+        RegistryObject<EntityType<T>> newborn = register.register(name, entityTypeSupplier);
 
         if (attributesBuilderSupplier != null) {
             ModEntities.addAttributeRequest((RegistryObject<EntityType<? extends LivingEntity>>)(Object) newborn, () -> attributesBuilderSupplier.get().build());
@@ -82,12 +94,12 @@ public class EntityBuilder<T extends Entity> {
 
         RegistryObject<Item> egg = null;
         if (hasEgg) {
-            egg = new ItemBuilder()
+            egg = itemBuilder
                     .withName(name + "_spawn_egg")
                     .withSupplier(() ->
                         new ForgeSpawnEggItem(() -> (EntityType<? extends Mob>) newborn.get(), eggColorA, eggColorB, new Item.Properties())
                     )
-                    .customDatagen(Datagen.ModItemModelProvider.spawnEgg())
+                    .customDatagen((datagen, itemRegistryObject) -> datagen.spawnEgg())
                     .build();
         }
 

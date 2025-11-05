@@ -3,7 +3,7 @@ package com.robotemployee.reu.util.registry.builder;
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.registry.ModFluids;
-import com.robotemployee.reu.util.datagen.FluidDatagen;
+import com.robotemployee.reu.util.datagen.DatagenInstance;
 import com.robotemployee.reu.util.registry.entry.BlockRegistryEntry;
 import com.robotemployee.reu.util.registry.entry.FluidRegistryEntry;
 import com.robotemployee.reu.util.registry.generics.FilledBottleItem;
@@ -51,6 +51,34 @@ public class FluidBuilder {
 
     int tint = 0xFFFFFF;
 
+    public static class Manager {
+        private final DatagenInstance datagenInstance;
+        private final ItemBuilder.Manager itemManager;
+        private final BlockBuilder.Manager blockManager;
+        private final DeferredRegister<Fluid> register;
+        public Manager(DatagenInstance datagenInstance, ItemBuilder.Manager itemManager, BlockBuilder.Manager blockManager, DeferredRegister<Fluid> register) {
+            this.datagenInstance = datagenInstance;
+            this.itemManager = itemManager;
+            this.blockManager = blockManager;
+            this.register = register;
+        }
+
+        public FluidBuilder createBuilder() {
+            return new FluidBuilder(datagenInstance, itemManager, blockManager, register);
+        }
+    }
+
+    private final DatagenInstance datagenInstance;
+    private final ItemBuilder.Manager itemManager;
+    private final BlockBuilder.Manager blockManager;
+    private final DeferredRegister<Fluid> register;
+    private FluidBuilder(DatagenInstance datagenInstance, ItemBuilder.Manager itemManager, BlockBuilder.Manager blockManager, DeferredRegister<Fluid> register) {
+        this.datagenInstance = datagenInstance;
+        this.itemManager = itemManager;
+        this.blockManager = blockManager;
+        this.register = register;
+    }
+
     // Required things
 
     public FluidBuilder withName(String name) {
@@ -76,7 +104,7 @@ public class FluidBuilder {
 
     public FluidRegistryEntry build() {
 
-        DeferredRegister<Fluid> FLUIDS = ModFluids.FLUIDS;
+        DeferredRegister<Fluid> FLUIDS = register;
 
         ResourceLocation loc = new ResourceLocation(RobotEmployeeUtils.MODID, name);
 
@@ -109,18 +137,18 @@ public class FluidBuilder {
 
         if (hasBucket) {
             Supplier<Item> supplier = getBucketSupplier(sourceFluid);
-            bucket = (new ItemBuilder()).withName(name + "_bucket").withSupplier(supplier).build();
+            bucket = itemManager.createBuilder().withName(name + "_bucket").withSupplier(supplier).build();
             ModFluids.bucketLookupTable.put(sourceFluid, bucket);
             queueBucketDatagen(bucket);
         }
         if (hasBottle) {
             Supplier<Item> supplier = getBottleSupplier(sourceFluid);
-            bottle = (new ItemBuilder()).withName(name + "_bottle").withSupplier(supplier).build();
+            bottle = itemManager.createBuilder().withName(name + "_bottle").withSupplier(supplier).build();
             ModFluids.bottleLookupTable.put(sourceFluid, bottle);
             queueBottleDatagen(bottle);
         }
         if (hasBlock) {
-            block = (new BlockBuilder()).withName(name).withSupplier(getBlockSupplier(() -> (ForgeFlowingFluid.Source)sourceFluid.get())).noCreativeTab().build();
+            block = blockManager.createBuilder().withName(name).withSupplier(getBlockSupplier(() -> (ForgeFlowingFluid.Source)sourceFluid.get())).noCreativeTab().build();
             //block = BLOCKS.register(name, getBlockSupplier());
         }
 
@@ -233,19 +261,11 @@ public class FluidBuilder {
     }
 
     private void queueBucketDatagen(Supplier<Item> supplier) {
-        FluidDatagen.addClientRequest(() -> {
-            try {
-                FluidDatagen.generateBucket(supplier);
-            } catch (IOException e) {throw new RuntimeException(e);}
-        });
+        datagenInstance.generateBucket(supplier);
     }
 
     private void queueBottleDatagen(Supplier<Item> supplier) {
-        FluidDatagen.addClientRequest(() -> {
-            try {
-                FluidDatagen.generateBottle(supplier);
-            } catch (IOException e) {throw new RuntimeException(e);}
-        });
+        datagenInstance.generateBottle(supplier);
     }
 
     public enum Mode {
