@@ -1,12 +1,13 @@
 package com.robotemployee.reu.util.registry.builder;
 
-import com.robotemployee.reu.util.registry.tools.CreativeModeTabTools;
+import com.robotemployee.reu.util.registry.entry.CreativeTabMutableRegistryEntry;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.function.BiConsumer;
@@ -20,27 +21,36 @@ public class ItemBuilder {
     private BiConsumer<DatagenInstance, RegistryObject<Item>> datagenConsumer;
     private final DatagenInstance datagenInstance;
     private final DeferredRegister<Item> register;
-    private boolean inCreativeTab = true;
+    @Nullable
+    private CreativeTabMutableRegistryEntry creativeModeTab;
 
     private boolean doDatagen = true;
 
-    protected ItemBuilder(DatagenInstance datagenInstance, DeferredRegister<Item> register) {
+    protected ItemBuilder(DatagenInstance datagenInstance, DeferredRegister<Item> register, CreativeTabMutableRegistryEntry creativeModeTab) {
         datagenConsumer = DatagenInstance::basicItem;
         this.datagenInstance = datagenInstance;
         this.register = register;
+        this.creativeModeTab = creativeModeTab;
     }
 
     public static class Manager {
 
         public final DatagenInstance datagenInstance;
         public final DeferredRegister<Item> register;
+        @Nullable
+        public CreativeTabMutableRegistryEntry defaultTab;
         public Manager(@NotNull DatagenInstance datagenInstance, DeferredRegister<Item> register) {
             this.datagenInstance = datagenInstance;
             this.register = register;
         }
 
+        public Manager defaultCreativeTab(CreativeTabMutableRegistryEntry defaultTab) {
+            this.defaultTab = defaultTab;
+            return this;
+        }
+
         public ItemBuilder createBuilder() {
-            return new ItemBuilder(datagenInstance, register);
+            return new ItemBuilder(datagenInstance, register, defaultTab);
         }
     }
 
@@ -57,7 +67,7 @@ public class ItemBuilder {
     public RegistryObject<Item> build() {
         checkForInsufficientParams();
         RegistryObject<Item> newborn = register.register(name, supplier);
-        if (inCreativeTab) CreativeModeTabTools.addItem(newborn);
+        if (creativeModeTab != null) creativeModeTab.addItem(newborn);
         if (doDatagen) datagenConsumer.accept(datagenInstance, newborn);
         for (Supplier<TagKey<Item>> tag : tags) {
             datagenInstance.addTagToItem(newborn, tag);
@@ -90,8 +100,13 @@ public class ItemBuilder {
         return this;
     }
 
+    public ItemBuilder overrideCreativeTab(CreativeTabMutableRegistryEntry creativeModeTab) {
+        this.creativeModeTab = creativeModeTab;
+        return this;
+    }
+
     public ItemBuilder noCreativeTab() {
-        this.inCreativeTab = false;
+        this.creativeModeTab = null;
         return this;
     }
 
