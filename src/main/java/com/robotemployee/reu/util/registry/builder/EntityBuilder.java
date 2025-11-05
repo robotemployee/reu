@@ -34,6 +34,19 @@ public class EntityBuilder<T extends Entity> {
     private final DatagenInstance datagenInstance;
     private final DeferredRegister<EntityType<?>> register;
 
+    public static class Manager {
+        public final DatagenInstance datagenInstance;
+        public final DeferredRegister<EntityType<?>> register;
+        public Manager(DatagenInstance datagenInstance, DeferredRegister<EntityType<?>> register) {
+            this.datagenInstance = datagenInstance;
+            this.register = register;
+        }
+
+        public <T extends Entity> EntityBuilder<T> createBuilder() {
+            return new EntityBuilder<>(datagenInstance, register);
+        }
+    }
+
     private EntityBuilder(DatagenInstance datagenInstance, DeferredRegister<EntityType<?>> register) {
         this.datagenInstance = datagenInstance;
         this.register = register;
