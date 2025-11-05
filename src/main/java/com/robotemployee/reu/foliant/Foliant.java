@@ -4,12 +4,15 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
+import com.robotemployee.reu.foliant.entity.AmelieEntity;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.entity.ProjectileImpactEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -303,5 +306,19 @@ public class Foliant {
                         )
 
         );
+    }
+
+
+    @SubscribeEvent
+    public static void onProjectileImpact(ProjectileImpactEvent event) {
+        if (event.getEntity().level().isClientSide()) return;
+
+        if (!(event.getRayTraceResult() instanceof EntityHitResult)) return;
+
+        if (!(event.getEntity() instanceof AmelieEntity amelie)) return;
+
+        if (!amelie.canDodge()) return;
+
+        amelie.dodge(amelie.level().getRandom().nextBoolean());
     }
 }

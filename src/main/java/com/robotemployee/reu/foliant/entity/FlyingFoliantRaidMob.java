@@ -14,7 +14,9 @@ public abstract class FlyingFoliantRaidMob extends FoliantRaidMob {
         super(entityType, level);
     }
 
-    // the following is copypasted from FlyingMob. if Java won't let me extend multiple classes I'll do it myself
+    // ignore this it's cope complete cope
+
+    // the following is copypasted from FlyingMob. if Java won't let me extend multiple classes or pick functions from a sibling I'll do it myself
     protected void checkFallDamage(double p_20809_, boolean p_20810_, BlockState p_20811_, BlockPos p_20812_) {
     }
 

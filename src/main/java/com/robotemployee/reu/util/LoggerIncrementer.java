@@ -7,6 +7,8 @@ public class LoggerIncrementer {
 
     // this class is just a logging utility that i can use to like,,, print numbers at different lines easily according to where a certain function has reached
 
+    // this is,,,, cope. useless tbh
+
     // just make one and pass a reference to the class you're making it in
     // or if it's in a static context just give it a String label directly
     // then whenever you call increment() it'll output a number that goes up with each output
