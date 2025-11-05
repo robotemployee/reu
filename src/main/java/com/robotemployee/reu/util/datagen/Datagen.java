@@ -61,7 +61,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-@Mod.EventBusSubscriber(modid = RobotEmployeeUtils.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
+
 public class Datagen {
 
     public static final Logger LOGGER = LogUtils.getLogger();
@@ -71,16 +71,17 @@ public class Datagen {
         //addTagToTag(() -> AllTags.AllItemTags.PRESSURIZED_AIR_SOURCES.tag, () -> back);
     }
 
-    @SubscribeEvent
-    public static void run(GatherDataEvent event) {
+
+    // you need to call this during the GatherDataEvent for your mod
+    public static void run(GatherDataEvent event, String modid) {
         LOGGER.info("Received data generation event");
         FluidDatagen.run(event);
 
         DataGenerator gen = event.getGenerator();
 
-        gen.addProvider(event.includeClient(), new ModItemModelProvider(gen.getPackOutput(), event.getExistingFileHelper()));
-        gen.addProvider(event.includeClient(), new ModSoundProvider(gen.getPackOutput(), event.getExistingFileHelper()));
-        ModTagsProvider.attach(event);
+        gen.addProvider(event.includeClient(), new ModItemModelProvider(gen.getPackOutput(), event.getExistingFileHelper(), modid));
+        gen.addProvider(event.includeClient(), new ModSoundProvider(gen.getPackOutput(), event.getExistingFileHelper(), modid));
+        ModTagsProvider.attach(event, modid);
 
         gen.addProvider(event.includeServer(), ModLootTableProvider.create(gen.getPackOutput()));
 
@@ -188,8 +189,8 @@ public class Datagen {
 
         Logger LOGGER = LogUtils.getLogger();
 
-        public ModItemModelProvider(PackOutput output, ExistingFileHelper existingFileHelper) {
-            super(output, RobotEmployeeUtils.MODID, existingFileHelper);
+        public ModItemModelProvider(PackOutput output, ExistingFileHelper existingFileHelper, String modid) {
+            super(output, modid, existingFileHelper);
         }
 
         @Override
@@ -214,7 +215,7 @@ public class Datagen {
 
         static HashMap<ResourceKey<? extends Registry<?>>, ArrayList<Consumer<TagsProviderImpl<?>>>> requests = new HashMap<>();
 
-        public static void attach(GatherDataEvent event) {
+        public static void attach(GatherDataEvent event, String modid) {
             DataGenerator gen = event.getGenerator();
             PackOutput output = gen.getPackOutput();
             ExistingFileHelper existingFileHelper = event.getExistingFileHelper();
@@ -222,7 +223,7 @@ public class Datagen {
 
             LOGGER.info("Attaching tag datagen");
 
-            gen.addProvider(event.includeServer(), new TagsProviderImpl<>(output, Registries.ITEM, lookupProvider, existingFileHelper));
+            gen.addProvider(event.includeServer(), new TagsProviderImpl<>(output, Registries.ITEM, lookupProvider, existingFileHelper, modid));
         }
 
         public static <T> void queueRequest(ResourceKey<? extends Registry<T>> key, Consumer<TagsProviderImpl<T>> request) {
@@ -236,8 +237,8 @@ public class Datagen {
 
         private static class TagsProviderImpl<T> extends TagsProvider<T> {
 
-            protected TagsProviderImpl(PackOutput output, ResourceKey<? extends Registry<T>> key, CompletableFuture<HolderLookup.Provider> future, @Nullable ExistingFileHelper existingFileHelper) {
-                super(output, key, future, RobotEmployeeUtils.MODID, existingFileHelper);
+            protected TagsProviderImpl(PackOutput output, ResourceKey<? extends Registry<T>> key, CompletableFuture<HolderLookup.Provider> future, @Nullable ExistingFileHelper existingFileHelper, String modid) {
+                super(output, key, future, modid, existingFileHelper);
             }
 
             @Override
@@ -479,8 +480,8 @@ public class Datagen {
          * @param output The {@linkplain PackOutput} instance provided by the data generator.
          * @param helper The existing file helper provided by the event you are initializing this provider in.
          */
-        protected ModSoundProvider(PackOutput output, ExistingFileHelper helper) {
-            super(output, RobotEmployeeUtils.MODID, helper);
+        protected ModSoundProvider(PackOutput output, ExistingFileHelper helper, String modid) {
+            super(output, modid, helper);
         }
 
         protected static void queueRequest(Consumer<ModSoundProvider> request) {
