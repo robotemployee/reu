@@ -41,7 +41,7 @@ authors="${mod_authors}" #optional
 # The description text for the mod (multi line!) (#mandatory)
 description='''${mod_description}'''
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
-[[dependencies.${mod_id}]] #optional
+[[dependencies."${mod_id}"]] #optional
     # the modid of the dependency
     modId="forge" #mandatory
     # Does this dependency have to exist - if not, ordering below must be specified
@@ -55,7 +55,7 @@ description='''${mod_description}'''
     # Side this dependency is applied on - BOTH, CLIENT, or SERVER
     side="BOTH"
 # Here's another dependency
-[[dependencies.${mod_id}]]
+[[dependencies."${mod_id}"]]
     modId="minecraft"
     mandatory=true
     # This version range declares a minimum of the current minecraft version up to but not including the next major version
@@ -63,37 +63,7 @@ description='''${mod_description}'''
     ordering="NONE"
     side="BOTH"
 
-# Create
-[[dependencies.${mod_id}]]
-    modId="create"
-    mandatory=false
-    versionRange="[6.0.4,)"
-    ordering="NONE"
-    side="BOTH"
 
-# Alex's Caves
-[[dependencies.${mod_id}]]
-modId="alexscaves"
-mandatory=false
-versionRange="[2.0.2,)"
-ordering="NONE"
-side="BOTH"
-
-# Alex's Mobs
-[[dependencies.${mod_id}]]
-modId="alexsmobs"
-mandatory=false
-versionRange="[1.22.9,)"
-ordering="NONE"
-side="BOTH"
-
-# Rechiseled
-[[dependencies.${mod_id}]]
-modId="rechiseled"
-mandatory=false
-versionRange="[1.1.6,)"
-ordering="NONE"
-side="BOTH"
 
 # Features are specific properties of the game environment, that you may want to declare you require. This example declares
 # that your mod requires GL version 3.2 or higher. Other features will be added. They are side aware so declaring this won't

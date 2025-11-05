@@ -205,7 +205,7 @@ tasks.register('playRainWorld', Copy) {
 
     into file(System.getenv("MINECRAFT_MODS_DEV_DIR"))
 
-    include 'reu-*.jar'
+    include "${mod_id}-*.jar"
 }
 
 // However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing:
