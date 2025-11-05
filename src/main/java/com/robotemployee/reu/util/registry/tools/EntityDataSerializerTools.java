@@ -1,4 +1,4 @@
-package com.robotemployee.reu.registry;
+package com.robotemployee.reu.util.registry.tools;
 
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import net.minecraft.network.FriendlyByteBuf;
@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ModEntityDataSerializers {
+public class EntityDataSerializerTools {
 
     public static final DeferredRegister<EntityDataSerializer<?>> SERIALIZERS = DeferredRegister.create(ForgeRegistries.Keys.ENTITY_DATA_SERIALIZERS, RobotEmployeeUtils.MODID);
     public static final RegistryObject<EntityDataSerializer<List<Integer>>> INTEGER_LIST = SERIALIZERS.register("integer_list", () -> new EntityDataSerializer<>() {

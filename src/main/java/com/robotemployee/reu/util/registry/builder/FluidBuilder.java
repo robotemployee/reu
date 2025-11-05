@@ -2,7 +2,6 @@ package com.robotemployee.reu.util.registry.builder;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
-import com.robotemployee.reu.registry.ModFluids;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import com.robotemployee.reu.util.registry.entry.BlockRegistryEntry;
 import com.robotemployee.reu.util.registry.entry.FluidRegistryEntry;
@@ -22,7 +21,6 @@ import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
-import java.io.IOException;
 import java.util.function.Supplier;
 
 public class FluidBuilder {
@@ -138,13 +136,13 @@ public class FluidBuilder {
         if (hasBucket) {
             Supplier<Item> supplier = getBucketSupplier(sourceFluid);
             bucket = itemManager.createBuilder().withName(name + "_bucket").withSupplier(supplier).build();
-            ModFluids.bucketLookupTable.put(sourceFluid, bucket);
+            // fixme FluidTools.bucketLookupTable.put(sourceFluid, bucket);
             queueBucketDatagen(bucket);
         }
         if (hasBottle) {
             Supplier<Item> supplier = getBottleSupplier(sourceFluid);
             bottle = itemManager.createBuilder().withName(name + "_bottle").withSupplier(supplier).build();
-            ModFluids.bottleLookupTable.put(sourceFluid, bottle);
+            // fixme FluidTools.bottleLookupTable.put(sourceFluid, bottle);
             queueBottleDatagen(bottle);
         }
         if (hasBlock) {

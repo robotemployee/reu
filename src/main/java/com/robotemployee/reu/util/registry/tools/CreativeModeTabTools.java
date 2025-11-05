@@ -1,18 +1,15 @@
-package com.robotemployee.reu.registry;
+package com.robotemployee.reu.util.registry.tools;
 
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
 
 import java.util.ArrayList;
 import java.util.function.Supplier;
 
-public class ModCreativeModeTabs {
+public class CreativeModeTabTools {
 
     private static final ArrayList<Supplier<Item>> addedItems = new ArrayList<>();
 

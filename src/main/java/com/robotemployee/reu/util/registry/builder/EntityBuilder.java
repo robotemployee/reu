@@ -1,7 +1,7 @@
 package com.robotemployee.reu.util.registry.builder;
 
 import com.robotemployee.reu.core.RobotEmployeeUtils;
-import com.robotemployee.reu.registry.ModEntities;
+import com.robotemployee.reu.util.registry.tools.EntityTools;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import com.robotemployee.reu.util.registry.entry.EntityRegistryEntry;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -31,25 +31,29 @@ public class EntityBuilder<T extends Entity> {
     private int eggColorB;
     private ItemBuilder itemBuilder;
 
-    private final DatagenInstance datagenInstance;
-    private final DeferredRegister<EntityType<?>> register;
-
     public static class Manager {
         public final DatagenInstance datagenInstance;
         public final DeferredRegister<EntityType<?>> register;
-        public Manager(DatagenInstance datagenInstance, DeferredRegister<EntityType<?>> register) {
+        public final ItemBuilder.Manager itemManager;
+        public Manager(DatagenInstance datagenInstance, DeferredRegister<EntityType<?>> register, ItemBuilder.Manager itemManager) {
             this.datagenInstance = datagenInstance;
             this.register = register;
+            this.itemManager = itemManager;
         }
 
         public <T extends Entity> EntityBuilder<T> createBuilder() {
-            return new EntityBuilder<>(datagenInstance, register);
+            return new EntityBuilder<>(datagenInstance, register, itemManager);
         }
     }
 
-    private EntityBuilder(DatagenInstance datagenInstance, DeferredRegister<EntityType<?>> register) {
+    private final DatagenInstance datagenInstance;
+    private final DeferredRegister<EntityType<?>> register;
+    private final ItemBuilder.Manager itemManager;
+
+    private EntityBuilder(DatagenInstance datagenInstance, DeferredRegister<EntityType<?>> register, ItemBuilder.Manager itemManager) {
         this.datagenInstance = datagenInstance;
         this.register = register;
+        this.itemManager = itemManager;
     }
 
     /*
@@ -75,11 +79,10 @@ public class EntityBuilder<T extends Entity> {
         return this;
     }
 
-    public EntityBuilder<T> eggColor(ItemBuilder.Manager manager, int eggColorA, int eggColorB) {
+    public EntityBuilder<T> eggColor(int eggColorA, int eggColorB) {
         hasEgg = true;
         this.eggColorA = eggColorA;
         this.eggColorB = eggColorB;
-        this.itemBuilder = manager.createBuilder();
         return this;
     }
 
@@ -101,7 +104,7 @@ public class EntityBuilder<T extends Entity> {
         RegistryObject<EntityType<T>> newborn = register.register(name, entityTypeSupplier);
 
         if (attributesBuilderSupplier != null) {
-            ModEntities.addAttributeRequest((RegistryObject<EntityType<? extends LivingEntity>>)(Object) newborn, () -> attributesBuilderSupplier.get().build());
+            EntityTools.addAttributeRequest((RegistryObject<EntityType<? extends LivingEntity>>)(Object) newborn, () -> attributesBuilderSupplier.get().build());
             //(RegistryObject<EntityType<? extends LivingEntity>>)(Object)newborn, () -> attributesBuilderSupplier.get().build())
         }
 

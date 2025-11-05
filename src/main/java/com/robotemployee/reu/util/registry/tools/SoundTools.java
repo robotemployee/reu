@@ -1,4 +1,4 @@
-package com.robotemployee.reu.registry;
+package com.robotemployee.reu.util.registry.tools;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
@@ -10,10 +10,9 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.slf4j.Logger;
 
-public class ModSounds {
+public class SoundTools {
 
     static Logger LOGGER = LogUtils.getLogger();
-    public static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, RobotEmployeeUtils.MODID);
 
     public static RegistryObject<SoundEvent> registerDiscSound(String name, SoundBuilder.Manager manager) {
         return manager.createBuilder()

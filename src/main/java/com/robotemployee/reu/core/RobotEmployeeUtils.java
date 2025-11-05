@@ -1,41 +1,29 @@
 package com.robotemployee.reu.core;
 
 import com.mojang.logging.LogUtils;
-import com.robotemployee.reu.registry.*;
-import net.minecraft.client.gui.screens.Screen;
+import com.robotemployee.reu.util.registry.tools.*;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.EntityRenderers;
-import net.minecraft.client.renderer.item.ItemProperties;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(RobotEmployeeUtils.MODID)
@@ -54,21 +42,27 @@ public class RobotEmployeeUtils
     {
         IEventBus modEventBus = context.getModEventBus();
 
-        ModEntityDataSerializers.SERIALIZERS.register(modEventBus);
-        ModMobEffects.EFFECTS.register(modEventBus);
-        ModSounds.SOUNDS.register(modEventBus);
-        ModEntities.ENTITIES.register(modEventBus);
-        ModBlocks.BLOCKS.register(modEventBus);
-        ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
-        ModFluidTypes.FLUID_TYPES.register(modEventBus);
-        ModFluids.FLUIDS.register(modEventBus);
-        ModItems.ITEMS.register(modEventBus);
+        /* here is your ideal load order:
+
+        entity data serializers
+        mob effects
+        sound events
+        entity types
+        blocks
+        block entities
+        fluid types
+        fluids
+        items
+        creative mode tabs
+
+        and then, datagen...
+        >> call a function in the classes that have your datagen stuff loaded, do whatever you have to to queue those requests, i just use a parameterless void function to load it into the jvm
+        advancements
+        damage types
+
+         */
 
         // the rest of these don't care as much about the ordering
-        ModAdvancements.register();
-        ModDamageTypes.idk();
-
-        ModCreativeModeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);

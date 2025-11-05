@@ -1,4 +1,4 @@
-package com.robotemployee.reu.registry;
+package com.robotemployee.reu.util.registry.tools;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
@@ -16,15 +16,11 @@ import org.slf4j.Logger;
 
 import java.util.function.Supplier;
 
-public class ModItems {
+public class ItemTools {
 
     // note that this is not the only place items are registered.
     // for example, items are registered by BlockBuilder in order to automatically make block items
     // they are also registered by FluidBuilder if a bucket and bottle for the fluid are required
-    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, RobotEmployeeUtils.MODID);
-    //public static final RegistryObject<Item> RECONSTRUCTOR = ITEMS.register("reconstructor", () -> new ReconstructorItem(new Item.Properties().rarity(Rarity.RARE)));
-    //public static final RegistryObject<Item> SCULK_RECONSTRUCTOR = ITEMS.register("sculk_reconstructor", () -> new SculkReconstructorItem(new Item.Properties().rarity(Rarity.EPIC)));
-    //public static final RegistryObject<Item> INJECTOR = ITEMS.register("injector", () -> new InjectorItem(new Item.Properties()));
 
     static Logger LOGGER = LogUtils.getLogger();
 

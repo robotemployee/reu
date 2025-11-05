@@ -21,24 +21,27 @@ public class SoundBuilder {
     private boolean isFixedRange = false;
     private float range = 0;
 
-    private final DatagenInstance datagenInstance;
-    private final DeferredRegister<SoundEvent> register;
-
     public static class Manager {
         public final DatagenInstance datagenInstance;
         public final DeferredRegister<SoundEvent> register;
-        public Manager(DatagenInstance datagenInstance, DeferredRegister<SoundEvent> register)  {
+        public final String modid;
+        public Manager(DatagenInstance datagenInstance, DeferredRegister<SoundEvent> register, String modid)  {
             this.datagenInstance = datagenInstance;
             this.register = register;
+            this.modid = modid;
         }
         public SoundBuilder createBuilder() {
-            return new SoundBuilder(datagenInstance, register);
+            return new SoundBuilder(datagenInstance, register, modid);
         }
     }
 
-    protected SoundBuilder(DatagenInstance datagenInstance, DeferredRegister<SoundEvent> register) {
+    private final DatagenInstance datagenInstance;
+    private final DeferredRegister<SoundEvent> register;
+    private final String modid;
+    protected SoundBuilder(DatagenInstance datagenInstance, DeferredRegister<SoundEvent> register, String modid) {
         this.datagenInstance = datagenInstance;
         this.register = register;
+        this.modid = modid;
     }
 
     public SoundBuilder withName(String name) {
@@ -46,13 +49,14 @@ public class SoundBuilder {
         return this;
     }
 
-    public SoundBuilder soundLocation(ResourceLocation location) {
-        this.location = location;
+    public SoundBuilder soundLocation(String path) {
+        this.location = new ResourceLocation(modid, path);
         return this;
     }
 
-    public SoundBuilder soundLocation(String location) {
-        return soundLocation(new ResourceLocation(RobotEmployeeUtils.MODID, location));
+    public SoundBuilder soundLocation(ResourceLocation location) {
+        this.location = location;
+        return this;
     }
 
     public SoundBuilder withDefinition(SoundDefinition definition) {
@@ -84,12 +88,12 @@ public class SoundBuilder {
         if (isFixedRange) {
             newborn = register.register(
                     name,
-                    () -> SoundEvent.createFixedRangeEvent(new ResourceLocation(RobotEmployeeUtils.MODID, name), range)
+                    () -> SoundEvent.createFixedRangeEvent(new ResourceLocation(modid, name), range)
             );
         } else {
             newborn = register.register(
                     name,
-                    () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(RobotEmployeeUtils.MODID, name))
+                    () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(modid, name))
             );
         }
 

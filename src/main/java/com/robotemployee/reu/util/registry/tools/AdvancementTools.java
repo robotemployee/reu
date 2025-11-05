@@ -1,4 +1,4 @@
-package com.robotemployee.reu.registry;
+package com.robotemployee.reu.util.registry.tools;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
@@ -20,12 +20,7 @@ import org.slf4j.Logger;
 
 import java.util.function.Supplier;
 
-public class ModAdvancements {
-
-    // DO NOT REMOVE. This is called to load this class into the JVM so that all of these funny static things are handled properly!
-    public static void register() {
-        LOGGER.info("Registering advancements!");
-    }
+public class AdvancementTools {
 
     static Logger LOGGER = LogUtils.getLogger();
 

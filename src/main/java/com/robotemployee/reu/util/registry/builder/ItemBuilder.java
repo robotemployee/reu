@@ -1,7 +1,6 @@
 package com.robotemployee.reu.util.registry.builder;
 
-import com.robotemployee.reu.registry.ModCreativeModeTabs;
-import com.robotemployee.reu.registry.ModItems;
+import com.robotemployee.reu.util.registry.tools.CreativeModeTabTools;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
@@ -57,8 +56,8 @@ public class ItemBuilder {
 
     public RegistryObject<Item> build() {
         checkForInsufficientParams();
-        RegistryObject<Item> newborn = ModItems.ITEMS.register(name, supplier);
-        if (inCreativeTab) ModCreativeModeTabs.addItem(newborn);
+        RegistryObject<Item> newborn = register.register(name, supplier);
+        if (inCreativeTab) CreativeModeTabTools.addItem(newborn);
         if (doDatagen) datagenConsumer.accept(datagenInstance, newborn);
         for (Supplier<TagKey<Item>> tag : tags) {
             datagenInstance.addTagToItem(newborn, tag);

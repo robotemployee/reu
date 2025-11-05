@@ -2,7 +2,6 @@ package com.robotemployee.reu.util.registry.builder;
 
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
-import com.robotemployee.reu.registry.ModItems;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import com.robotemployee.reu.util.registry.entry.BlockRegistryEntry;
 import net.minecraft.resources.ResourceLocation;

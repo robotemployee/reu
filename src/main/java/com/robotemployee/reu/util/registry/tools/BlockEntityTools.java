@@ -1,4 +1,4 @@
-package com.robotemployee.reu.registry;
+package com.robotemployee.reu.util.registry.tools;
 
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import net.minecraft.world.level.block.Block;
@@ -10,11 +10,12 @@ import net.minecraftforge.registries.RegistryObject;
 
 import java.util.function.Supplier;
 
-public class ModBlockEntities {
+public class BlockEntityTools {
 
-    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, RobotEmployeeUtils.MODID);
-
+    /*
     public static <T extends BlockEntity> RegistryObject<BlockEntityType<T>> register(String name, BlockEntityType.BlockEntitySupplier<T> supplier, Supplier<Block> blockSupplier) {
         return BLOCK_ENTITIES.register(name, () -> BlockEntityType.Builder.of(supplier, blockSupplier.get()).build(null));
     }
+
+     */
 }
