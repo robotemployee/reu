@@ -130,7 +130,7 @@ repositories {
     //     dir 'libs'
     // }
 
-    maven { url 'https://jitpack.io' }
+
 }
 
 dependencies {
