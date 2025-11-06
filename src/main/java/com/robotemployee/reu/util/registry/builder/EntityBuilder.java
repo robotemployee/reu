@@ -29,7 +29,6 @@ public class EntityBuilder<T extends Entity> {
     boolean hasEgg = false;
     private int eggColorA;
     private int eggColorB;
-    private ItemBuilder itemBuilder;
 
     public static class Manager {
         public final DatagenInstance datagenInstance;
@@ -110,7 +109,7 @@ public class EntityBuilder<T extends Entity> {
 
         RegistryObject<Item> egg = null;
         if (hasEgg) {
-            egg = itemBuilder
+            egg = itemManager.createBuilder()
                     .withName(name + "_spawn_egg")
                     .withSupplier(() ->
                         new ForgeSpawnEggItem(() -> (EntityType<? extends Mob>) newborn.get(), eggColorA, eggColorB, new Item.Properties())
