@@ -138,9 +138,9 @@ public class DatagenInstance {
         });
     }
 
-    public Consumer<RegistryObject<Item>> spawnEgg() {
-        return (newborn) -> modItemModelProviderManager.queueRequest(provider -> {
-            provider.getBuilder(newborn.getId().getPath())
+    public void spawnEgg(RegistryObject<Item> item) {
+        modItemModelProviderManager.queueRequest(provider -> {
+            provider.getBuilder(item.getId().getPath())
                     .parent(provider.getExistingFile(new ResourceLocation("item/template_spawn_egg")))
                     .texture("layer0", "minecraft:item/spawn_egg");
         });

@@ -126,7 +126,7 @@ public class EntityBuilder<T extends Entity> {
                     .withSupplier(() ->
                         new ForgeSpawnEggItem(() -> (EntityType<? extends Mob>) newborn.get(), eggColorA, eggColorB, new Item.Properties())
                     )
-                    .customDatagen((datagen, itemRegistryObject) -> datagen.spawnEgg())
+                    .customDatagen(DatagenInstance::spawnEgg)
                     .build();
         }
 
