@@ -94,5 +94,14 @@ public class RobotEmployeeUtils
                 EntityRenderers.register(entity.get(), renderer);
             });
         }
+
+        @SubscribeEvent
+        public static void onClientSetup(FMLClientSetupEvent event)
+        {
+            for (Consumer<FMLClientSetupEvent> requests : CLIENT_SETUP_REQUESTS) {
+                requests.accept(event);
+            }
+            //EntityRenderers.register(ModEntities.DEVIL.get(), DevilRenderer::new);
+        }
     }
 }
