@@ -31,19 +31,19 @@ public class EntityBuilder<T extends Entity> {
     private int eggColorA;
     private int eggColorB;
 
-    public static class Manager {
+    public class Manager {
         public final DatagenInstance datagenInstance;
         public final DeferredRegister<EntityType<?>> register;
         public final ItemBuilder.Manager itemManager;
 
-        public BiConsumer<Supplier<EntityType<? extends Entity>>, EntityRendererProvider<? extends Entity>> rendererReciever;
+        public BiConsumer<Supplier<EntityType<T>>, EntityRendererProvider<T>> rendererReciever;
         public Manager(DatagenInstance datagenInstance, DeferredRegister<EntityType<?>> register, ItemBuilder.Manager itemManager) {
             this.datagenInstance = datagenInstance;
             this.register = register;
             this.itemManager = itemManager;
         }
 
-        public <T extends Entity> EntityBuilder<T> createBuilder() {
+        public EntityBuilder<T> createBuilder() {
             EntityBuilder<T> newborn = new EntityBuilder<>(datagenInstance, register, itemManager);
             if (rendererReciever != null) newborn.withRendererReciever(rendererReciever);
             return newborn;
@@ -52,7 +52,7 @@ public class EntityBuilder<T extends Entity> {
         // this is required if you are using a custom renderer
         // attach this to something that will register the renderer to the entity, it's a ClientModEvent. make a queue out of an ArrayList or something
         // did not add that functionality directly here because events are static
-        public Manager withRendererReciever(BiConsumer<Supplier<EntityType<? extends Entity>>, EntityRendererProvider<? extends Entity>> rendererReciever) {
+        public Manager withRendererReciever(BiConsumer<Supplier<EntityType<T>>, EntityRendererProvider<T>> rendererReciever) {
             this.rendererReciever = rendererReciever;
             return this;
         }
@@ -61,7 +61,7 @@ public class EntityBuilder<T extends Entity> {
     private final DatagenInstance datagenInstance;
     private final DeferredRegister<EntityType<?>> register;
     private final ItemBuilder.Manager itemManager;
-    private BiConsumer<Supplier<EntityType<? extends Entity>>, EntityRendererProvider<? extends Entity>> rendererReciever;
+    private BiConsumer<Supplier<EntityType<T>>, EntityRendererProvider<T>> rendererReciever;
 
     private EntityBuilder(DatagenInstance datagenInstance, DeferredRegister<EntityType<?>> register, ItemBuilder.Manager itemManager) {
         this.datagenInstance = datagenInstance;
@@ -69,7 +69,7 @@ public class EntityBuilder<T extends Entity> {
         this.itemManager = itemManager;
     }
 
-    private EntityBuilder<T> withRendererReciever(BiConsumer<Supplier<EntityType<? extends Entity>>, EntityRendererProvider<? extends Entity>> rendererReciever) {
+    private EntityBuilder<T> withRendererReciever(BiConsumer<Supplier<EntityType<T>>, EntityRendererProvider<T>> rendererReciever) {
         this.rendererReciever = rendererReciever;
         return this;
     }
