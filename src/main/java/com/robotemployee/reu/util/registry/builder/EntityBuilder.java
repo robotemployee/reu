@@ -52,8 +52,8 @@ public class EntityBuilder<T extends Entity> {
         // this is required if you are using a custom renderer
         // attach this to something that will register the renderer to the entity, it's a ClientModEvent. make a queue out of an ArrayList or something
         // did not add that functionality directly here because events are static
-        public Manager withRendererReciever(BiConsumer<Supplier<EntityType<? extends Entity>>, EntityRendererProvider<? extends Entity>> rendererReciever) {
-            this.rendererReciever = rendererReciever;
+        public <T extends Entity> Manager withRendererReciever(BiConsumer<Supplier<EntityType<? extends T>>, EntityRendererProvider<? extends T>> rendererReciever) {
+            this.rendererReciever = (BiConsumer<Supplier<EntityType<? extends Entity>>, EntityRendererProvider<? extends Entity>>) rendererReciever;
             return this;
         }
     }

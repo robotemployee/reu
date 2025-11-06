@@ -89,7 +89,7 @@ public class RobotEmployeeUtils
     public static class ClientModEvents {
         private static final ArrayList<Consumer<FMLClientSetupEvent>> CLIENT_SETUP_REQUESTS = new ArrayList<>();
 
-        public static <T extends Entity> void addCustomRenderer(Supplier<EntityType<T>> entity, EntityRendererProvider<T> renderer) {
+        public static <T extends Entity> void addCustomRenderer(Supplier<EntityType<? extends T>> entity, EntityRendererProvider<T> renderer) {
             CLIENT_SETUP_REQUESTS.add(fmlClientSetupEvent -> {
                 EntityRenderers.register(entity.get(), renderer);
             });
