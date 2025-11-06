@@ -104,9 +104,6 @@ public class FluidBuilder {
 
         DeferredRegister<Fluid> FLUIDS = register;
 
-        ResourceLocation loc = new ResourceLocation(RobotEmployeeUtils.MODID, name);
-
-        LOGGER.info("Registering fluid " + loc);
         checkForInsufficientParams();
 
         Supplier<ForgeFlowingFluid.Properties> newPropertiesSupplier = () -> {

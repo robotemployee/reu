@@ -65,12 +65,8 @@ public class BlockBuilder {
     public BlockRegistryEntry build() {
         DeferredRegister<Block> BLOCKS = register;
 
-        LOGGER.info("Registering block " + new ResourceLocation(RobotEmployeeUtils.MODID, name));
         checkForInsufficientParams();
         RegistryObject<Block> block = BLOCKS.register(getName(), getSupplier());
-        //LOGGER.info("gdagdagaag" + block.getId());
-        // do not uncomment
-        //LOGGER.info("Blocky block block block" + block.get());
 
         if (hasItem()) {
             itemBuilder = itemManager.createBuilder();

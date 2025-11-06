@@ -11,15 +11,4 @@ import java.util.function.Supplier;
 
 public class CreativeModeTabTools {
 
-    private static final ArrayList<Supplier<Item>> addedItems = new ArrayList<>();
-
-    public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, RobotEmployeeUtils.MODID);
-
-    public static ArrayList<Supplier<Item>> getAddedItems() {
-        return addedItems;
-    }
-
-    public static void addItem(Supplier<Item> item) {
-        addedItems.add(item);
-    }
 }
