@@ -231,7 +231,7 @@ public class DatagenInstance {
 
             @Override
             protected void addTags(@NotNull HolderLookup.Provider provider) {
-                ArrayList<Consumer<TagsProviderImpl<?>>> requests = allRequests.get(this.registryKey);
+                ArrayList<Consumer<TagsProviderImpl<?>>> requests = allRequests.computeIfAbsent(registryKey, k -> new ArrayList<>());
                 LOGGER.debug("Amount of " + this.registryKey + " tag requests: " + requests.size());
                 for (Consumer<TagsProviderImpl<?>> request : requests) {
                     request.accept(this);
