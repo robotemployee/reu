@@ -4,12 +4,12 @@ import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.util.registry.tools.EntityTools;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import com.robotemployee.reu.util.registry.entry.EntityRegistryEntry;
+import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.monster.Zoglin;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -31,19 +31,19 @@ public class EntityBuilder<T extends Entity> {
     private int eggColorA;
     private int eggColorB;
 
-    public class Manager {
+    public static class Manager {
         public final DatagenInstance datagenInstance;
         public final DeferredRegister<EntityType<?>> register;
         public final ItemBuilder.Manager itemManager;
 
-        public BiConsumer<Supplier<EntityType<T>>, EntityRendererProvider<T>> rendererReciever;
+        public BiConsumer<Supplier<EntityType<? extends Entity>>, EntityRendererProvider<? extends Entity>> rendererReciever;
         public Manager(DatagenInstance datagenInstance, DeferredRegister<EntityType<?>> register, ItemBuilder.Manager itemManager) {
             this.datagenInstance = datagenInstance;
             this.register = register;
             this.itemManager = itemManager;
         }
 
-        public EntityBuilder<T> createBuilder() {
+        public <T extends Entity> EntityBuilder<T> createBuilder() {
             EntityBuilder<T> newborn = new EntityBuilder<>(datagenInstance, register, itemManager);
             if (rendererReciever != null) newborn.withRendererReciever(rendererReciever);
             return newborn;
@@ -52,7 +52,7 @@ public class EntityBuilder<T extends Entity> {
         // this is required if you are using a custom renderer
         // attach this to something that will register the renderer to the entity, it's a ClientModEvent. make a queue out of an ArrayList or something
         // did not add that functionality directly here because events are static
-        public Manager withRendererReciever(BiConsumer<Supplier<EntityType<T>>, EntityRendererProvider<T>> rendererReciever) {
+        public Manager withRendererReciever(BiConsumer<Supplier<EntityType<? extends Entity>>, EntityRendererProvider<? extends Entity>> rendererReciever) {
             this.rendererReciever = rendererReciever;
             return this;
         }
@@ -69,8 +69,9 @@ public class EntityBuilder<T extends Entity> {
         this.itemManager = itemManager;
     }
 
-    private EntityBuilder<T> withRendererReciever(BiConsumer<Supplier<EntityType<T>>, EntityRendererProvider<T>> rendererReciever) {
-        this.rendererReciever = rendererReciever;
+    private EntityBuilder<T> withRendererReciever(BiConsumer<Supplier<EntityType<? extends Entity>>, EntityRendererProvider<? extends Entity>> rendererReciever) {
+        // sjut up
+        this.rendererReciever = (BiConsumer<Supplier<EntityType<T>>, EntityRendererProvider<T>>) (Object) rendererReciever;
         return this;
     }
 
