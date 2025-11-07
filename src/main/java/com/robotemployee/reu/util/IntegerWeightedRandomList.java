@@ -54,4 +54,8 @@ public class IntegerWeightedRandomList<K> extends ArrayList<Map.Entry<K, Integer
         remove(resultEntry);
         return resultEntry.getKey();
     }
+
+    public void add(K result, Integer weight) {
+        add(Map.entry(result, weight));
+    }
 }
