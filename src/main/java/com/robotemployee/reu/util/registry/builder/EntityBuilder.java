@@ -101,10 +101,9 @@ public class EntityBuilder<T extends Entity> {
     private EntityRendererProvider<T> rendererProvider;
     // AAAAAHHHHH I LOVE BEING AUTISTIC THIS SHIT IS FUCKING GREAT AAAAHHH
 
-    @OnlyIn(Dist.CLIENT)
-    public EntityBuilder<T> customRenderer(EntityRendererProvider<T> rendererProvider) {
+    public EntityBuilder<T> customRenderer(Supplier<EntityRendererProvider<T>> rendererProviderSupplier) {
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-            this.rendererProvider = rendererProvider;
+            this.rendererProvider = rendererProviderSupplier.get();
         });
         return this;
     }
@@ -133,7 +132,7 @@ public class EntityBuilder<T extends Entity> {
         //EntityRegistryEntry<T> entry = new EntityRegistryEntry<>(newborn);
 
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-            if (rendererProvider != null) rendererReciever.accept(newborn::get, rendererProvider);
+            if (rendererProvider != null) rendererReciever.accept(newborn, rendererProvider);
         });
 
         return new EntityRegistryEntry<>(newborn, egg);
