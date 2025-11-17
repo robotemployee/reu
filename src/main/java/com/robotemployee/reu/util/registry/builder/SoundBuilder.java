@@ -114,7 +114,7 @@ public class SoundBuilder {
 
     private void checkForInsufficientParams() {
         if (name == null) throw new IllegalStateException("Sound name was not provided");
-        if (location == null) throw new IllegalStateException("Sound resource location was not provided");
+        if (location == null && definition == null) throw new IllegalStateException("Sound resource location was not provided. Needed if you aren't going to specify a sound definition, since it has to generate one for you");
     }
 
 
