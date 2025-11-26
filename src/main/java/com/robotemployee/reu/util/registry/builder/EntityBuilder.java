@@ -1,5 +1,6 @@
 package com.robotemployee.reu.util.registry.builder;
 
+import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.util.registry.tools.EntityTools;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import com.robotemployee.reu.util.registry.entry.EntityRegistryEntry;
@@ -13,11 +14,14 @@ import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
+import org.slf4j.Logger;
 
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 public class EntityBuilder<T extends Entity> {
+
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     private String name;
     private Supplier<EntityType.Builder<T>> entityTypeBuilderSupplier;
@@ -99,9 +103,9 @@ public class EntityBuilder<T extends Entity> {
     private EntityRendererProvider<T> rendererProvider;
     // AAAAAHHHHH I LOVE BEING AUTISTIC THIS SHIT IS FUCKING GREAT AAAAHHH
 
-    public EntityBuilder<T> customRenderer(Supplier<EntityRendererProvider<T>> rendererProviderSupplier) {
+    public EntityBuilder<T> customRenderer(Supplier<Supplier<EntityRendererProvider<T>>> rendererProviderSupplier) {
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-            this.rendererProvider = rendererProviderSupplier.get();
+            this.rendererProvider = rendererProviderSupplier.get().get();
         });
         return this;
     }

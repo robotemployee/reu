@@ -29,6 +29,9 @@ public interface PathNavigationAccessor {
     @Invoker("canUpdatePath")
     boolean canUpdatePath();
 
+    /*
     @Invoker("createPath")
     Path createPath(Set<BlockPos> p_148223_, int p_148224_, boolean p_148225_, int p_148226_, float p_148227_);
+
+     */
 }
