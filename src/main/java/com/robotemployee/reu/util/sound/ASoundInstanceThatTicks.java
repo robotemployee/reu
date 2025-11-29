@@ -44,6 +44,8 @@ public abstract class ASoundInstanceThatTicks extends AbstractTickableSoundInsta
     public void tick() {
         if (isStopped()) return;
         if (!onTick.apply(this)) stop();
+
+        if (!hasPlayedIngame() && isActuallyPlayingIngame()) hasPlayedIngame = true;
     }
 
     public void stopPlaying() {
@@ -64,6 +66,18 @@ public abstract class ASoundInstanceThatTicks extends AbstractTickableSoundInsta
         this.z = pos.z();
     }
 
+    // the stopped property is not automatically set to true when the audio is finished playing
+    // as such, this method is here
+    // why is it here? well, i put this functionality somewhere else and it caused serverside issues that would have looked ugly as fuck to fix
+    // probably because it's static or something and evil jvm optimization whatever stuff makes it load on the server even when the code is runtime unreachable in that environment
+    public boolean isActuallyPlayingIngame() {
+        return Minecraft.getInstance().getSoundManager().isActive(this);
+    }
+
+    private boolean hasPlayedIngame = false;
+    public boolean hasPlayedIngame() {
+        return hasPlayedIngame;
+    }
     protected void start() {
         Minecraft.getInstance().getSoundManager().queueTickingSound(this);
     }

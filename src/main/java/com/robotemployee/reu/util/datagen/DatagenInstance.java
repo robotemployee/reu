@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 
@@ -403,6 +404,15 @@ public class DatagenInstance {
                             true,
                             false
                     ).parent(advancements.get(parent));
+        }
+
+        public ResourceLocation customAdvancement(ResourceLocation id, Supplier<Item> icon, Component title, Component desc, @Nullable ResourceLocation parent, Consumer<Advancement.Builder> builderConsumer) {
+            Advancement.Builder builder = createNormalAdvancement(icon, title, desc, parent);
+            builderConsumer.accept(builder);
+            queueRequest(consumer -> {
+                record(builder.save(consumer, id.toString()));
+            });
+            return id;
         }
 
         public ResourceLocation root(ResourceLocation id, Supplier<Item> icon, Component title, Component desc, ResourceLocation texture) {
