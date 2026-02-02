@@ -13,4 +13,6 @@ public interface MoveControlAccessor {
     @Accessor MoveControl.Operation getOperation();
     @Accessor void setOperation(MoveControl.Operation operation);
 
+    @Invoker("isWalkable")
+    boolean isWalkable(float a, float b);
 }
