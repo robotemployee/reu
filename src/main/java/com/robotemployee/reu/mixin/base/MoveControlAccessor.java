@@ -3,6 +3,7 @@ package com.robotemployee.reu.mixin.base;
 import net.minecraft.world.entity.ai.control.MoveControl;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
+import org.spongepowered.asm.mixin.gen.Invoker;
 
 @Mixin(MoveControl.class)
 public interface MoveControlAccessor {
