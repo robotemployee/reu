@@ -180,7 +180,7 @@ public class DatagenInstance {
             return provider;
         }
 
-        protected static class ModItemModelProvider extends ItemModelProvider {
+        public static class ModItemModelProvider extends ItemModelProvider {
             public final ArrayList<Consumer<ModItemModelProvider>> requests;
             public ModItemModelProvider(PackOutput output, ExistingFileHelper existingFileHelper, String modid, ArrayList<Consumer<ModItemModelProvider>> requests) {
                 super(output, modid, existingFileHelper);
@@ -441,7 +441,7 @@ public class DatagenInstance {
                 super(output, registries, existingFileHelper, List.of(new ModAdvancementsProcessor(requests)));
             }
 
-            protected static class ModAdvancementsProcessor implements AdvancementGenerator {
+            public static class ModAdvancementsProcessor implements AdvancementGenerator {
 
                 final ArrayList<Consumer<Consumer<Advancement>>> requests;
                 public ModAdvancementsProcessor(ArrayList<Consumer<Consumer<Advancement>>> requests) {
