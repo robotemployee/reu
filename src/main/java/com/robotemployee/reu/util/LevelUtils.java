@@ -10,6 +10,8 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 
 public class LevelUtils {
+
+    public static final int MAX_SEARCH_DEPTH = 128;
     /**
      * <p>Given a Level and start position, it returns the first BlockPos it finds that matches given conditions. After each failed condition check, it applies a transformation.</p>
      * @implNote It will stop evaluating and return null if it can't find a result within either the maxSearchDepth or 256 tries.
@@ -33,7 +35,14 @@ public class LevelUtils {
 
     @Nullable
     public static BlockPos findSolidGroundBelow(Level level, BlockPos startingPos) {
-        return findSolidGroundBelow(128, level, startingPos);
+        return findSolidGroundBelow(MAX_SEARCH_DEPTH, level, startingPos);
+    }
+
+    /// returns -1 if the solid ground is too far away
+    public static int getBlockPosAltitude(Entity entity) {
+        BlockPos solidGroundBelow = findSolidGroundBelow(entity);
+        if (solidGroundBelow == null) return -1;
+        return entity.blockPosition().getY() - solidGroundBelow.getY();
     }
 
     @Nullable

@@ -22,4 +22,12 @@ public class EntityRegistryEntry<T extends Entity> {
     public EntityType<T> get() {
         return getRegistryObject().get();
     }
+
+    public Item getEgg() {
+        return getEggRegistry().get();
+    }
+
+    public RegistryObject<Item> getEggRegistry() {
+        return eggReg;
+    }
 }
