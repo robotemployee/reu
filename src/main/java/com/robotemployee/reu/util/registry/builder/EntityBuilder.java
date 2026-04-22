@@ -8,12 +8,11 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeSpawnEggItem;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.common.DeferredSpawnEggItem;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import org.slf4j.Logger;
 
 import java.util.function.BiConsumer;
@@ -104,28 +103,29 @@ public class EntityBuilder<T extends Entity> {
     // AAAAAHHHHH I LOVE BEING AUTISTIC THIS SHIT IS FUCKING GREAT AAAAHHH
 
     public EntityBuilder<T> customRenderer(Supplier<Supplier<EntityRendererProvider<T>>> rendererProviderSupplier) {
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+        if (FMLEnvironment.dist.isClient()) {
             this.rendererProvider = rendererProviderSupplier.get().get();
-        });
+        }
+
         return this;
     }
 
     public EntityRegistryEntry<T> build() {
         checkForInsufficientParams();
         Supplier<EntityType<T>> entityTypeSupplier = () -> entityTypeBuilderSupplier.get().build(name);
-        RegistryObject<EntityType<T>> newborn = register.register(name, entityTypeSupplier);
+        Supplier<EntityType<T>> newborn = register.register(name, entityTypeSupplier);
 
         if (attributesBuilderSupplier != null) {
-            EntityTools.addAttributeRequest((RegistryObject<EntityType<? extends LivingEntity>>)(Object) newborn, () -> attributesBuilderSupplier.get().build());
+            EntityTools.addAttributeRequest((Supplier<EntityType<? extends LivingEntity>>)(Object) newborn, () -> attributesBuilderSupplier.get().build());
             //(RegistryObject<EntityType<? extends LivingEntity>>)(Object)newborn, () -> attributesBuilderSupplier.get().build())
         }
 
-        RegistryObject<Item> egg = null;
+        Supplier<Item> egg = null;
         if (hasEgg) {
             egg = itemManager.createBuilder()
                     .withName(name + "_spawn_egg")
                     .withSupplier(() ->
-                        new ForgeSpawnEggItem(() -> (EntityType<? extends Mob>) newborn.get(), eggColorA, eggColorB, new Item.Properties())
+                        new DeferredSpawnEggItem(() -> (EntityType<? extends Mob>) newborn.get(), eggColorA, eggColorB, new Item.Properties())
                     )
                     .customDatagen(DatagenInstance::spawnEgg)
                     .build();
@@ -133,9 +133,9 @@ public class EntityBuilder<T extends Entity> {
 
         //EntityRegistryEntry<T> entry = new EntityRegistryEntry<>(newborn);
 
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+        if (FMLEnvironment.dist.isClient()) {
             if (rendererProvider != null) rendererReciever.accept(newborn::get, () -> rendererProvider);
-        });
+        }
 
         return new EntityRegistryEntry<>(newborn, egg);
     }

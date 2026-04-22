@@ -1,14 +1,14 @@
 package com.robotemployee.reu.util.datagen;
 
 import com.mojang.logging.LogUtils;
-import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.FrameType;
+import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.advancements.critereon.LocationPredicate;
 import net.minecraft.advancements.critereon.PlayerTrigger;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.PackOutput;
@@ -27,15 +27,14 @@ import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSet;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
-import net.minecraftforge.client.model.generators.ItemModelProvider;
-import net.minecraftforge.client.model.generators.ModelFile;
-import net.minecraftforge.common.data.ExistingFileHelper;
-import net.minecraftforge.common.data.ForgeAdvancementProvider;
-import net.minecraftforge.common.data.SoundDefinition;
-import net.minecraftforge.common.data.SoundDefinitionsProvider;
-import net.minecraftforge.data.event.GatherDataEvent;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
+import net.neoforged.neoforge.client.model.generators.ModelFile;
+import net.neoforged.neoforge.common.data.AdvancementProvider;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.neoforged.neoforge.common.data.SoundDefinition;
+import net.neoforged.neoforge.common.data.SoundDefinitionsProvider;
+import net.neoforged.neoforge.common.data.internal.NeoForgeAdvancementProvider;
+import net.neoforged.neoforge.data.event.GatherDataEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -43,10 +42,7 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -81,7 +77,7 @@ public class DatagenInstance {
         gen.addProvider(event.includeClient(), modSoundProviderManager.run(gen.getPackOutput(), event.getExistingFileHelper(), MODID));
         modTagsProviderManager.attach(event, MODID);
 
-        gen.addProvider(event.includeServer(), modLootTableProviderManager.run(gen.getPackOutput()));
+        gen.addProvider(event.includeServer(), modLootTableProviderManager.run(gen.getPackOutput(), event.getLookupProvider()));
 
         gen.addProvider(event.includeServer(), modAdvancementProviderManager.run(gen.getPackOutput(), event.getLookupProvider(), event.getExistingFileHelper()));
     }
@@ -91,7 +87,7 @@ public class DatagenInstance {
         return Files.exists(Paths.get("src", "main", "resources", "assets", loc.getNamespace(), loc.getPath()));
     }
 
-    public void simpleSingleLootTable(ResourceLocation loc, Supplier<ItemStack> supplier, LootContextParamSet params) {
+    public void simpleSingleLootTable(ResourceKey<LootTable> loc, Supplier<ItemStack> supplier, LootContextParamSet params) {
         modLootTableProviderManager.queueRequest(loc, params, () -> LootTable.lootTable()
                 .withPool(LootPool.lootPool()
                         .setRolls(ConstantValue.exactly(1))
@@ -131,25 +127,25 @@ public class DatagenInstance {
 
     public void generateBottle(Supplier<Item> supplier) {
         modItemModelProviderManager.queueRequest((provider) -> {
-            ResourceLocation loc = ForgeRegistries.ITEMS.getKey(supplier.get());
+            ResourceLocation loc = BuiltInRegistries.ITEM.getKey(supplier.get());
             provider.getBuilder(loc.toString())
                     .parent(new ModelFile.UncheckedModelFile("item/generated"))
-                    .texture("layer0", new ResourceLocation("minecraft", "item/potion"))
-                    .texture("layer1", new ResourceLocation("minecraft", "item/potion_overlay"));
+                    .texture("layer0", ResourceLocation.fromNamespaceAndPath("minecraft", "item/potion"))
+                    .texture("layer1", ResourceLocation.fromNamespaceAndPath("minecraft", "item/potion_overlay"));
         });
     }
 
-    public void spawnEgg(RegistryObject<Item> item) {
+    public void spawnEgg(Supplier<Item> item) {
         modItemModelProviderManager.queueRequest(provider -> {
-            provider.getBuilder(item.getId().getPath())
-                    .parent(provider.getExistingFile(new ResourceLocation("item/template_spawn_egg")))
+            provider.getBuilder(BuiltInRegistries.ITEM.getKey(item.get()).toString())
+                    .parent(provider.getExistingFile(ResourceLocation.fromNamespaceAndPath("minecraft", "item/template_spawn_egg")))
                     .texture("layer0", "minecraft:item/spawn_egg");
         });
     }
 
     public void addTagToItem(Supplier<Item> itemSupplier, Supplier<TagKey<Item>> tagSupplier) {
         modTagsProviderManager.queueRequest(Registries.ITEM, (provider -> {
-            ResourceKey<Item> resourceKey = ForgeRegistries.ITEMS.getResourceKey(itemSupplier.get()).orElse(null);
+            ResourceKey<Item> resourceKey = BuiltInRegistries.ITEM.getResourceKey(itemSupplier.get()).orElse(null);
             provider.tag(tagSupplier.get()).add(resourceKey);
         }));
     }
@@ -252,7 +248,7 @@ public class DatagenInstance {
 
         //public static final HashSet<SubProviderEntry> requests = new HashSet<>();
 
-        protected final HashSet<ResourceLocation> locs = new HashSet<>();
+        protected final HashSet<ResourceKey<LootTable>> locs = new HashSet<>();
 
         // these are basically just entries but using a HashMap so that there can be 1 provider per LootContextParamSet
         // in create() it actually just iterates through the map and creates a LootTableSubProviderEntry whatever thingy for each pair
@@ -264,7 +260,7 @@ public class DatagenInstance {
             queueRequest(loc, new SubProviderEntry(() -> new EveryLootTableSubProvider(loc, consumer), params));
         }*/
 
-        public void queueRequest(ResourceLocation loc, LootContextParamSet params, Supplier<LootTable.Builder> builder) {
+        public void queueRequest(ResourceKey<LootTable> loc, LootContextParamSet params, Supplier<LootTable.Builder> builder) {
             if (locs.contains(loc)) {
                 LOGGER.error("attempted to queue loot tables with duplicate resource locations");
                 return;
@@ -282,41 +278,41 @@ public class DatagenInstance {
             }
         }
 
-        public ModLootTableProvider run(PackOutput output) {
-            return ModLootTableProvider.create(output, requests, locs);
+        public ModLootTableProvider run(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
+            return ModLootTableProvider.create(output, requests, locs, registries);
         }
 
         public static class ModLootTableProvider extends LootTableProvider {
             // parent class stores this yes, but it's private and im really really fucking lazy right now and i don't wanna do an access modifier so
             // shut up
-            protected ModLootTableProvider(PackOutput output, HashSet<ResourceLocation> locs, ArrayList<SubProviderEntry> entries) {
-                super(output, locs, entries);
+            protected ModLootTableProvider(PackOutput output, Set<ResourceKey<LootTable>> locs, List<SubProviderEntry> subProviders, CompletableFuture<HolderLookup.Provider> registries) {
+                super(output, locs, subProviders, registries);
             }
 
-            public static ModLootTableProvider create(PackOutput output, HashMap<LootContextParamSet, LootTableSubProvider> requests, HashSet<ResourceLocation> locs) {
+            public static ModLootTableProvider create(PackOutput output, Map<LootContextParamSet, LootTableSubProvider> requests, Set<ResourceKey<LootTable>> locs, CompletableFuture<HolderLookup.Provider> registries) {
                 ArrayList<SubProviderEntry> entries = new ArrayList<>();
 
                 for (HashMap.Entry<LootContextParamSet, LootTableSubProvider> entry : requests.entrySet()) {
-                    entries.add(new SubProviderEntry(entry::getValue, entry.getKey()));
+                    entries.add(new SubProviderEntry((provider) -> entry.getValue(), entry.getKey()));
                 }
 
-                return new ModLootTableProvider(output, locs, entries);
+                return new ModLootTableProvider(output, locs, entries, registries);
             }
         }
 
         public static class EveryLootTableSubProvider implements LootTableSubProvider {
 
-            public final HashMap<ResourceLocation, Supplier<LootTable.Builder>> requests = new HashMap<>();
+            public final HashMap<ResourceKey<LootTable>, Supplier<LootTable.Builder>> requests = new HashMap<>();
 
             public EveryLootTableSubProvider() {}
 
-            public void queueRequest(ResourceLocation loc, Supplier<LootTable.Builder> builder) {
+            public void queueRequest(ResourceKey<LootTable> loc, Supplier<LootTable.Builder> builder) {
                 requests.put(loc, builder);
             }
 
             @Override
-            public void generate(@NotNull BiConsumer<ResourceLocation, LootTable.Builder> consumer) {
-                for (HashMap.Entry<ResourceLocation, Supplier<LootTable.Builder>> entry : requests.entrySet()) {
+            public void generate(@NotNull BiConsumer<ResourceKey<LootTable>, LootTable.Builder> consumer) {
+                for (HashMap.Entry<ResourceKey<LootTable>, Supplier<LootTable.Builder>> entry : requests.entrySet()) {
                     consumer.accept(entry.getKey(), entry.getValue().get());
                 }
             }
@@ -325,12 +321,12 @@ public class DatagenInstance {
 
     public static class ModAdvancementProviderManager {
 
-        public Advancement ROOT;
+        public AdvancementHolder ROOT;
         public ResourceLocation ROOT_LOCATION;
 
-        public final ArrayList<Consumer<Consumer<Advancement>>> requests = new ArrayList<>();
+        public final ArrayList<Consumer<Consumer<AdvancementHolder>>> requests = new ArrayList<>();
 
-        protected final HashMap<ResourceLocation, Advancement> advancements = new HashMap<>();
+        protected final HashMap<ResourceLocation, AdvancementHolder> advancements = new HashMap<>();
 
         // Here's how you use this.
         // Call queueRequest() with a lambda where you create an advancement
@@ -339,7 +335,7 @@ public class DatagenInstance {
         // as a parent for another advancement. This is necessary because
         // minecraft is silly
 
-        public void queueRequest(Consumer<Consumer<Advancement>> request) {
+        public void queueRequest(Consumer<Consumer<AdvancementHolder>> request) {
             //LOGGER.info("Queueing request for advancement");
             requests.add(request);
         }
@@ -349,8 +345,8 @@ public class DatagenInstance {
             return provider;
         }
 
-        public void record(Advancement advancement) {
-            advancements.put(advancement.getId(), advancement);
+        public void record(AdvancementHolder advancement) {
+            advancements.put(advancement.id(), advancement);
         }
 
         public ResourceLocation simpleAdvancement(ResourceLocation id, Supplier<Item> icon, Component title, Component desc, @Nullable ResourceLocation parent) {
@@ -359,7 +355,7 @@ public class DatagenInstance {
                 //LOGGER.info("Root is " + ROOT + " and rootloc is " + ROOT_LOCATION);
 
                 record(createNormalAdvancement(icon, title, desc, parent)
-                        .addCriterion("award_through_code", new ImpossibleTrigger.TriggerInstance())
+                        .addCriterion("award_through_code", CriteriaTriggers.IMPOSSIBLE.createCriterion(new ImpossibleTrigger.TriggerInstance()))
                         .save(consumer, id.toString()));
             });
             return id;
@@ -399,7 +395,7 @@ public class DatagenInstance {
                             title,
                             desc,
                             null,
-                            FrameType.TASK,
+                            AdvancementType.TASK,
                             true,
                             true,
                             false
@@ -424,32 +420,32 @@ public class DatagenInstance {
                                 title,
                                 desc,
                                 texture,
-                                FrameType.TASK,
+                                AdvancementType.TASK,
                                 false,
                                 false,
                                 false
                         )
-                        .addCriterion("joined_game", PlayerTrigger.TriggerInstance.located(LocationPredicate.ANY))
+                        .addCriterion("joined_game", PlayerTrigger.TriggerInstance.tick())
                         .save(consumer, id.toString());
                 record(ROOT);
             });
             return id;
         }
 
-        public static class ModAdvancementProvider extends ForgeAdvancementProvider {
-            public ModAdvancementProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> registries, ExistingFileHelper existingFileHelper, ArrayList<Consumer<Consumer<Advancement>>> requests) {
+        public static class ModAdvancementProvider extends AdvancementProvider {
+            public ModAdvancementProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> registries, ExistingFileHelper existingFileHelper, ArrayList<Consumer<Consumer<AdvancementHolder>>> requests) {
                 super(output, registries, existingFileHelper, List.of(new ModAdvancementsProcessor(requests)));
             }
 
             public static class ModAdvancementsProcessor implements AdvancementGenerator {
 
-                final ArrayList<Consumer<Consumer<Advancement>>> requests;
-                public ModAdvancementsProcessor(ArrayList<Consumer<Consumer<Advancement>>> requests) {
+                final ArrayList<Consumer<Consumer<AdvancementHolder>>> requests;
+                public ModAdvancementsProcessor(ArrayList<Consumer<Consumer<AdvancementHolder>>> requests) {
                     this.requests = requests;
                 }
 
                 @Override
-                public void generate(HolderLookup.@NotNull Provider registries, @NotNull Consumer<Advancement> saver, @NotNull ExistingFileHelper existingFileHelper) {
+                public void generate(HolderLookup.@NotNull Provider registries, @NotNull Consumer<AdvancementHolder> saver, @NotNull ExistingFileHelper existingFileHelper) {
                     LOGGER.debug("Generating advancements... There are " + requests.size() + " requests");
                 /*
                 ROOT = Advancement.Builder.advancement()
@@ -469,7 +465,7 @@ public class DatagenInstance {
                  */
 
 
-                    for (Consumer<Consumer<Advancement>> request : requests) request.accept(saver);
+                    for (Consumer<Consumer<AdvancementHolder>> request : requests) request.accept(saver);
                 }
             }
         }

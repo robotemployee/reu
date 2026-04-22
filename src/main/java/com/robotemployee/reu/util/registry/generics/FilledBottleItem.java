@@ -1,6 +1,5 @@
 package com.robotemployee.reu.util.registry.generics;
 
-import com.robotemployee.reu.capability.FilteredSimpleFluidStorage;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
@@ -17,11 +16,11 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.fluids.FluidStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.function.Supplier;
 
 public class FilledBottleItem extends Item {
 
@@ -33,7 +32,7 @@ public class FilledBottleItem extends Item {
         this.fluidStack = fluidStack;
     }
 
-    public FilledBottleItem(RegistryObject<Fluid> fluid, Properties properties) {
+    public FilledBottleItem(Supplier<Fluid> fluid, Properties properties) {
         this(new FluidStack(fluid.get(), 250), properties);
     }
 
@@ -83,9 +82,13 @@ public class FilledBottleItem extends Item {
         return InteractionResultHolder.consume(player.getItemInHand(hand));
     }
 
+    // todo figure out new capability system
+    // reimplement filtered simple fluid storage
     @Override @NotNull
     public ICapabilityProvider initCapabilities(@NotNull ItemStack stack, @Nullable CompoundTag nbt) {
         return new FilteredSimpleFluidStorage(new FluidStack(getStack(stack), 250), stack, new ItemStack(Items.GLASS_BOTTLE), 250);
     }
+
+
 
 }

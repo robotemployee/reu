@@ -4,20 +4,21 @@ import com.robotemployee.reu.util.registry.builder.FluidBuilder;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.function.Supplier;
 
 public class FluidRegistryEntry {
 
-    private final RegistryObject<Fluid> SOURCE;
-    private final RegistryObject<Fluid> FLOW;
-    private final RegistryObject<Item> BUCKET;
-    private final RegistryObject<Item> BOTTLE;
+    private final Supplier<Fluid> SOURCE;
+    private final Supplier<Fluid> FLOW;
+    private final Supplier<Item> BUCKET;
+    private final Supplier<Item> BOTTLE;
     private final BlockRegistryEntry BLOCK;
 
     public final FluidBuilder.Mode MODE;
 
-    public FluidRegistryEntry(RegistryObject<Fluid> flow, RegistryObject<Fluid> source, @Nullable BlockRegistryEntry block, @Nullable RegistryObject<Item> bucket, @Nullable RegistryObject<Item> bottle) {
+    public FluidRegistryEntry(Supplier<Fluid> flow, Supplier<Fluid> source, @Nullable BlockRegistryEntry block, @Nullable Supplier<Item> bucket, @Nullable Supplier<Item> bottle) {
         this.SOURCE = source;
         this.FLOW = flow;
         this.BLOCK = block;
@@ -26,11 +27,11 @@ public class FluidRegistryEntry {
         this.MODE = flow != null ? FluidBuilder.Mode.FLOWING : FluidBuilder.Mode.NON_FLOWING;
     }
 
-    public FluidRegistryEntry(RegistryObject<Fluid> flow, RegistryObject<Fluid> source) {
+    public FluidRegistryEntry(Supplier<Fluid> flow, Supplier<Fluid> source) {
         this(flow, source, null, null, null);
     }
 
-    public FluidRegistryEntry(RegistryObject<Fluid> source) {
+    public FluidRegistryEntry(Supplier<Fluid> source) {
         this(null, source);
     }
 
@@ -44,8 +45,8 @@ public class FluidRegistryEntry {
     }
 
     @Nullable
-    public RegistryObject<Fluid> getFlowRegistry() { return (MODE.flowing()) ? FLOW : null; }
-    public RegistryObject<Fluid> getSourceRegistry() { return SOURCE; }
+    public Supplier<Fluid> getFlowRegistry() { return (MODE.flowing()) ? FLOW : null; }
+    public Supplier<Fluid> getSourceRegistry() { return SOURCE; }
 
     @Nullable
     public Item getBucket() { return BUCKET != null ? BUCKET.get() : null; }

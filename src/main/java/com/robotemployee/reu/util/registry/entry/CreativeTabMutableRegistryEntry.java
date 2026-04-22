@@ -4,8 +4,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.ArrayList;
 import java.util.function.Supplier;
@@ -13,7 +12,7 @@ import java.util.function.Supplier;
 public class CreativeTabMutableRegistryEntry {
     // note that this class NOT FINALIZED
     // you are meant to add items to it before it is registered, it differs from the other RegistryEntry-type stuff in that way
-    protected RegistryObject<CreativeModeTab> tab;
+    protected Supplier<CreativeModeTab> tab;
     protected final ArrayList<Supplier<Item>> addedItems = new ArrayList<>();
 
     public final String name;
@@ -38,7 +37,7 @@ public class CreativeTabMutableRegistryEntry {
         addedItems.add(addedItem);
     }
 
-    public RegistryObject<CreativeModeTab> getRegistryObject() {
+    public Supplier<CreativeModeTab> getRegistryObject() {
         return tab;
     }
 

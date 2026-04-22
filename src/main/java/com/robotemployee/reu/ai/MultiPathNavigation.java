@@ -6,11 +6,12 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
 import net.minecraft.world.level.pathfinder.NodeEvaluator;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.level.pathfinder.PathFinder;
+import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
@@ -137,6 +138,11 @@ public class MultiPathNavigation<T> extends PathNavigation {
         return getCurrentNavigation().moveTo(x, y, z, speedMod);
     }
 
+    @Override
+    public boolean moveTo(double x, double y, double z, int accuracy, double speed) {
+        return getCurrentNavigation().moveTo(x, y, z, accuracy, speed);
+    }
+
     @Nullable
     @Override
     public Path getPath() {
@@ -165,8 +171,8 @@ public class MultiPathNavigation<T> extends PathNavigation {
     }
 
     @Override
-    public boolean canCutCorner(BlockPathTypes blockPathTypes) {
-        return getCurrentNavigation().canCutCorner(blockPathTypes);
+    public boolean canCutCorner(@NotNull PathType pathType) {
+        return getCurrentNavigation().canCutCorner(pathType);
     }
 
     @Override
@@ -207,7 +213,7 @@ public class MultiPathNavigation<T> extends PathNavigation {
     // this is only used in the constructor, null should be safe here
     @Override
     protected PathFinder createPathFinder(int idk) {
-        return null;//((PathNavigationAccessor)getCurrentNavigation()).createPathFinder(idk);
+        return ((PathNavigationAccessor)getCurrentNavigation()).createPathFinder(idk);
     }
 
     // this is only used in

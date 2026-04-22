@@ -4,8 +4,7 @@ import com.robotemployee.reu.util.registry.entry.CreativeTabMutableRegistryEntry
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,7 +17,7 @@ public class ItemBuilder {
     private String name;
     private Supplier<Item> supplier;
     private final ArrayList<Supplier<TagKey<Item>>> tags = new ArrayList<>();
-    private BiConsumer<DatagenInstance, RegistryObject<Item>> datagenConsumer;
+    private BiConsumer<DatagenInstance, Supplier<Item>> datagenConsumer;
     private final DatagenInstance datagenInstance;
     private final DeferredRegister<Item> register;
     @Nullable
@@ -64,9 +63,9 @@ public class ItemBuilder {
         return this;
     }
 
-    public RegistryObject<Item> build() {
+    public Supplier<Item> build() {
         checkForInsufficientParams();
-        RegistryObject<Item> newborn = register.register(name, supplier);
+        Supplier<Item> newborn = register.register(name, supplier);
         if (creativeModeTab != null) creativeModeTab.addItem(newborn);
         if (doDatagen) datagenConsumer.accept(datagenInstance, newborn);
         for (Supplier<TagKey<Item>> tag : tags) {
@@ -89,7 +88,7 @@ public class ItemBuilder {
     }
 
     /** see easy consumers for this at the bottom of {@link DatagenInstance.ModItemModelProviderManager}*/
-    public ItemBuilder customDatagen(BiConsumer<DatagenInstance, RegistryObject<Item>> datagen) {
+    public ItemBuilder customDatagen(BiConsumer<DatagenInstance, Supplier<Item>> datagen) {
         if (!doDatagen) throw new IllegalStateException("Added custom datagen after specifying to not do datagen");
         this.datagenConsumer = datagen;
         return this;

@@ -8,8 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import org.slf4j.Logger;
 
 import java.util.function.Function;
@@ -66,7 +65,7 @@ public class BlockBuilder {
         DeferredRegister<Block> BLOCKS = register;
 
         checkForInsufficientParams();
-        RegistryObject<Block> block = BLOCKS.register(getName(), getSupplier());
+        Supplier<Block> block = BLOCKS.register(getName(), getSupplier());
 
         if (hasItem()) {
             itemBuilder = itemManager.createBuilder();
@@ -76,7 +75,7 @@ public class BlockBuilder {
 
             if (!hasCreativeTab) itemBuilder.noCreativeTab();
 
-            RegistryObject<Item> item = itemBuilder.build();
+            Supplier<Item> item = itemBuilder.build();
             return new BlockRegistryEntry(block, item);
         }
 

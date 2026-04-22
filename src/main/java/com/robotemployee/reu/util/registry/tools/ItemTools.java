@@ -8,10 +8,6 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
-import net.minecraft.world.item.RecordItem;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
 import org.slf4j.Logger;
 
 import java.util.function.Supplier;
@@ -24,7 +20,7 @@ public class ItemTools {
 
     static Logger LOGGER = LogUtils.getLogger();
 
-    public static RegistryObject<Item> createSimpleItem(ItemBuilder.Manager manager, String id) {
+    public static Supplier<Item> createSimpleItem(ItemBuilder.Manager manager, String id) {
         return manager.createBuilder()
                 .withName(id)
                 .withSupplier(() -> new Item(
@@ -33,7 +29,7 @@ public class ItemTools {
                 .build();
     }
 
-    public static RegistryObject<Item> createSimpleFoodItem(ItemBuilder.Manager manager, String id, FoodProperties properties) {
+    public static Supplier<Item> createSimpleFoodItem(ItemBuilder.Manager manager, String id, FoodProperties properties) {
         return manager.createBuilder()
                 .withName(id)
                 .withSupplier(() -> new Item(
@@ -43,7 +39,7 @@ public class ItemTools {
     }
 
     // note that the resulting item id will have "music_disc_" appended to the start of the itemId input
-    public static RegistryObject<Item> createDiscItem(ItemBuilder.Manager manager, String itemId, Supplier<SoundEvent> sound, int ticks) {
+    public static Supplier<Item> createDiscItem(ItemBuilder.Manager manager, String itemId, Supplier<SoundEvent> sound, int ticks) {
         String finalItemId = "music_disc_" + itemId;
 
         return manager.createBuilder()

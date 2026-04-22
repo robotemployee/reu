@@ -4,11 +4,11 @@ import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraftforge.common.data.SoundDefinition;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.common.data.SoundDefinition;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class SoundBuilder {
 
@@ -50,7 +50,7 @@ public class SoundBuilder {
     }
 
     public SoundBuilder soundLocation(String path) {
-        this.location = new ResourceLocation(modid, path);
+        this.location = ResourceLocation.fromNamespaceAndPath(modid, path);
         return this;
     }
 
@@ -81,19 +81,19 @@ public class SoundBuilder {
         return this;
     }
 
-    public RegistryObject<SoundEvent> build() {
+    public Supplier<SoundEvent> build() {
         checkForInsufficientParams();
-        RegistryObject<SoundEvent> newborn;
+        Supplier<SoundEvent> newborn;
 
         if (isFixedRange) {
             newborn = register.register(
                     name,
-                    () -> SoundEvent.createFixedRangeEvent(new ResourceLocation(modid, name), range)
+                    () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(modid, name), range)
             );
         } else {
             newborn = register.register(
                     name,
-                    () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(modid, name))
+                    () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(modid, name))
             );
         }
 
@@ -103,7 +103,7 @@ public class SoundBuilder {
     }
 
 
-    private void runDatagen(RegistryObject<SoundEvent> newborn) {
+    private void runDatagen(Supplier<SoundEvent> newborn) {
         if (definition == null) {
             SoundDefinition.Sound sound = SoundDefinition.Sound.sound(location, SoundDefinition.SoundType.SOUND);
             if (soundModifier != null) soundModifier.accept(sound);

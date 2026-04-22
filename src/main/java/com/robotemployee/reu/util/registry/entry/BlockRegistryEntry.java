@@ -2,19 +2,20 @@ package com.robotemployee.reu.util.registry.entry;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.function.Supplier;
 
 public class BlockRegistryEntry {
     @Nullable
-    public final RegistryObject<Item> ITEM;
-    public final RegistryObject<Block> BLOCK;
-    public BlockRegistryEntry(RegistryObject<Block> BLOCK, @Nullable RegistryObject<Item> ITEM) {
+    public final Supplier<Item> ITEM;
+    public final Supplier<Block> BLOCK;
+    public BlockRegistryEntry(Supplier<Block> BLOCK, @Nullable Supplier<Item> ITEM) {
         this.BLOCK = BLOCK;
         this.ITEM = ITEM;
     }
 
-    public BlockRegistryEntry(RegistryObject<Block> BLOCK) {
+    public BlockRegistryEntry(Supplier<Block> BLOCK) {
         this.BLOCK = BLOCK;
         this.ITEM = null;
     }

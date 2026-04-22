@@ -13,8 +13,7 @@ public class LevelUtils {
 
     public static final int MAX_SEARCH_DEPTH = 128;
     /**
-     * <p>Given a Level and start position, it returns the first BlockPos it finds that matches given conditions. After each failed condition check, it applies a transformation.</p>
-     * @implNote It will stop evaluating and return null if it can't find a result within either the maxSearchDepth or 256 tries.
+     * <p>Given a Level and start position, it returns the first BlockPos it finds that matches given conditions. After each failed condition check, it applies a transformation. It will stop evaluating and return null if it can't find a result within either the maxSearchDepth or 256 tries.</p>
      * @param level The level to use.
      * @param startingPos The first block position checked and to be transformed.
      * @param evaluator Predicate which returns true when the block is what you're looking for.

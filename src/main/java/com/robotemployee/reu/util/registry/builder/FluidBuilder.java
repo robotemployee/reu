@@ -6,6 +6,7 @@ import com.robotemployee.reu.util.datagen.DatagenInstance;
 import com.robotemployee.reu.util.registry.entry.BlockRegistryEntry;
 import com.robotemployee.reu.util.registry.entry.FluidRegistryEntry;
 import com.robotemployee.reu.util.registry.generics.FilledBottleItem;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
@@ -14,10 +15,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.ForgeFlowingFluid;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.fluids.BaseFlowingFluid;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -35,7 +34,7 @@ public class FluidBuilder {
 
     Mode mode;
 
-    private Supplier<ForgeFlowingFluid.Properties> propertiesSupplier;
+    private Supplier<BaseFlowingFluid.Properties> propertiesSupplier;
 
     private Supplier<Fluid> normalSupplier;
 
@@ -84,7 +83,7 @@ public class FluidBuilder {
         return this;
     }
 
-    public FluidBuilder flowing(Supplier<ForgeFlowingFluid.Properties> propertiesSupplier) {
+    public FluidBuilder flowing(Supplier<BaseFlowingFluid.Properties> propertiesSupplier) {
         if (mode != null) throw new IllegalStateException("Attempted to add flowing fluid parameters to a fluid that was already given a fluid supplier");
         this.propertiesSupplier = propertiesSupplier;
         this.mode = Mode.FLOWING;
@@ -106,28 +105,28 @@ public class FluidBuilder {
 
         checkForInsufficientParams();
 
-        Supplier<ForgeFlowingFluid.Properties> newPropertiesSupplier = () -> {
-            ForgeFlowingFluid.Properties props = propertiesSupplier.get();
-            if (hasBucket) props = props.bucket(() -> ForgeRegistries.ITEMS.getValue(new ResourceLocation(RobotEmployeeUtils.MODID, name + "_bucket")));
-            if (hasBlock) props = props.block(() -> (LiquidBlock)ForgeRegistries.BLOCKS.getValue(new ResourceLocation(RobotEmployeeUtils.MODID, name)));
+        Supplier<BaseFlowingFluid.Properties> newPropertiesSupplier = () -> {
+            BaseFlowingFluid.Properties props = propertiesSupplier.get();
+            if (hasBucket) props = props.bucket(() -> BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath(RobotEmployeeUtils.MODID, name + "_bucket")));
+            if (hasBlock) props = props.block(() -> (LiquidBlock)BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath(RobotEmployeeUtils.MODID, name)));
             return props;
         };
 
 
 
-        RegistryObject<Fluid> sourceFluid;
-        RegistryObject<Fluid> flowingFluid = null;
+        Supplier<Fluid> sourceFluid;
+        Supplier<Fluid> flowingFluid = null;
 
         if (mode.flowing()) {
-            sourceFluid = FLUIDS.register(name, () -> new ForgeFlowingFluid.Source(newPropertiesSupplier.get()));
-            flowingFluid = FLUIDS.register("flowing_" + name, () -> new ForgeFlowingFluid.Flowing(newPropertiesSupplier.get()));
+            sourceFluid = FLUIDS.register(name, () -> new BaseFlowingFluid.Source(newPropertiesSupplier.get()));
+            flowingFluid = FLUIDS.register("flowing_" + name, () -> new BaseFlowingFluid.Flowing(newPropertiesSupplier.get()));
         } else {
             sourceFluid = FLUIDS.register(name, normalSupplier);
         }
 
 
-        RegistryObject<Item> bucket = null;
-        RegistryObject<Item> bottle = null;
+        Supplier<Item> bucket = null;
+        Supplier<Item> bottle = null;
         BlockRegistryEntry block = null;
 
         if (hasBucket) {
@@ -143,7 +142,7 @@ public class FluidBuilder {
             queueBottleDatagen(bottle);
         }
         if (hasBlock) {
-            block = blockManager.createBuilder().withName(name).withSupplier(getBlockSupplier(() -> (ForgeFlowingFluid.Source)sourceFluid.get())).noCreativeTab().build();
+            block = blockManager.createBuilder().withName(name).withSupplier(getBlockSupplier(() -> (BaseFlowingFluid.Source)sourceFluid.get())).noCreativeTab().build();
             //block = BLOCKS.register(name, getBlockSupplier());
         }
 
@@ -204,23 +203,23 @@ public class FluidBuilder {
     }
 
     @Nullable
-    public Supplier<LiquidBlock> getBlockSupplier(Supplier<ForgeFlowingFluid.Source> sourceSupplier) {
+    public Supplier<LiquidBlock> getBlockSupplier(Supplier<BaseFlowingFluid.Source> sourceSupplier) {
         if (!hasBlock) return null;
         if (blockSupplier != null) return blockSupplier;
         if (mode.nonFlowing()) throw new IllegalStateException("Attempted to register the block for a fluid that is registered as non-flowing");
 
-        return () -> new LiquidBlock(sourceSupplier, BlockBehaviour.Properties.copy(Blocks.WATER));
+        return () -> new LiquidBlock(sourceSupplier.get(), BlockBehaviour.Properties.ofFullCopy(Blocks.WATER));
     }
 
     @Nullable
-    public Supplier<Item> getBucketSupplier(RegistryObject<Fluid> fluid) {
+    public Supplier<Item> getBucketSupplier(Supplier<Fluid> fluid) {
         if (!hasBucket) return null;
         if (bucketSupplier != null) return bucketSupplier;
-        return () -> new BucketItem(fluid, (new Item.Properties()).craftRemainder(Items.BUCKET).stacksTo(1));
+        return () -> new BucketItem(fluid.get(), (new Item.Properties()).craftRemainder(Items.BUCKET).stacksTo(1));
     }
 
     @Nullable
-    public Supplier<Item> getBottleSupplier(RegistryObject<Fluid> fluid) {
+    public Supplier<Item> getBottleSupplier(Supplier<Fluid> fluid) {
         if (!hasBottle) return null;
         if (bottleSupplier != null) return bottleSupplier;
 

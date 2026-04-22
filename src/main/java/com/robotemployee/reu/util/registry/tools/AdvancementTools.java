@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientAdvancements;
@@ -13,8 +14,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
@@ -28,37 +29,37 @@ public class AdvancementTools {
 
     public static ResourceLocation createDiscAdvancement(DatagenInstance datagenInstance, String id, Supplier<Item> supplier, Component desc) {
         //LOGGER.info("Creating disc advancement with ID " + id);
-        ResourceLocation newborn = datagenInstance.modAdvancementProviderManager.simpleItemObtainedAdvancement(new ResourceLocation(RobotEmployeeUtils.MODID, id), supplier, desc, lastDiscLoc);
+        ResourceLocation newborn = datagenInstance.modAdvancementProviderManager.simpleItemObtainedAdvancement(ResourceLocation.fromNamespaceAndPath(RobotEmployeeUtils.MODID, id), supplier, desc, lastDiscLoc);
         lastDiscLoc = newborn;
         return newborn;
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static Advancement getAdvancementClient(ResourceLocation loc) {
+    public static AdvancementHolder getAdvancementClient(ResourceLocation loc) {
         ClientAdvancements manager = Minecraft.getInstance().getConnection().getAdvancements();
-        Advancement output = manager.getAdvancements().get(loc);
+        AdvancementHolder output = manager.get(loc);
         if (output == null) LOGGER.error("Attempted to get an advancement that doesn't exist: " + loc);
 
         return output;
     }
 
-    public static Advancement getAdvancement(@NotNull ServerPlayer player, ResourceLocation loc) {
+    public static AdvancementHolder getAdvancement(@NotNull ServerPlayer player, ResourceLocation loc) {
         ServerLevel level = (ServerLevel) player.level();
         MinecraftServer server = level.getServer();
-        Advancement output = server.getAdvancements().getAdvancement(loc);
+        AdvancementHolder output = server.getAdvancements().get(loc);
         if (output == null) LOGGER.error("Attempted to get an advancement that doesn't exist: " + loc);
 
         return output;
     }
 
     public static AdvancementProgress getAdvancementProgress(@NotNull ServerPlayer player, ResourceLocation loc) {
-        Advancement advancement = getAdvancement(player, loc);
+        AdvancementHolder advancement = getAdvancement(player, loc);
         return player.getAdvancements().getOrStartProgress(advancement);
     }
 
     public static void completeAdvancement(@NotNull ServerPlayer player, ResourceLocation loc) {
         //LOGGER.info("completing advancement " + loc + " for " + player.getName());
-        Advancement advancement = getAdvancement(player, loc);
+        AdvancementHolder advancement = getAdvancement(player, loc);
         AdvancementProgress progress = player.getAdvancements().getOrStartProgress(advancement);
 
         for (String criterion : progress.getRemainingCriteria()) {
