@@ -6,6 +6,7 @@ import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.advancements.critereon.LocationPredicate;
 import net.minecraft.advancements.critereon.PlayerTrigger;
+import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -22,6 +23,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.JukeboxSong;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
@@ -61,6 +63,7 @@ public class DatagenInstance {
     public final ModSoundProviderManager modSoundProviderManager = new ModSoundProviderManager();
     public final ModTagsProviderManager modTagsProviderManager = new ModTagsProviderManager();
     public final ModAdvancementProviderManager modAdvancementProviderManager = new ModAdvancementProviderManager();
+    public final ModJukeboxSongProviderManager modJukeboxSongProviderManager = new ModJukeboxSongProviderManager();
     public DatagenInstance(String modid) {
         this.MODID = modid;
     }
@@ -80,6 +83,7 @@ public class DatagenInstance {
         gen.addProvider(event.includeServer(), modLootTableProviderManager.run(gen.getPackOutput(), event.getLookupProvider()));
 
         gen.addProvider(event.includeServer(), modAdvancementProviderManager.run(gen.getPackOutput(), event.getLookupProvider(), event.getExistingFileHelper()));
+        gen.addProvider(true, modJukeboxSongProviderManager.run(gen.getPackOutput(), event.getLookupProvider(), event.getExistingFileHelper(), MODID));
     }
 
 
@@ -341,8 +345,7 @@ public class DatagenInstance {
         }
 
         public ModAdvancementProvider run(PackOutput output, CompletableFuture<HolderLookup.Provider> registries, ExistingFileHelper existingFileHelper) {
-            ModAdvancementProvider provider = new ModAdvancementProvider(output, registries, existingFileHelper, requests);
-            return provider;
+            return new ModAdvancementProvider(output, registries, existingFileHelper, requests);
         }
 
         public void record(AdvancementHolder advancement) {
@@ -507,6 +510,38 @@ public class DatagenInstance {
             @Override
             public void add(Supplier<SoundEvent> soundEvent, SoundDefinition definition) {
                 super.add(soundEvent, definition);
+            }
+        }
+    }
+
+    public static class ModJukeboxSongProviderManager {
+        private final ArrayList<Consumer<Consumer<Holder<JukeboxSong>>>> requests = new ArrayList<>();
+
+        public void queueRequest(Consumer<Consumer<Holder<JukeboxSong>>> request) {
+            requests.add(request);
+        }
+
+        public ResourceKey<JukeboxSong> registerJukeboxSong(ResourceLocation loc, JukeboxSong jukeboxSong) {
+            ResourceKey<JukeboxSong> resourceKey = ResourceKey.create(Registries.JUKEBOX_SONG, loc);
+            queueRequest(consumer -> {
+                consumer.accept(Holder.direct(jukeboxSong));
+            });
+            return resourceKey;
+        }
+
+        public JukeboxSongDataProvider run(PackOutput output, CompletableFuture<HolderLookup.Provider> registries, ExistingFileHelper helper, String modid) {
+            return new JukeboxSongDataProvider(output, registries, List.of(new ModJukeboxSongProcessor(requests)));
+        }
+
+        public static class ModJukeboxSongProcessor implements JukeboxSongDataProvider.JukeboxSongSubProvider {
+            private final List<Consumer<Consumer<Holder<JukeboxSong>>>> requests;
+            public ModJukeboxSongProcessor(List<Consumer<Consumer<Holder<JukeboxSong>>>> requests) {
+                this.requests = requests;
+            }
+
+            @Override
+            public void generate(HolderLookup.Provider provider, Consumer<Holder<JukeboxSong>> saver) {
+                for (Consumer<Consumer<Holder<JukeboxSong>>> request : requests) request.accept(saver);
             }
         }
     }

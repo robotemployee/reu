@@ -14,6 +14,8 @@ import java.util.function.Supplier;
 
 public class EntityDataSerializerTools {
 
+    // why am i registering it in here?
+    // whatever it's my mod im the only one who has to put up with it
     public static final DeferredRegister<EntityDataSerializer<?>> SERIALIZERS = DeferredRegister.create(NeoForgeRegistries.Keys.ENTITY_DATA_SERIALIZERS, RobotEmployeeUtils.MODID);
     public static final Supplier<EntityDataSerializer<List<Integer>>> INTEGER_LIST = SERIALIZERS.register("integer_list", () -> new EntityDataSerializer<List<Integer>>() {
         public void write(RegistryFriendlyByteBuf buffer, List<Integer> list) {

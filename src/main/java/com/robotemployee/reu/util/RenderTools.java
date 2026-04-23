@@ -10,8 +10,8 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
@@ -20,7 +20,7 @@ import org.joml.Vector3f;
 
 @OnlyIn(Dist.CLIENT)
 public class RenderTools {
-    private static final ResourceLocation MARKER_TEXTURE = new ResourceLocation(RobotEmployeeUtils.MODID, "textures/misc/debug_marker.png");
+    private static final ResourceLocation MARKER_TEXTURE = ResourceLocation.fromNamespaceAndPath(RobotEmployeeUtils.MODID, "textures/misc/debug_marker.png");
 
     public static final int PACKED_LIGHT_FOR_2DS = LightTexture.FULL_BRIGHT;
 
@@ -53,41 +53,35 @@ public class RenderTools {
         float size = 0.5f;
 
         Matrix4f lastPose = poseStack.last().pose();
-        Matrix3f normal = poseStack.last().normal();
 
+        vertexes
+                .addVertex(lastPose, -size, -size, 0)
+                .setColor(color)
+                .setUv(0, 1)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(PACKED_LIGHT_FOR_2DS)
+                .setNormal(poseStack.last(), 0, 1, 0)
 
+                .addVertex(lastPose, -size, size, 0)
+                .setColor(color)
+                .setUv(0, 0)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(PACKED_LIGHT_FOR_2DS)
+                .setNormal(poseStack.last(), 0, 1, 0)
 
-        vertexes.vertex(lastPose, -size, -size, 0)
-                .color(color)
-                .uv(0, 1)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(PACKED_LIGHT_FOR_2DS)
-                .normal(normal, 0, 1, 0)
-                .endVertex();
+                .addVertex(lastPose, size, size, 0)
+                .setColor(color)
+                .setUv(1, 0)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(PACKED_LIGHT_FOR_2DS)
+                .setNormal(poseStack.last(), 0, 1, 0)
 
-        vertexes.vertex(lastPose, -size, size, 0)
-                .color(color)
-                .uv(0, 0)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(PACKED_LIGHT_FOR_2DS)
-                .normal(normal, 0, 1, 0)
-                .endVertex();
-
-        vertexes.vertex(lastPose, size, size, 0)
-                .color(color)
-                .uv(1, 0)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(PACKED_LIGHT_FOR_2DS)
-                .normal(normal, 0, 1, 0)
-                .endVertex();
-
-        vertexes.vertex(lastPose, size, -size, 0)
-                .color(color)
-                .uv(1, 1)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(PACKED_LIGHT_FOR_2DS)
-                .normal(normal, 0, 1, 0)
-                .endVertex();
+                .addVertex(lastPose, size, -size, 0)
+                .setColor(color)
+                .setUv(1, 1)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(PACKED_LIGHT_FOR_2DS)
+                .setNormal(poseStack.last(), 0, 1, 0);
 
         poseStack.popPose();
     }
@@ -200,37 +194,34 @@ public class RenderTools {
         Matrix4f lastPose = poseStack.last().pose();
         Matrix3f normal = poseStack.last().normal();
 
-        vertexes.vertex(lastPose, -width, 0, 0)
-                .color(1.0f, 1.0f, 1.0f, 1.0f)
-                .uv(minUV.x(), endV)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(PACKED_LIGHT_FOR_2DS)
-                .normal(normal, 0, 1, 0)
-                .endVertex();
+        vertexes
+                .addVertex(lastPose, -width, 0, 0)
+                .setColor(1.0f, 1.0f, 1.0f, 1.0f)
+                .setUv(minUV.x(), endV)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(PACKED_LIGHT_FOR_2DS)
+                .setNormal(poseStack.last(), 0, 1, 0)
 
-        vertexes.vertex(lastPose, -width, length, 0)
-                .color(1.0f, 1.0f, 1.0f, 1.0f)
-                .uv(minUV.x(), startV)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(PACKED_LIGHT_FOR_2DS)
-                .normal(normal, 0, 1, 0)
-                .endVertex();
+                .addVertex(lastPose, -width, length, 0)
+                .setColor(1.0f, 1.0f, 1.0f, 1.0f)
+                .setUv(minUV.x(), startV)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(PACKED_LIGHT_FOR_2DS)
+                .setNormal(poseStack.last(), 0, 1, 0)
 
-        vertexes.vertex(lastPose, width, length, 0)
-                .color(1.0f, 1.0f, 1.0f, 1.0f)
-                .uv(maxUV.x(), startV)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(PACKED_LIGHT_FOR_2DS)
-                .normal(normal, 0, 1, 0)
-                .endVertex();
+                .addVertex(lastPose, width, length, 0)
+                .setColor(1.0f, 1.0f, 1.0f, 1.0f)
+                .setUv(maxUV.x(), startV)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(PACKED_LIGHT_FOR_2DS)
+                .setNormal(poseStack.last(), 0, 1, 0)
 
-        vertexes.vertex(lastPose, width, 0, 0)
-                .color(1.0f, 1.0f, 1.0f, 1.0f)
-                .uv(maxUV.x(), endV)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(PACKED_LIGHT_FOR_2DS)
-                .normal(normal, 0, 1, 0)
-                .endVertex();
+                .addVertex(lastPose, width, 0, 0)
+                .setColor(1.0f, 1.0f, 1.0f, 1.0f)
+                .setUv(maxUV.x(), endV)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(PACKED_LIGHT_FOR_2DS)
+                .setNormal(poseStack.last(), 0, 1, 0);
 
 
         poseStack.popPose();
@@ -259,37 +250,34 @@ public class RenderTools {
         Matrix4f lastPose = poseStack.last().pose();
         Matrix3f normal = poseStack.last().normal();
 
-        vertexes.vertex(lastPose, -size, -size, 0)
-                .color(1.0f, 1.0f, 1.0f, 1.0f)
-                .uv(minUV.x(), maxUV.y())
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(PACKED_LIGHT_FOR_2DS)
-                .normal(normal, 0, 1, 0)
-                .endVertex();
+        vertexes
+                .addVertex(lastPose, -size, -size, 0)
+                .setColor(1.0f, 1.0f, 1.0f, 1.0f)
+                .setUv(minUV.x(), maxUV.y())
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(PACKED_LIGHT_FOR_2DS)
+                .setNormal(poseStack.last(), 0, 1, 0)
 
-        vertexes.vertex(lastPose, -size, size, 0)
-                .color(1.0f, 1.0f, 1.0f, 1.0f)
-                .uv(minUV.x(), minUV.y())
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(PACKED_LIGHT_FOR_2DS)
-                .normal(normal, 0, 1, 0)
-                .endVertex();
+                .addVertex(lastPose, -size, size, 0)
+                .setColor(1.0f, 1.0f, 1.0f, 1.0f)
+                .setUv(minUV.x(), minUV.y())
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(PACKED_LIGHT_FOR_2DS)
+                .setNormal(poseStack.last(), 0, 1, 0)
 
-        vertexes.vertex(lastPose, size, size, 0)
-                .color(1.0f, 1.0f, 1.0f, 1.0f)
-                .uv(maxUV.x(), minUV.y())
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(PACKED_LIGHT_FOR_2DS)
-                .normal(normal, 0, 1, 0)
-                .endVertex();
+                .addVertex(lastPose, size, size, 0)
+                .setColor(1.0f, 1.0f, 1.0f, 1.0f)
+                .setUv(maxUV.x(), minUV.y())
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(PACKED_LIGHT_FOR_2DS)
+                .setNormal(poseStack.last(), 0, 1, 0)
 
-        vertexes.vertex(lastPose, size, -size, 0)
-                .color(1.0f, 1.0f, 1.0f, 1.0f)
-                .uv(maxUV.x(), maxUV.y())
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(PACKED_LIGHT_FOR_2DS)
-                .normal(normal, 0, 1, 0)
-                .endVertex();
+                .addVertex(lastPose, size, -size, 0)
+                .setColor(1.0f, 1.0f, 1.0f, 1.0f)
+                .setUv(maxUV.x(), maxUV.y())
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(PACKED_LIGHT_FOR_2DS)
+                .setNormal(poseStack.last(), 0, 1, 0);
 
         poseStack.popPose();
     }

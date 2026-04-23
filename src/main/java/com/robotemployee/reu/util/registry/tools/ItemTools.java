@@ -6,8 +6,11 @@ import com.robotemployee.reu.util.registry.builder.ItemBuilder;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.data.DataGenerator;
+import net.minecraft.data.DataProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.food.FoodProperties;
@@ -49,15 +52,14 @@ public class ItemTools {
     // note that the resulting item id will have "music_disc_" appended to the start of the itemId input
     public static Supplier<Item> createDiscItem(ItemBuilder.Manager manager, String itemId, Supplier<SoundEvent> sound, int ticks) {
         String finalItemId = "music_disc_" + itemId;
+        ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(manager.register.getNamespace(), finalItemId);
 
-        //ResourceKey<JukeboxSong>
-        ResourceKey.create(new ResourceKey(), Registries.JUKEBOX_SONG)
-        JukeboxSong song = new JukeboxSong(
+        ResourceKey<JukeboxSong> jukeboxSong = manager.datagenInstance.modJukeboxSongProviderManager.registerJukeboxSong(loc, new JukeboxSong(
                 Holder.direct(sound.get()),
                 Component.translatable("item." + manager.register.getNamespace() + "." + finalItemId + ".desc"),
                 (float) ticks / 20,
                 7
-        );
+        ));
 
         return manager.createBuilder()
                 .withName(finalItemId)
@@ -69,7 +71,7 @@ public class ItemTools {
                                         .rarity(Rarity.RARE)
                                         .stacksTo(1)
                                         .fireResistant()
-                                        .jukeboxPlayable()
+                                        .jukeboxPlayable(jukeboxSong)
                         );
                 })
                 .addTag(() -> Tags.Items.MUSIC_DISCS)

@@ -1,14 +1,19 @@
 package com.robotemployee.reu.util.registry.builder;
 
+import com.robotemployee.reu.capability.IHasCapability;
 import com.robotemployee.reu.util.registry.entry.CreativeTabMutableRegistryEntry;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -25,22 +30,25 @@ public class ItemBuilder {
 
     private boolean doDatagen = true;
 
-    protected ItemBuilder(DatagenInstance datagenInstance, DeferredRegister<Item> register, CreativeTabMutableRegistryEntry creativeModeTab) {
+    protected ItemBuilder(DatagenInstance datagenInstance, DeferredRegister<Item> register, @Nullable CreativeTabMutableRegistryEntry creativeModeTab) {
         datagenConsumer = DatagenInstance::basicItem;
         this.datagenInstance = datagenInstance;
         this.register = register;
         this.creativeModeTab = creativeModeTab;
     }
 
+    @EventBusSubscriber
     public static class Manager {
-
         public final DatagenInstance datagenInstance;
         public final DeferredRegister<Item> register;
+        public final List<Supplier<Item>> registeredItems = new ArrayList<>();
+
         @Nullable
         public CreativeTabMutableRegistryEntry defaultTab;
         public Manager(@NotNull DatagenInstance datagenInstance, DeferredRegister<Item> register) {
             this.datagenInstance = datagenInstance;
             this.register = register;
+            Manager.MANAGERS.add(this);
         }
 
         public Manager defaultCreativeTab(CreativeTabMutableRegistryEntry defaultTab) {
@@ -48,8 +56,37 @@ public class ItemBuilder {
             return this;
         }
 
+        public void noteRegisteredItem(Supplier<Item> supplier) {
+            registeredItems.add(supplier);
+        }
+
+        /**
+         * call this when registering capabilities
+         * @param event the RegisterCapabilities event to use
+         */
+        public void registerMyCapabilities(RegisterCapabilitiesEvent event) {
+            registeredItems.forEach(req -> {
+                if (req.get() instanceof IHasCapability<?> capabilityHaver) {
+                    capabilityHaver.onRegisteringCapabilities(event);
+                }
+            });
+        }
+
+        // i could do something similar to what i did in, i think EntityBuilder? where there's a queue in reu
+        // buuuuutttttttt meh i can figure it out later. encapsulation and whatnot
+        // probably a better solution
+        // scratch that definitely a better solution
+        // and actually i think that queue was intended to be in your thing
+
         public ItemBuilder createBuilder() {
             return new ItemBuilder(datagenInstance, register, defaultTab);
+        }
+
+        public static final List<Manager> MANAGERS = new ArrayList<>();
+
+        @SubscribeEvent
+        public static void onRegisterCapabilities(RegisterCapabilitiesEvent event) {
+            MANAGERS.forEach(manager -> manager.registerMyCapabilities(event));
         }
     }
 

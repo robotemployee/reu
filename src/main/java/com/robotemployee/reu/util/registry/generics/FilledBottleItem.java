@@ -1,7 +1,8 @@
 package com.robotemployee.reu.util.registry.generics;
 
+import com.robotemployee.reu.capability.AllOrNothingFluidStorageItem;
+import com.robotemployee.reu.capability.IHasCapability;
 import net.minecraft.advancements.CriteriaTriggers;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -16,16 +17,17 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.fluids.FluidStack;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Supplier;
 
-public class FilledBottleItem extends Item {
+public class FilledBottleItem extends Item implements IHasCapability<Item> {
 
 
-    private FluidStack fluidStack;
+    private final FluidStack fluidStack;
 
     public FilledBottleItem(FluidStack fluidStack, Properties properties) {
         super(properties);
@@ -38,8 +40,11 @@ public class FilledBottleItem extends Item {
 
 
 
-    public FluidStack getStack(ItemStack stack) {
+    public FluidStack getOriginalFluidStack(ItemStack stack) {
         return fluidStack;
+    }
+    public FluidStack getFluidStack(ItemStack stack) {
+        return getOriginalFluidStack(stack).copy();
     }
 
     @Override @NotNull
@@ -82,13 +87,12 @@ public class FilledBottleItem extends Item {
         return InteractionResultHolder.consume(player.getItemInHand(hand));
     }
 
-    // todo figure out new capability system
-    // reimplement filtered simple fluid storage
-    @Override @NotNull
-    public ICapabilityProvider initCapabilities(@NotNull ItemStack stack, @Nullable CompoundTag nbt) {
-        return new FilteredSimpleFluidStorage(new FluidStack(getStack(stack), 250), stack, new ItemStack(Items.GLASS_BOTTLE), 250);
+    @Override
+    public void onRegisteringCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerItem(
+                Capabilities.FluidHandler.ITEM,
+                (stack, context) -> new AllOrNothingFluidStorageItem(getFluidStack(stack), stack, (s) -> new ItemStack(Items.GLASS_BOTTLE)),
+                this
+        );
     }
-
-
-
 }
