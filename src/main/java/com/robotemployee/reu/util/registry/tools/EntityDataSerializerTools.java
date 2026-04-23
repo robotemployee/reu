@@ -1,7 +1,6 @@
 package com.robotemployee.reu.util.registry.tools;
 
 import com.robotemployee.reu.core.RobotEmployeeUtils;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.syncher.EntityDataSerializer;
@@ -16,18 +15,16 @@ import java.util.function.Supplier;
 public class EntityDataSerializerTools {
 
     public static final DeferredRegister<EntityDataSerializer<?>> SERIALIZERS = DeferredRegister.create(NeoForgeRegistries.Keys.ENTITY_DATA_SERIALIZERS, RobotEmployeeUtils.MODID);
-    public static final Supplier<EntityDataSerializer<List<Integer>>> INTEGER_LIST = SERIALIZERS.register("integer_list", () -> new EntityDataSerializer<>() {
-        @Override
-        public void write(FriendlyByteBuf buffer, List<Integer> list) {
+    public static final Supplier<EntityDataSerializer<List<Integer>>> INTEGER_LIST = SERIALIZERS.register("integer_list", () -> new EntityDataSerializer<List<Integer>>() {
+        public void write(RegistryFriendlyByteBuf buffer, List<Integer> list) {
             buffer.writeInt(list.size());
             for (Integer id : list) {
                 buffer.writeInt(id);
             }
         }
 
-        @Override
         @NotNull
-        public List<Integer> read(FriendlyByteBuf buffer) {
+        public List<Integer> read(RegistryFriendlyByteBuf buffer) {
             int size = buffer.readInt();
             List<Integer> list = new ArrayList<>();
             for (int i = 0; i < size; i++) {
@@ -37,8 +34,9 @@ public class EntityDataSerializerTools {
         }
 
         @Override
+        @NotNull
         public StreamCodec<? super RegistryFriendlyByteBuf, List<Integer>> codec() {
-            return null;
+            return StreamCodec.of(this::write, this::read);
         }
 
         @Override

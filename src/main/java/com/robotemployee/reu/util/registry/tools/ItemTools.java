@@ -3,11 +3,19 @@ package com.robotemployee.reu.util.registry.tools;
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.util.registry.builder.ItemBuilder;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.JukeboxSong;
 import net.minecraft.world.item.Rarity;
+import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import org.slf4j.Logger;
 
 import java.util.function.Supplier;
@@ -42,23 +50,29 @@ public class ItemTools {
     public static Supplier<Item> createDiscItem(ItemBuilder.Manager manager, String itemId, Supplier<SoundEvent> sound, int ticks) {
         String finalItemId = "music_disc_" + itemId;
 
+        //ResourceKey<JukeboxSong>
+        ResourceKey.create(new ResourceKey(), Registries.JUKEBOX_SONG)
+        JukeboxSong song = new JukeboxSong(
+                Holder.direct(sound.get()),
+                Component.translatable("item." + manager.register.getNamespace() + "." + finalItemId + ".desc"),
+                (float) ticks / 20,
+                7
+        );
+
         return manager.createBuilder()
                 .withName(finalItemId)
                 .withSupplier(() -> {
                         assert sound.get() != null;
                         LOGGER.info(String.format("Registering new music disc... id=%s sound=%s duration=%s", finalItemId, sound.get().getLocation(), ticks));
-                        return new RecordItem(
-                                1,
-                                sound,
+                        return new Item(
                                 new Item.Properties()
                                         .rarity(Rarity.RARE)
                                         .stacksTo(1)
                                         .fireResistant()
-                                ,
-                                ticks
+                                        .jukeboxPlayable()
                         );
                 })
-                .addTag(() -> ItemTags.MUSIC_DISCS)
+                .addTag(() -> Tags.Items.MUSIC_DISCS)
                 .build();
 
     }
