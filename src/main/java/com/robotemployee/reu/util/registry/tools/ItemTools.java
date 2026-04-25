@@ -3,6 +3,7 @@ package com.robotemployee.reu.util.registry.tools;
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.util.registry.builder.ItemBuilder;
+import com.robotemployee.reu.util.registry.entry.SoundRegistryEntry;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -50,22 +51,20 @@ public class ItemTools {
     }
 
     // note that the resulting item id will have "music_disc_" appended to the start of the itemId input
-    public static Supplier<Item> createDiscItem(ItemBuilder.Manager manager, String itemId, Supplier<SoundEvent> sound, int ticks) {
+    public static Supplier<Item> createDiscItem(ItemBuilder.Manager manager, String itemId, SoundRegistryEntry soundRegistryEntry) {
         String finalItemId = "music_disc_" + itemId;
         ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(manager.register.getNamespace(), finalItemId);
 
-        ResourceKey<JukeboxSong> jukeboxSong = manager.datagenInstance.modJukeboxSongProviderManager.registerJukeboxSong(loc, new JukeboxSong(
-                Holder.direct(sound.get()),
-                Component.translatable("item." + manager.register.getNamespace() + "." + finalItemId + ".desc"),
-                (float) ticks / 20,
-                7
-        ));
+        if (!soundRegistryEntry.isJukeboxSong()) throw new IllegalArgumentException("Can't register a disc item for a sound that isn't a jukebox song");
+
+        Holder<SoundEvent> sound = soundRegistryEntry.holder();
+
+        ResourceKey<JukeboxSong> jukeboxSong = soundRegistryEntry.jukeboxSong();
 
         return manager.createBuilder()
                 .withName(finalItemId)
                 .withSupplier(() -> {
-                        assert sound.get() != null;
-                        LOGGER.info(String.format("Registering new music disc... id=%s sound=%s duration=%s", finalItemId, sound.get().getLocation(), ticks));
+                        LOGGER.info(String.format("Registering new music disc... id=%s sound=%s", finalItemId, sound.getRegisteredName()));
                         return new Item(
                                 new Item.Properties()
                                         .rarity(Rarity.RARE)

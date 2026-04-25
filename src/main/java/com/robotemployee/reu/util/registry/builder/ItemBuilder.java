@@ -42,6 +42,7 @@ public class ItemBuilder {
         public final DatagenInstance datagenInstance;
         public final DeferredRegister<Item> register;
         public final List<Supplier<Item>> registeredItems = new ArrayList<>();
+        protected SoundBuilder.Manager soundManager;
 
         @Nullable
         public CreativeTabMutableRegistryEntry defaultTab;
@@ -54,6 +55,15 @@ public class ItemBuilder {
         public Manager defaultCreativeTab(CreativeTabMutableRegistryEntry defaultTab) {
             this.defaultTab = defaultTab;
             return this;
+        }
+
+        public Manager withSoundManager(SoundBuilder.Manager soundManager) {
+            this.soundManager = soundManager;
+            return this;
+        }
+
+        public SoundBuilder.Manager getSoundManager() {
+            return soundManager;
         }
 
         public void noteRegisteredItem(Supplier<Item> supplier) {

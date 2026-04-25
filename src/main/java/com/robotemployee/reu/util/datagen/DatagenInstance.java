@@ -4,7 +4,6 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
-import net.minecraft.advancements.critereon.LocationPredicate;
 import net.minecraft.advancements.critereon.PlayerTrigger;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
@@ -24,6 +23,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.JukeboxSong;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
@@ -31,24 +31,18 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParamSet;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
-import net.neoforged.neoforge.common.data.AdvancementProvider;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
-import net.neoforged.neoforge.common.data.SoundDefinition;
-import net.neoforged.neoforge.common.data.SoundDefinitionsProvider;
-import net.neoforged.neoforge.common.data.internal.NeoForgeAdvancementProvider;
+import net.neoforged.neoforge.common.data.*;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 
@@ -64,6 +58,7 @@ public class DatagenInstance {
     public final ModTagsProviderManager modTagsProviderManager = new ModTagsProviderManager();
     public final ModAdvancementProviderManager modAdvancementProviderManager = new ModAdvancementProviderManager();
     public final ModJukeboxSongProviderManager modJukeboxSongProviderManager = new ModJukeboxSongProviderManager();
+    public final ModEnchantmentProviderManager modEnchantmentProviderManager = new ModEnchantmentProviderManager();
     public DatagenInstance(String modid) {
         this.MODID = modid;
     }
@@ -515,16 +510,16 @@ public class DatagenInstance {
     }
 
     public static class ModJukeboxSongProviderManager {
-        private final ArrayList<Consumer<Consumer<Holder<JukeboxSong>>>> requests = new ArrayList<>();
+        private final ArrayList<Consumer<Consumer<JukeboxSongDataProvider.JukeboxSongRequest>>> requests = new ArrayList<>();
 
-        public void queueRequest(Consumer<Consumer<Holder<JukeboxSong>>> request) {
+        public void queueRequest(Consumer<Consumer<JukeboxSongDataProvider.JukeboxSongRequest>> request) {
             requests.add(request);
         }
 
         public ResourceKey<JukeboxSong> registerJukeboxSong(ResourceLocation loc, JukeboxSong jukeboxSong) {
             ResourceKey<JukeboxSong> resourceKey = ResourceKey.create(Registries.JUKEBOX_SONG, loc);
             queueRequest(consumer -> {
-                consumer.accept(Holder.direct(jukeboxSong));
+                consumer.accept(new JukeboxSongDataProvider.JukeboxSongRequest(resourceKey, jukeboxSong));
             });
             return resourceKey;
         }
@@ -534,16 +529,51 @@ public class DatagenInstance {
         }
 
         public static class ModJukeboxSongProcessor implements JukeboxSongDataProvider.JukeboxSongSubProvider {
-            private final List<Consumer<Consumer<Holder<JukeboxSong>>>> requests;
-            public ModJukeboxSongProcessor(List<Consumer<Consumer<Holder<JukeboxSong>>>> requests) {
+            private final List<Consumer<Consumer<JukeboxSongDataProvider.JukeboxSongRequest>>> requests;
+            public ModJukeboxSongProcessor(List<Consumer<Consumer<JukeboxSongDataProvider.JukeboxSongRequest>>> requests) {
                 this.requests = requests;
             }
 
             @Override
-            public void generate(HolderLookup.Provider provider, Consumer<Holder<JukeboxSong>> saver) {
-                for (Consumer<Consumer<Holder<JukeboxSong>>> request : requests) request.accept(saver);
+            public void generate(HolderLookup.Provider provider, Consumer<JukeboxSongDataProvider.JukeboxSongRequest> saver) {
+                for (Consumer<Consumer<JukeboxSongDataProvider.JukeboxSongRequest>> request : requests) request.accept(saver);
             }
         }
     }
 
+    public static class ModEnchantmentProviderManager {
+        protected final List<Consumer<Consumer<Holder<Enchantment>>>> requests = new ArrayList<>();
+
+        public EnchantmentProvider run(PackOutput output, CompletableFuture<HolderLookup.Provider> registries, ExistingFileHelper helper, String modid) {
+            return new EnchantmentProvider(output, registries, List.of(new ModJukeboxSongProcessor(requests)));
+        }
+
+        public void queueRequest(Consumer<Consumer<Holder<Enchantment>>> consumer) {
+            requests.add(consumer);
+        }
+
+        // silly mode
+        public void justPutDownTheSillyLittleThing(Holder<Enchantment> enchantmentHolder) {
+            queueRequest(consumer -> {
+                consumer.accept(enchantmentHolder);
+            });
+        }
+
+        // serious mode. do not use this except for in cases of emergency
+        public void registerEnchantment(Holder<Enchantment> enchantmentHolder) {
+            justPutDownTheSillyLittleThing(enchantmentHolder);
+        }
+
+        public static class ModJukeboxSongProcessor implements EnchantmentProvider.EnchantmentSubProvider {
+            public final List<Consumer<Consumer<Holder<Enchantment>>>> requests;
+            public ModJukeboxSongProcessor(List<Consumer<Consumer<Holder<Enchantment>>>> requests) {
+                this.requests = requests;
+            }
+
+            @Override
+            public void generate(HolderLookup.Provider provider, Consumer<Holder<Enchantment>> saver) {
+                for (Consumer<Consumer<Holder<Enchantment>>> request : requests) request.accept(saver);
+            }
+        }
+    }
 }

@@ -1,4 +1,4 @@
-package com.robotemployee.reu.util;
+package com.robotemployee.reu.util.tools;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
@@ -8,7 +8,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
-public class MobUtils {
+public class MobTools {
 
     static final Logger LOGGER = LogUtils.getLogger();
 

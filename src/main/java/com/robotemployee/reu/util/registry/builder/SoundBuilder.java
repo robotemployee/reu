@@ -1,12 +1,19 @@
 package com.robotemployee.reu.util.registry.builder;
 
-import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
+import com.robotemployee.reu.util.registry.entry.SoundRegistryEntry;
+import net.minecraft.core.Holder;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.item.JukeboxSong;
+import net.neoforged.neoforge.common.data.DatapackBuiltinEntriesProvider;
 import net.neoforged.neoforge.common.data.SoundDefinition;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -17,9 +24,11 @@ public class SoundBuilder {
     private SoundDefinition definition;
     private Consumer<SoundDefinition.Sound> soundModifier;
 
-    private Mode mode = Mode.NORMAL;
     private boolean isFixedRange = false;
     private float range = 0;
+
+    private BiFunction<Holder<SoundEvent>, ResourceLocation, JukeboxSong> jukeboxSongCreator;
+    private String jukeboxSongName;
 
     public static class Manager {
         public final DatagenInstance datagenInstance;
@@ -30,18 +39,27 @@ public class SoundBuilder {
             this.register = register;
             this.modid = modid;
         }
+
         public SoundBuilder createBuilder() {
-            return new SoundBuilder(datagenInstance, register, modid);
+            return new SoundBuilder(this);
+        }
+
+        public DeferredRegister<SoundEvent> getSoundRegister() {
+            return register;
+        }
+
+        public DatagenInstance getDatagenInstance() {
+            return datagenInstance;
+        }
+
+        public String getModid() {
+            return modid;
         }
     }
 
-    private final DatagenInstance datagenInstance;
-    private final DeferredRegister<SoundEvent> register;
-    private final String modid;
-    protected SoundBuilder(DatagenInstance datagenInstance, DeferredRegister<SoundEvent> register, String modid) {
-        this.datagenInstance = datagenInstance;
-        this.register = register;
-        this.modid = modid;
+    private final Manager MANAGER;
+    protected SoundBuilder(Manager manager) {
+        this.MANAGER = manager;
     }
 
     public SoundBuilder withName(String name) {
@@ -50,7 +68,7 @@ public class SoundBuilder {
     }
 
     public SoundBuilder soundLocation(String path) {
-        this.location = ResourceLocation.fromNamespaceAndPath(modid, path);
+        this.location = ResourceLocation.fromNamespaceAndPath(MANAGER.getModid(), path);
         return this;
     }
 
@@ -76,30 +94,52 @@ public class SoundBuilder {
         return this;
     }
 
-    public SoundBuilder withMode(Mode mode) {
-        this.mode = mode;
+    public SoundBuilder withJukeboxSong(String jukeboxSongName, int ticks) {
+        this.jukeboxSongCreator = (newborn, loc) -> new JukeboxSong(
+                newborn,
+                Component.translatable("item." + loc.getNamespace() + "." + loc.getPath() + ".desc"),
+                ticks / 60f,
+                5
+        );
+        this.jukeboxSongName = jukeboxSongName;
         return this;
     }
 
-    public Supplier<SoundEvent> build() {
-        checkForInsufficientParams();
-        Supplier<SoundEvent> newborn;
+    /**
+     * @param jukeboxSongCreator gives you the newborn holder for the sound event and the resource location it's under, you provide a JukeboxSong from that
+     */
+    public SoundBuilder withJukeboxSong(String jukeboxSongName, BiFunction<Holder<SoundEvent>, ResourceLocation, JukeboxSong> jukeboxSongCreator) {
+        this.jukeboxSongCreator = jukeboxSongCreator;
+        this.jukeboxSongName = jukeboxSongName;
+        return this;
+    }
 
+    public SoundRegistryEntry build() {
+        checkForInsufficientParams();
+        DeferredHolder<SoundEvent, SoundEvent> newborn;
+
+        ResourceLocation newbornResourceLocation = ResourceLocation.fromNamespaceAndPath(MANAGER.getModid(), name);
+        ResourceLocation jukeboxSongResourceLocation = newbornResourceLocation;
         if (isFixedRange) {
-            newborn = register.register(
+            newborn = MANAGER.getSoundRegister().register(
                     name,
-                    () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(modid, name), range)
+                    () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MANAGER.getModid(), name), range)
             );
         } else {
-            newborn = register.register(
+            newborn = MANAGER.getSoundRegister().register(
                     name,
-                    () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(modid, name))
+                    () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MANAGER.getModid(), name))
             );
         }
 
-        runDatagen(newborn);
+        ResourceKey<JukeboxSong> jukeboxSongKey;
+        if (jukeboxSongCreator != null) {
+            JukeboxSong song = jukeboxSongCreator.apply(newborn, jukeboxSongResourceLocation);
+            jukeboxSongKey = MANAGER.getDatagenInstance().modJukeboxSongProviderManager.registerJukeboxSong(jukeboxSongResourceLocation, song);
+        } else jukeboxSongKey = null;
 
-        return newborn;
+        runDatagen(newborn);
+        return new SoundRegistryEntry(newborn, jukeboxSongKey);
     }
 
 
@@ -109,7 +149,7 @@ public class SoundBuilder {
             if (soundModifier != null) soundModifier.accept(sound);
             definition = SoundDefinition.definition().with(sound);
         }
-        datagenInstance.modSoundProviderManager.register(newborn, definition);
+        MANAGER.getDatagenInstance().modSoundProviderManager.register(newborn, definition);
     }
 
     private void checkForInsufficientParams() {
@@ -117,16 +157,4 @@ public class SoundBuilder {
         if (location == null && definition == null) throw new IllegalStateException("Sound resource location was not provided. Needed if you aren't going to specify a sound definition, since it has to generate one for you");
     }
 
-
-    public enum Mode {
-        NORMAL(false),
-        DISC(true);
-
-        final boolean stream;
-        Mode(boolean stream) {
-
-            this.stream = stream;
-        }
-
-    }
 }

@@ -1,4 +1,4 @@
-package com.robotemployee.reu.util;
+package com.robotemployee.reu.util.tools;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 
-public class LevelUtils {
+public class LevelTools {
 
     public static final int MAX_SEARCH_DEPTH = 128;
     /**

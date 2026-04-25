@@ -1,4 +1,4 @@
-package com.robotemployee.reu.util;
+package com.robotemployee.reu.util.tools;
 
 import com.mojang.logging.LogUtils;
 import org.joml.Vector3f;

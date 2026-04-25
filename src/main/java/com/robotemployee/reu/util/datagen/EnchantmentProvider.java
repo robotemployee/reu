@@ -9,11 +9,10 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
-import net.minecraft.data.advancements.AdvancementSubProvider;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.JukeboxSong;
+import net.minecraft.world.item.enchantment.Enchantment;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -24,14 +23,13 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-// based on advancement provider im just speedrunning a port
-public class JukeboxSongDataProvider implements DataProvider {
+public class EnchantmentProvider implements DataProvider {
     private final PackOutput.PathProvider pathProvider;
-    private final List<JukeboxSongSubProvider> subProviders;
+    private final List<EnchantmentProvider.EnchantmentSubProvider> subProviders;
     private final CompletableFuture<HolderLookup.Provider> registries;
 
-    public JukeboxSongDataProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> registries, List<JukeboxSongSubProvider> subProviders) {
-        this.pathProvider = output.createRegistryElementsPathProvider(Registries.JUKEBOX_SONG);
+    public EnchantmentProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> registries, List<EnchantmentSubProvider> subProviders) {
+        this.pathProvider = output.createRegistryElementsPathProvider(Registries.ENCHANTMENT);
         this.subProviders = subProviders;
         this.registries = registries;
     }
@@ -39,22 +37,22 @@ public class JukeboxSongDataProvider implements DataProvider {
     @Override
     @NotNull
     public CompletableFuture<?> run(@NotNull CachedOutput output) {
-        return this.registries.thenCompose((provider) -> {
-            Set<ResourceKey<JukeboxSong>> set = new HashSet<>();
+        return this.registries.thenCompose((p_323115_) -> {
+            Set<ResourceKey<Enchantment>> set = new HashSet<>();
             List<CompletableFuture<?>> list = new ArrayList<>();
-            Consumer<JukeboxSongRequest> consumer = (songRequest) -> {
-                if (!set.add(songRequest.key())) {
-                    throw new IllegalStateException("Duplicate jukebox song " + songRequest.key());
+            Consumer<Holder<Enchantment>> consumer = (enchantmentHolder) -> {
+                if (!set.add(enchantmentHolder.getKey())) {
+                    throw new IllegalStateException("Duplicate enchantment " + enchantmentHolder.getKey());
                 } else {
-                    ResourceKey<JukeboxSong> resourceKey = songRequest.key();
-                    if (resourceKey == null) throw new IllegalStateException("Jukebox song holder has no ResourceKey: " + songRequest);
+                    ResourceKey<Enchantment> resourceKey = enchantmentHolder.getKey();
+                    if (resourceKey == null) throw new IllegalStateException("Enchantment holder has no ResourceKey: " + enchantmentHolder);
                     Path path = this.pathProvider.json(resourceKey.location());
-                    list.add(DataProvider.saveStable(output, provider, JukeboxSong.CODEC, Holder.direct(songRequest.song()), path));
+                    list.add(DataProvider.saveStable(output, p_323115_, Enchantment.CODEC, enchantmentHolder, path));
                 }
             };
 
-            for(JukeboxSongSubProvider jukeboxSongSubProvider : this.subProviders) {
-                jukeboxSongSubProvider.generate(provider, consumer);
+            for(EnchantmentSubProvider enchantmentSubProvider : this.subProviders) {
+                enchantmentSubProvider.generate(p_323115_, consumer);
             }
 
             return CompletableFuture.allOf(list.toArray(CompletableFuture[]::new));
@@ -64,18 +62,14 @@ public class JukeboxSongDataProvider implements DataProvider {
     @Override
     @NotNull
     public String getName() {
-        return RobotEmployeeUtils.MODID + "_jukebox_song";
+        return RobotEmployeeUtils.MODID + "_enchantment";
     }
 
-    public static interface JukeboxSongSubProvider {
-        void generate(HolderLookup.Provider provider, Consumer<JukeboxSongRequest> consumer);
+    public static interface EnchantmentSubProvider {
+        void generate(HolderLookup.Provider provider, Consumer<Holder<Enchantment>> consumer);
 
         static AdvancementHolder createPlaceholder(String location) {
             return Advancement.Builder.advancement().build(ResourceLocation.parse(location));
         }
-    }
-
-    public record JukeboxSongRequest(ResourceKey<JukeboxSong> key, JukeboxSong song) {
-
     }
 }

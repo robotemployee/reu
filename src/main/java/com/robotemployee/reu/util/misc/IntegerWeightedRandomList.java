@@ -1,9 +1,8 @@
-package com.robotemployee.reu.util;
+package com.robotemployee.reu.util.misc;
 
 import net.minecraft.util.RandomSource;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map;
 
 public class IntegerWeightedRandomList<K> extends ArrayList<Map.Entry<K, Integer>> {
