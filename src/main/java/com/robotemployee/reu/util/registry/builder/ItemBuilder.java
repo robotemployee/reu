@@ -3,11 +3,14 @@ package com.robotemployee.reu.util.registry.builder;
 import com.robotemployee.reu.capability.IHasCapability;
 import com.robotemployee.reu.util.registry.entry.CreativeTabMutableRegistryEntry;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
+import com.robotemployee.reu.util.registry.entry.ItemRegistryEntry;
+import net.minecraft.core.Holder;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -110,15 +113,15 @@ public class ItemBuilder {
         return this;
     }
 
-    public Supplier<Item> build() {
+    public ItemRegistryEntry build() {
         checkForInsufficientParams();
-        Supplier<Item> newborn = register.register(name, supplier);
-        if (creativeModeTab != null) creativeModeTab.addItem(newborn);
-        if (doDatagen) datagenConsumer.accept(datagenInstance, newborn);
+        DeferredHolder<Item, Item> newborn = register.register(name, supplier);
+        if (creativeModeTab != null) creativeModeTab.addItem(newborn::value);
+        if (doDatagen) datagenConsumer.accept(datagenInstance, newborn::value);
         for (Supplier<TagKey<Item>> tag : tags) {
-            datagenInstance.addTagToItem(newborn, tag);
+            datagenInstance.addTagToItem(newborn::value, tag);
         }
-        return newborn;
+        return new ItemRegistryEntry(newborn);
     }
 
     public ItemBuilder addTag(Supplier<TagKey<Item>> tagSupplier) {

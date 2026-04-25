@@ -8,6 +8,7 @@ import net.minecraft.advancements.critereon.PlayerTrigger;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
+import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.DataGenerator;
@@ -15,6 +16,7 @@ import net.minecraft.data.PackOutput;
 import net.minecraft.data.loot.LootTableProvider;
 import net.minecraft.data.loot.LootTableSubProvider;
 import net.minecraft.data.tags.TagsProvider;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -63,10 +65,20 @@ public class DatagenInstance {
         this.MODID = modid;
     }
 
+    protected CompletableFuture<HolderLookup.Provider> lookupProvider;
 
+    public HolderLookup.Provider getLookupProvider() {
+        if (lookupProvider == null) throw new IllegalStateException("can't ask for holder lookup provider before GatherDataEvent");
+        return lookupProvider.join();
+    }
 
     // you need to call this during the GatherDataEvent for your mod
     public void run(GatherDataEvent event) {
+        this.lookupProvider = event.getLookupProvider();
+
+        RegistrySetBuilder builder = new RegistrySetBuilder()
+                .add(Registries.JUKEBOX_SONG, modJukeboxSongProviderManager::bootstrap)
+                .add(Registries.ENCHANTMENT, modEnchantmentProviderManager::bootstrap);
         LOGGER.debug("Received data generation event");
 
         DataGenerator gen = event.getGenerator();
@@ -78,7 +90,7 @@ public class DatagenInstance {
         gen.addProvider(event.includeServer(), modLootTableProviderManager.run(gen.getPackOutput(), event.getLookupProvider()));
 
         gen.addProvider(event.includeServer(), modAdvancementProviderManager.run(gen.getPackOutput(), event.getLookupProvider(), event.getExistingFileHelper()));
-        gen.addProvider(true, modJukeboxSongProviderManager.run(gen.getPackOutput(), event.getLookupProvider(), event.getExistingFileHelper(), MODID));
+        gen.addProvider(event.includeServer(), new DatapackBuiltinEntriesProvider(gen.getPackOutput(), event.getLookupProvider(), builder, Set.of(MODID)));
     }
 
 
@@ -364,15 +376,21 @@ public class DatagenInstance {
         }
 
         public ResourceLocation simpleItemObtainedAdvancement(ResourceLocation loc, Supplier<Item> icon, Component desc, @Nullable ResourceLocation parent) {
+            return simpleItemObtainedAdvancement(loc, icon, () -> desc, parent);
+        }
+
+        public ResourceLocation simpleItemObtainedAdvancement(ResourceLocation loc, Supplier<Item> icon, Supplier<Component> desc, @Nullable ResourceLocation parent) {
+            return simpleItemObtainedAdvancement(loc, icon, () -> Component.translatable(icon.get().getDescriptionId() + ".desc"), desc, parent);
+        }
+
+        public ResourceLocation simpleItemObtainedAdvancement(ResourceLocation loc, Supplier<Item> icon, Supplier<Component> title, Supplier<Component> desc, @Nullable ResourceLocation parent) {
 
             queueRequest((consumer) -> {
                 Item item = icon.get();
 
-                Component title = Component.translatable(item.getDescriptionId() + ".desc");
-
                 //LOGGER.info("Root is " + ROOT + " and rootloc is " + ROOT_LOCATION);
 
-                record(createNormalAdvancement(icon, title, desc, parent)
+                record(createNormalAdvancement(icon, title.get(), desc.get(), parent)
                         .addCriterion("has_item", InventoryChangeTrigger.TriggerInstance.hasItems(icon.get()))
                         .save(consumer, loc.toString()));
 
@@ -510,70 +528,58 @@ public class DatagenInstance {
     }
 
     public static class ModJukeboxSongProviderManager {
-        private final ArrayList<Consumer<Consumer<JukeboxSongDataProvider.JukeboxSongRequest>>> requests = new ArrayList<>();
+        protected List<SongRequest> requests = new ArrayList<>();
 
-        public void queueRequest(Consumer<Consumer<JukeboxSongDataProvider.JukeboxSongRequest>> request) {
-            requests.add(request);
+        public ResourceKey<JukeboxSong> registerJukeboxSong(ResourceLocation loc, JukeboxSong song) {
+            ResourceKey<JukeboxSong> key = ResourceKey.create(Registries.JUKEBOX_SONG, loc);
+            queueRequest(new SongRequest(key, song));
+            return key;
         }
 
-        public ResourceKey<JukeboxSong> registerJukeboxSong(ResourceLocation loc, JukeboxSong jukeboxSong) {
-            ResourceKey<JukeboxSong> resourceKey = ResourceKey.create(Registries.JUKEBOX_SONG, loc);
-            queueRequest(consumer -> {
-                consumer.accept(new JukeboxSongDataProvider.JukeboxSongRequest(resourceKey, jukeboxSong));
-            });
-            return resourceKey;
+        public void queueRequest(SongRequest songRequest) {
+            requests.add(songRequest);
         }
 
-        public JukeboxSongDataProvider run(PackOutput output, CompletableFuture<HolderLookup.Provider> registries, ExistingFileHelper helper, String modid) {
-            return new JukeboxSongDataProvider(output, registries, List.of(new ModJukeboxSongProcessor(requests)));
-        }
-
-        public static class ModJukeboxSongProcessor implements JukeboxSongDataProvider.JukeboxSongSubProvider {
-            private final List<Consumer<Consumer<JukeboxSongDataProvider.JukeboxSongRequest>>> requests;
-            public ModJukeboxSongProcessor(List<Consumer<Consumer<JukeboxSongDataProvider.JukeboxSongRequest>>> requests) {
-                this.requests = requests;
+        public void bootstrap(BootstrapContext<JukeboxSong> context) {
+            for (SongRequest request : requests) {
+                context.register(request.key(), request.song());
             }
+        }
 
-            @Override
-            public void generate(HolderLookup.Provider provider, Consumer<JukeboxSongDataProvider.JukeboxSongRequest> saver) {
-                for (Consumer<Consumer<JukeboxSongDataProvider.JukeboxSongRequest>> request : requests) request.accept(saver);
-            }
+        public record SongRequest(ResourceKey<JukeboxSong> key, JukeboxSong song) {
+
         }
     }
 
-    public static class ModEnchantmentProviderManager {
-        protected final List<Consumer<Consumer<Holder<Enchantment>>>> requests = new ArrayList<>();
 
-        public EnchantmentProvider run(PackOutput output, CompletableFuture<HolderLookup.Provider> registries, ExistingFileHelper helper, String modid) {
-            return new EnchantmentProvider(output, registries, List.of(new ModJukeboxSongProcessor(requests)));
+
+    public static class ModEnchantmentProviderManager {
+        protected final List<Consumer<Consumer<EnchantmentRequest>>> requests = new ArrayList<>();
+
+        public void bootstrap(BootstrapContext<Enchantment> context) {
+            requests.forEach(consumer -> consumer.accept(request -> context.register(request.key(), request.enchantment().get())));
         }
 
-        public void queueRequest(Consumer<Consumer<Holder<Enchantment>>> consumer) {
+        public void queueRequest(Consumer<Consumer<EnchantmentRequest>> consumer) {
             requests.add(consumer);
         }
 
         // silly mode
-        public void justPutDownTheSillyLittleThing(Holder<Enchantment> enchantmentHolder) {
+        public ResourceKey<Enchantment> justPutDownTheSillyLittleThing(ResourceLocation location, Supplier<Enchantment> enchantment) {
+            ResourceKey<Enchantment> key = ResourceKey.create(Registries.ENCHANTMENT, location);
             queueRequest(consumer -> {
-                consumer.accept(enchantmentHolder);
+                consumer.accept(new EnchantmentRequest(key, enchantment));
             });
+            return key;
         }
 
         // serious mode. do not use this except for in cases of emergency
-        public void registerEnchantment(Holder<Enchantment> enchantmentHolder) {
-            justPutDownTheSillyLittleThing(enchantmentHolder);
+        public void registerEnchantment(ResourceLocation location, Supplier<Enchantment> enchantment) {
+            justPutDownTheSillyLittleThing(location, enchantment);
         }
 
-        public static class ModJukeboxSongProcessor implements EnchantmentProvider.EnchantmentSubProvider {
-            public final List<Consumer<Consumer<Holder<Enchantment>>>> requests;
-            public ModJukeboxSongProcessor(List<Consumer<Consumer<Holder<Enchantment>>>> requests) {
-                this.requests = requests;
-            }
+        public record EnchantmentRequest(ResourceKey<Enchantment> key, Supplier<Enchantment> enchantment) {
 
-            @Override
-            public void generate(HolderLookup.Provider provider, Consumer<Holder<Enchantment>> saver) {
-                for (Consumer<Consumer<Holder<Enchantment>>> request : requests) request.accept(saver);
-            }
         }
     }
 }

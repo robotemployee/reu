@@ -3,6 +3,7 @@ package com.robotemployee.reu.util.registry.tools;
 import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.util.registry.builder.ItemBuilder;
+import com.robotemployee.reu.util.registry.entry.ItemRegistryEntry;
 import com.robotemployee.reu.util.registry.entry.SoundRegistryEntry;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -32,7 +33,7 @@ public class ItemTools {
 
     static Logger LOGGER = LogUtils.getLogger();
 
-    public static Supplier<Item> createSimpleItem(ItemBuilder.Manager manager, String id) {
+    public static ItemRegistryEntry createSimpleItem(ItemBuilder.Manager manager, String id) {
         return manager.createBuilder()
                 .withName(id)
                 .withSupplier(() -> new Item(
@@ -41,7 +42,7 @@ public class ItemTools {
                 .build();
     }
 
-    public static Supplier<Item> createSimpleFoodItem(ItemBuilder.Manager manager, String id, FoodProperties properties) {
+    public static ItemRegistryEntry createSimpleFoodItem(ItemBuilder.Manager manager, String id, FoodProperties properties) {
         return manager.createBuilder()
                 .withName(id)
                 .withSupplier(() -> new Item(
@@ -51,7 +52,7 @@ public class ItemTools {
     }
 
     // note that the resulting item id will have "music_disc_" appended to the start of the itemId input
-    public static Supplier<Item> createDiscItem(ItemBuilder.Manager manager, String itemId, SoundRegistryEntry soundRegistryEntry) {
+    public static ItemRegistryEntry createDiscItem(ItemBuilder.Manager manager, String itemId, SoundRegistryEntry soundRegistryEntry) {
         String finalItemId = "music_disc_" + itemId;
         ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(manager.register.getNamespace(), finalItemId);
 

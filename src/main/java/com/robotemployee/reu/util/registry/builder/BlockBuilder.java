@@ -4,6 +4,8 @@ import com.mojang.logging.LogUtils;
 import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import com.robotemployee.reu.util.registry.entry.BlockRegistryEntry;
+import com.robotemployee.reu.util.registry.entry.ItemRegistryEntry;
+import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -75,7 +77,7 @@ public class BlockBuilder {
 
             if (!hasCreativeTab) itemBuilder.noCreativeTab();
 
-            Supplier<Item> item = itemBuilder.build();
+            ItemRegistryEntry item = itemBuilder.build();
             return new BlockRegistryEntry(block, item);
         }
 

@@ -1,35 +1,27 @@
 package com.robotemployee.reu.util.registry.builder;
 
 import com.robotemployee.reu.util.datagen.DatagenInstance;
+import com.robotemployee.reu.util.registry.entry.EnchantmentRegistryEntry;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class EnchantmentBuilder {
 
     public final Manager MANAGER;
-    public Enchantment.EnchantmentDefinition definition;
+    public Supplier<Enchantment.Builder> enchantment;
     public String name;
 
     protected EnchantmentBuilder(Manager manager) {
         this.MANAGER = manager;
     }
 
-    public static class Manager {
-        protected final DatagenInstance datagenInstance;
-        protected final DeferredRegister<Enchantment> register;
-        public Manager(DatagenInstance datagenInstance, DeferredRegister<Enchantment> register) {
-            this.datagenInstance = datagenInstance;
-            this.register = register;
-        }
-
-        public DeferredRegister<Enchantment> getRegister() {
-            return register;
-        }
-
+    public record Manager(DatagenInstance datagenInstance) {
         public DatagenInstance getDatagenInstance() {
             return datagenInstance;
         }
@@ -39,8 +31,8 @@ public class EnchantmentBuilder {
         }
     }
 
-    public EnchantmentBuilder withDefinition(Enchantment.EnchantmentDefinition definition) {
-        this.definition = definition;
+    public EnchantmentBuilder withEnchantment(Supplier<Enchantment.Builder> enchantment) {
+        this.enchantment = enchantment;
         return this;
     }
 
@@ -49,15 +41,9 @@ public class EnchantmentBuilder {
         return this;
     }
 
-    public Supplier<Enchantment> build() {
-        DeferredHolder<Enchantment, Enchantment> newborn = MANAGER.getRegister().register(name, () ->
-                Enchantment
-                        .enchantment(definition)
-                        .build(ResourceLocation.fromNamespaceAndPath(MANAGER.getRegister().getNamespace(), name))
-        );
+    public EnchantmentRegistryEntry build() {
+        ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(MANAGER.datagenInstance().MODID, name);
 
-        MANAGER.getDatagenInstance().modEnchantmentProviderManager.justPutDownTheSillyLittleThing(newborn);
-
-        return newborn;
+        return new EnchantmentRegistryEntry(MANAGER.getDatagenInstance().modEnchantmentProviderManager.justPutDownTheSillyLittleThing(loc, () -> enchantment.get().build(loc)));
     }
 }

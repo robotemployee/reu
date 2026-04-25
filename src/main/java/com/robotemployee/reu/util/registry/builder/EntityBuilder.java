@@ -1,10 +1,12 @@
 package com.robotemployee.reu.util.registry.builder;
 
 import com.mojang.logging.LogUtils;
+import com.robotemployee.reu.util.registry.entry.ItemRegistryEntry;
 import com.robotemployee.reu.util.registry.tools.EntityTools;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import com.robotemployee.reu.util.registry.entry.EntityRegistryEntry;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.core.Holder;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.item.Item;
@@ -120,7 +122,7 @@ public class EntityBuilder<T extends Entity> {
             //(RegistryObject<EntityType<? extends LivingEntity>>)(Object)newborn, () -> attributesBuilderSupplier.get().build())
         }
 
-        Supplier<Item> egg = null;
+        ItemRegistryEntry egg;
         if (hasEgg) {
             egg = itemManager.createBuilder()
                     .withName(name + "_spawn_egg")
@@ -129,7 +131,7 @@ public class EntityBuilder<T extends Entity> {
                     )
                     .customDatagen(DatagenInstance::spawnEgg)
                     .build();
-        }
+        } else egg = null;
 
         //EntityRegistryEntry<T> entry = new EntityRegistryEntry<>(newborn);
 

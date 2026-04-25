@@ -5,7 +5,9 @@ import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import com.robotemployee.reu.util.registry.entry.BlockRegistryEntry;
 import com.robotemployee.reu.util.registry.entry.FluidRegistryEntry;
+import com.robotemployee.reu.util.registry.entry.ItemRegistryEntry;
 import com.robotemployee.reu.util.registry.generics.FilledBottleItem;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BucketItem;
@@ -125,28 +127,28 @@ public class FluidBuilder {
         }
 
 
-        Supplier<Item> bucket = null;
-        Supplier<Item> bottle = null;
-        BlockRegistryEntry block = null;
+        ItemRegistryEntry bucket;
+        ItemRegistryEntry bottle;
+        BlockRegistryEntry block;
 
         if (hasBucket) {
             Supplier<Item> supplier = getBucketSupplier(sourceFluid);
             bucket = itemManager.createBuilder().withName(name + "_bucket").withSupplier(supplier).build();
             // fixme FluidTools.bucketLookupTable.put(sourceFluid, bucket);
             queueBucketDatagen(bucket);
-        }
+        } else bucket = null;
         if (hasBottle) {
             Supplier<Item> supplier = getBottleSupplier(sourceFluid);
             bottle = itemManager.createBuilder().withName(name + "_bottle").withSupplier(supplier).build();
             // fixme FluidTools.bottleLookupTable.put(sourceFluid, bottle);
             queueBottleDatagen(bottle);
-        }
+        } else bottle = null;
         if (hasBlock) {
             block = blockManager.createBuilder().withName(name).withSupplier(getBlockSupplier(() -> (BaseFlowingFluid.Source)sourceFluid.get())).noCreativeTab().build();
             //block = BLOCKS.register(name, getBlockSupplier());
-        }
+        } else block = null;
 
-        return new FluidRegistryEntry(flowingFluid, sourceFluid, block, bucket, bottle);
+        return new FluidRegistryEntry(flowingFluid, sourceFluid, block, hasBucket ? bucket : null, hasBottle ? bottle : null);
     }
 
     // Optional stuff

@@ -8,7 +8,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.JukeboxSong;
-import net.neoforged.neoforge.common.data.DatapackBuiltinEntriesProvider;
 import net.neoforged.neoforge.common.data.SoundDefinition;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -97,8 +96,8 @@ public class SoundBuilder {
     public SoundBuilder withJukeboxSong(String jukeboxSongName, int ticks) {
         this.jukeboxSongCreator = (newborn, loc) -> new JukeboxSong(
                 newborn,
-                Component.translatable("item." + loc.getNamespace() + "." + loc.getPath() + ".desc"),
-                ticks / 60f,
+                Component.translatable("sound." + loc.getNamespace() + "." + loc.getPath() + ".desc"),
+                ticks / 20f,
                 5
         );
         this.jukeboxSongName = jukeboxSongName;
@@ -118,28 +117,39 @@ public class SoundBuilder {
         checkForInsufficientParams();
         DeferredHolder<SoundEvent, SoundEvent> newborn;
 
-        ResourceLocation newbornResourceLocation = ResourceLocation.fromNamespaceAndPath(MANAGER.getModid(), name);
-        ResourceLocation jukeboxSongResourceLocation = newbornResourceLocation;
+        ResourceLocation identifier = ResourceLocation.fromNamespaceAndPath(MANAGER.getModid(), name);
+        ResourceLocation jukeboxSongLoc = identifier;
+
+        // if i ever look back here in the future
+        // note the distinction between the sound file location that is used for like. where the sound file is and is consumed in the datagen
+        // and the sound location that is used for its identifier like how it shows up ingame and as a lang entry
+
         if (isFixedRange) {
             newborn = MANAGER.getSoundRegister().register(
-                    name,
-                    () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MANAGER.getModid(), name), range)
+                    identifier.getPath(),
+                    () -> SoundEvent.createFixedRangeEvent(identifier, range)
             );
         } else {
             newborn = MANAGER.getSoundRegister().register(
-                    name,
-                    () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MANAGER.getModid(), name))
+                    identifier.getPath(),
+                    () -> SoundEvent.createVariableRangeEvent(identifier)
             );
         }
 
         ResourceKey<JukeboxSong> jukeboxSongKey;
         if (jukeboxSongCreator != null) {
-            JukeboxSong song = jukeboxSongCreator.apply(newborn, jukeboxSongResourceLocation);
-            jukeboxSongKey = MANAGER.getDatagenInstance().modJukeboxSongProviderManager.registerJukeboxSong(jukeboxSongResourceLocation, song);
+            JukeboxSong song = jukeboxSongCreator.apply(newborn, jukeboxSongLoc);
+            jukeboxSongKey = MANAGER.getDatagenInstance().modJukeboxSongProviderManager.registerJukeboxSong(jukeboxSongLoc, song);
         } else jukeboxSongKey = null;
 
         runDatagen(newborn);
         return new SoundRegistryEntry(newborn, jukeboxSongKey);
+    }
+
+    protected ResourceLocation getSoundFileLocation() {
+        if (location != null) return location;
+        if (name == null) throw new IllegalStateException("Name nor location present when trying to get resource location. Don't try to get the resource location outside of build()");
+        return ResourceLocation.fromNamespaceAndPath(MANAGER.getModid(), name);
     }
 
 
@@ -154,7 +164,7 @@ public class SoundBuilder {
 
     private void checkForInsufficientParams() {
         if (name == null) throw new IllegalStateException("Sound name was not provided");
-        if (location == null && definition == null) throw new IllegalStateException("Sound resource location was not provided. Needed if you aren't going to specify a sound definition, since it has to generate one for you");
+        if (location == null && definition == null) throw new IllegalStateException("Sound resource location was not provided. Needed if you aren't going to specify a sound definition. Also, you didn't specify a sound definition.");
     }
 
 }
