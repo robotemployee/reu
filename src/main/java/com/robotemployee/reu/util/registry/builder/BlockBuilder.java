@@ -1,13 +1,10 @@
 package com.robotemployee.reu.util.registry.builder;
 
 import com.mojang.logging.LogUtils;
-import com.robotemployee.reu.core.RobotEmployeeUtils;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import com.robotemployee.reu.util.registry.entry.BlockRegistryEntry;
 import com.robotemployee.reu.util.registry.entry.ItemRegistryEntry;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -15,6 +12,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.slf4j.Logger;
 
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -25,6 +23,10 @@ public class BlockBuilder {
     private boolean hasCreativeTab = true;
     private String name;
     private Supplier<? extends Block> supplier;
+    private boolean doDatagen = true;
+    private BiConsumer<DatagenInstance, Supplier<Block>> datagenConsumer = (datagen, blockSupplier) -> {
+        datagen.modBlockModelProviderManager.cubeAll(blockSupplier);
+    };
 
     private ItemBuilder itemBuilder;
 
@@ -76,6 +78,17 @@ public class BlockBuilder {
         return this;
     }
 
+    public BlockBuilder noDatagen() {
+        this.doDatagen = false;
+        return this;
+    }
+
+    public BlockBuilder withCustomDatagen(BiConsumer<DatagenInstance, Supplier<Block>> datagenConsumer) {
+        if (!doDatagen) throw new IllegalStateException("Specified that datagen shouldn't be done, but afterwards attempted to designate custom datagen");
+        this.datagenConsumer = datagenConsumer;
+        return this;
+    }
+
     // Build
 
     public BlockRegistryEntry build() {
@@ -93,6 +106,10 @@ public class BlockBuilder {
 
             ItemRegistryEntry item = itemBuilder.build();
             return new BlockRegistryEntry(block, item);
+        }
+
+        if (doDatagen) {
+            datagenConsumer.accept(MANAGER.getModInformation().getDatagenInstance(), block);
         }
 
         return new BlockRegistryEntry(block);

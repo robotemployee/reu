@@ -5,7 +5,6 @@ import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.advancements.critereon.PlayerTrigger;
-import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistrySetBuilder;
@@ -26,11 +25,13 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.JukeboxSong;
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSet;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
+import net.neoforged.neoforge.client.model.generators.BlockModelProvider;
 import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
 import net.neoforged.neoforge.common.data.*;
@@ -55,6 +56,7 @@ public class DatagenInstance {
     public final String MODID;
 
     public final ModItemModelProviderManager modItemModelProviderManager = new ModItemModelProviderManager();
+    public final ModBlockModelProviderManager modBlockModelProviderManager = new ModBlockModelProviderManager();
     public final ModLootTableProviderManager modLootTableProviderManager = new ModLootTableProviderManager();
     public final ModSoundProviderManager modSoundProviderManager = new ModSoundProviderManager();
     public final ModTagsProviderManager modTagsProviderManager = new ModTagsProviderManager();
@@ -84,6 +86,7 @@ public class DatagenInstance {
         DataGenerator gen = event.getGenerator();
 
         gen.addProvider(event.includeClient(), modItemModelProviderManager.run(gen.getPackOutput(), event.getExistingFileHelper(), MODID));
+        gen.addProvider(event.includeServer() || event.includeClient(), modBlockModelProviderManager.run(gen.getPackOutput(), event.getExistingFileHelper(), MODID));
         gen.addProvider(event.includeClient(), modSoundProviderManager.run(gen.getPackOutput(), event.getExistingFileHelper(), MODID));
         modTagsProviderManager.attach(event, MODID);
 
@@ -156,13 +159,34 @@ public class DatagenInstance {
 
     public void addTagToItem(Supplier<Item> itemSupplier, Supplier<TagKey<Item>> tagSupplier) {
         modTagsProviderManager.queueRequest(Registries.ITEM, (provider -> {
-            ResourceKey<Item> resourceKey = BuiltInRegistries.ITEM.getResourceKey(itemSupplier.get()).orElse(null);
+            ResourceKey<Item> resourceKey = BuiltInRegistries.ITEM.getResourceKey(itemSupplier.get()).orElseThrow();
             provider.tag(tagSupplier.get()).add(resourceKey);
         }));
     }
 
-    public void addTagToTag(Supplier<TagKey<Item>> addition, Supplier<TagKey<Item>> reciever) {
+    public void addTagToItem(Item item, TagKey<Item> tag) {
         modTagsProviderManager.queueRequest(Registries.ITEM, (provider -> {
+            ResourceKey<Item> resourceKey = BuiltInRegistries.ITEM.getResourceKey(item).orElseThrow();
+            provider.tag(tag).add(resourceKey);
+        }));
+    }
+
+    public void addTagToBlock(Supplier<Block> blockSupplier, Supplier<TagKey<Block>> tagSupplier) {
+        modTagsProviderManager.queueRequest(Registries.BLOCK, (provider -> {
+            ResourceKey<Block> resourceKey = BuiltInRegistries.BLOCK.getResourceKey(blockSupplier.get()).orElseThrow();
+            provider.tag(tagSupplier.get()).add(resourceKey);
+        }));
+    }
+
+    public void addTagToBlock(Block block, TagKey<Block> tag) {
+        modTagsProviderManager.queueRequest(Registries.BLOCK, (provider -> {
+            ResourceKey<Block> resourceKey = BuiltInRegistries.BLOCK.getResourceKey(block).orElseThrow();
+            provider.tag(tag).add(resourceKey);
+        }));
+    }
+
+    public <T> void addTagToTag(ResourceKey<Registry<T>> registry,  Supplier<TagKey<T>> addition, Supplier<TagKey<T>> reciever) {
+        modTagsProviderManager.queueRequest(registry, (provider -> {
             provider.tag(reciever.get()).addTag(addition.get());
         }));
     }
@@ -196,12 +220,67 @@ public class DatagenInstance {
 
             @Override
             protected void registerModels() {
-                LOGGER.debug("Generating models... Amount of requests: " + requests.size());
+                LOGGER.debug("Generating item models... Amount of requests: " + requests.size());
                 for (Consumer<ModItemModelProvider> request : requests) request.accept(this);
-                LOGGER.debug("Finished generating models!");
+                LOGGER.debug("Finished generating item models!");
             }
         }
 
+    }
+
+    public static class ModBlockModelProviderManager {
+        public ArrayList<Consumer<ModBlockModelProvider>> requests = new ArrayList<>();
+
+        public void basic(Supplier<Block> blockSupplier) {
+            cubeAll(blockSupplier);
+        }
+
+        public void cubeAll(Supplier<Block> blockSupplier) {
+            queueRequest(provider -> {
+                ResourceLocation blockLoc = BuiltInRegistries.BLOCK.getKey(blockSupplier.get());
+                ResourceLocation textureLoc = ResourceLocation.fromNamespaceAndPath(blockLoc.getNamespace(), "block/" + blockLoc.getPath());
+                LOGGER.info("Creating basic block model for " + blockSupplier.get().getDescriptionId() + ", looking for texture at '" + textureLoc + "'");
+                provider.cubeAll(blockLoc.getPath(), textureLoc);
+            });
+        }
+
+        public void orientableWithBottom(Supplier<Block> blockSupplier) {
+            queueRequest(provider -> {
+                ResourceLocation blockLoc = BuiltInRegistries.BLOCK.getKey(blockSupplier.get());
+                ResourceLocation textureLoc = ResourceLocation.fromNamespaceAndPath(blockLoc.getNamespace(), "block/" + blockLoc.getPath());
+                provider.orientableWithBottom(blockLoc.getPath(),
+                        textureLoc.withSuffix("_side"),
+                        textureLoc.withSuffix("_front"),
+                        textureLoc.withSuffix("_bottom"),
+                        textureLoc.withSuffix("_top")
+                );
+            });
+        }
+
+        public void queueRequest(Consumer<ModBlockModelProvider> request) {
+            requests.add(request);
+        }
+
+        public ModBlockModelProvider run(PackOutput output, ExistingFileHelper existingFileHelper, String modid) {
+            ModBlockModelProvider provider = new ModBlockModelProvider(output, existingFileHelper, modid, requests);
+            provider.registerModels();
+            return provider;
+        }
+
+        public static class ModBlockModelProvider extends BlockModelProvider {
+            private final ArrayList<Consumer<ModBlockModelProvider>> requests;
+            public ModBlockModelProvider(PackOutput output, ExistingFileHelper existingFileHelper, String modid, ArrayList<Consumer<ModBlockModelProvider>> requests) {
+                super(output, modid, existingFileHelper);
+                this.requests = requests;
+            }
+
+            @Override
+            protected void registerModels() {
+                LOGGER.debug("Generating block models... Amount of requests: " + requests.size());
+                for (Consumer<ModBlockModelProviderManager.ModBlockModelProvider> request : requests) request.accept(this);
+                LOGGER.debug("Finished generating block models!");
+            }
+        }
     }
 
     public static class ModTagsProviderManager {
@@ -521,7 +600,7 @@ public class DatagenInstance {
             }
 
             @Override
-            public void add(Supplier<SoundEvent> soundEvent, SoundDefinition definition) {
+            public void add(@NotNull Supplier<SoundEvent> soundEvent, @NotNull SoundDefinition definition) {
                 super.add(soundEvent, definition);
             }
         }
