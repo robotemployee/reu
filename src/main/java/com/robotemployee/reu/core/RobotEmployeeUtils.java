@@ -72,6 +72,8 @@ public class RobotEmployeeUtils
 
         // Register our mod's ForgeConfigSpec so that Forge can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+
+
     }
 
 
@@ -81,9 +83,10 @@ public class RobotEmployeeUtils
     }
 
     // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
+    /*
     @OnlyIn(Dist.CLIENT)
-    @EventBusSubscriber
     public static class ClientModEvents {
+
         private static final ArrayList<Consumer<FMLClientSetupEvent>> CLIENT_SETUP_REQUESTS = new ArrayList<>();
 
         public static <T extends Entity> void addCustomRenderer(Supplier<EntityType<? extends T>> entity, EntityRendererProvider<T> renderer) {
@@ -101,4 +104,6 @@ public class RobotEmployeeUtils
             //EntityRenderers.register(ModEntities.DEVIL.get(), DevilRenderer::new);
         }
     }
+
+     */
 }

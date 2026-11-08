@@ -54,7 +54,7 @@ public class ItemTools {
     // note that the resulting item id will have "music_disc_" appended to the start of the itemId input
     public static ItemRegistryEntry createDiscItem(ItemBuilder.Manager manager, String itemId, SoundRegistryEntry soundRegistryEntry) {
         String finalItemId = "music_disc_" + itemId;
-        ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(manager.register.getNamespace(), finalItemId);
+        ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(manager.getModInformation().getNamespace(), finalItemId);
 
         if (!soundRegistryEntry.isJukeboxSong()) throw new IllegalArgumentException("Can't register a disc item for a sound that isn't a jukebox song");
 

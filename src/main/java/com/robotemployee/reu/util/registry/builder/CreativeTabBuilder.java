@@ -1,9 +1,11 @@
 package com.robotemployee.reu.util.registry.builder;
 
 import com.robotemployee.reu.util.registry.entry.CreativeTabMutableRegistryEntry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.function.Supplier;
@@ -14,16 +16,22 @@ public class CreativeTabBuilder {
     private Supplier<ItemStack> iconSupplier;
     private Component title;
 
-    public static class Manager {
-        public final DeferredRegister<CreativeModeTab> register;
-        public final String modid;
-        public Manager(DeferredRegister<CreativeModeTab> register, String modid) {
-            this.register = register;
-            this.modid = modid;
+    public static class Manager implements IManager {
+        protected final DeferredRegister<CreativeModeTab> register;
+        protected final ModInformation modInformation;
+
+        public Manager(ModInformation modInformation) {
+            this.register = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, modInformation.getNamespace());
+            this.modInformation = modInformation;
         }
 
         public CreativeTabBuilder createBuilder() {
-            return new CreativeTabBuilder(register, modid);
+            return new CreativeTabBuilder(register, modInformation.getNamespace());
+        }
+
+        @Override
+        public void register(IEventBus modEventBus) {
+            register.register(modEventBus);
         }
     }
 

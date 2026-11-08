@@ -6,10 +6,12 @@ import com.robotemployee.reu.util.datagen.DatagenInstance;
 import com.robotemployee.reu.util.registry.entry.BlockRegistryEntry;
 import com.robotemployee.reu.util.registry.entry.ItemRegistryEntry;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.slf4j.Logger;
 
@@ -26,29 +28,42 @@ public class BlockBuilder {
 
     private ItemBuilder itemBuilder;
 
-    public static class Manager {
-        public final DatagenInstance datagenInstance;
-        public final DeferredRegister<Block> blockRegister;
-        public final ItemBuilder.Manager itemManager;
+    public static class Manager implements IManager {
+        protected final DeferredRegister<Block> blockRegister;
+        protected final ItemBuilder.Manager itemManager;
+        protected final ModInformation modInformation;
 
-        public Manager(DatagenInstance datagenInstance, DeferredRegister<Block> blockRegister, ItemBuilder.Manager itemManager) {
-            this.datagenInstance = datagenInstance;
-            this.blockRegister = blockRegister;
+        public Manager(ModInformation modInformation, ItemBuilder.Manager itemManager) {
+            this.modInformation = modInformation;
+            this.blockRegister = DeferredRegister.create(Registries.BLOCK, modInformation.getNamespace());
             this.itemManager = itemManager;
         }
 
         public BlockBuilder createBuilder() {
-            return new BlockBuilder(datagenInstance, blockRegister, itemManager);
+            return new BlockBuilder(this);
+        }
+
+        public DeferredRegister<Block> getRegister() {
+            return blockRegister;
+        }
+
+        public ItemBuilder.Manager getItemManager() {
+            return itemManager;
+        }
+
+        public ModInformation getModInformation() {
+            return modInformation;
+        }
+
+        @Override
+        public void register(IEventBus modEventBus) {
+            blockRegister.register(modEventBus);
         }
     }
 
-    private final DatagenInstance datagenInstance;
-    private final DeferredRegister<Block> register;
-    private final ItemBuilder.Manager itemManager;
-    private BlockBuilder(DatagenInstance datagenInstance, DeferredRegister<Block> register, ItemBuilder.Manager itemManager) {
-        this.datagenInstance = datagenInstance;
-        this.register = register;
-        this.itemManager = itemManager;
+    private final Manager MANAGER;
+    private BlockBuilder(Manager manager) {
+        this.MANAGER = manager;
     }
 
     public BlockBuilder withName(String name) {
@@ -64,13 +79,12 @@ public class BlockBuilder {
     // Build
 
     public BlockRegistryEntry build() {
-        DeferredRegister<Block> BLOCKS = register;
 
         checkForInsufficientParams();
-        Supplier<Block> block = BLOCKS.register(getName(), getSupplier());
+        Supplier<Block> block = MANAGER.getRegister().register(getName(), getSupplier());
 
         if (hasItem()) {
-            itemBuilder = itemManager.createBuilder();
+            itemBuilder = MANAGER.getItemManager().createBuilder();
             //RegistryObject<Item> item = ITEMS.register(getName(), () -> new BlockItem(block.get(), new Item.Properties()));
             if (!itemBuilder.hasName()) itemBuilder.withName(getName());
             if (!itemBuilder.hasSupplier()) itemBuilder.withSupplier(() -> new BlockItem(block.get(), new Item.Properties()));

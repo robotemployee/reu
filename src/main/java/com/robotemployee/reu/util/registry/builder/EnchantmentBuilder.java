@@ -5,6 +5,7 @@ import com.robotemployee.reu.util.registry.entry.EnchantmentRegistryEntry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -21,13 +22,23 @@ public class EnchantmentBuilder {
         this.MANAGER = manager;
     }
 
-    public record Manager(DatagenInstance datagenInstance) {
+    public static class Manager implements IManager {
+        protected final ModInformation modInformation;
+        public Manager(ModInformation modInformation) {
+            this.modInformation = modInformation;
+        }
+
         public DatagenInstance getDatagenInstance() {
-            return datagenInstance;
+            return modInformation.getDatagenInstance();
         }
 
         public EnchantmentBuilder createBuilder() {
             return new EnchantmentBuilder(this);
+        }
+
+        @Override
+        public void register(IEventBus modEventBus) {
+
         }
     }
 
@@ -42,7 +53,7 @@ public class EnchantmentBuilder {
     }
 
     public EnchantmentRegistryEntry build() {
-        ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(MANAGER.datagenInstance().MODID, name);
+        ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(MANAGER.getDatagenInstance().MODID, name);
 
         return new EnchantmentRegistryEntry(MANAGER.getDatagenInstance().modEnchantmentProviderManager.justPutDownTheSillyLittleThing(loc, () -> enchantment.get().build(loc)));
     }

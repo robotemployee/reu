@@ -6,18 +6,23 @@ import com.robotemployee.reu.util.registry.tools.EntityTools;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import com.robotemployee.reu.util.registry.entry.EntityRegistryEntry;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.core.Holder;
+import net.minecraft.client.renderer.entity.EntityRenderers;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.item.Item;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.DeferredSpawnEggItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.slf4j.Logger;
 
-import java.util.function.BiConsumer;
+import java.util.ArrayList;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class EntityBuilder<T extends Entity> {
@@ -32,50 +37,65 @@ public class EntityBuilder<T extends Entity> {
     private int eggColorA;
     private int eggColorB;
 
-    public static class Manager {
-        public final DatagenInstance datagenInstance;
-        public final DeferredRegister<EntityType<?>> register;
-        public final ItemBuilder.Manager itemManager;
+    // im fucking around with this one honestly shsush shhhh shhhhhhhhhhhh if it works it works
+    public static class Manager implements IManager {
+        private final DeferredRegister<EntityType<?>> register;
+        private final ItemBuilder.Manager itemManager;
 
-        public BiConsumer<Supplier<EntityType<? extends Entity>>, Supplier<EntityRendererProvider<? extends Entity>>> rendererReciever;
-        public Manager(DatagenInstance datagenInstance, DeferredRegister<EntityType<?>> register, ItemBuilder.Manager itemManager) {
-            this.datagenInstance = datagenInstance;
-            this.register = register;
+        @OnlyIn(Dist.CLIENT)
+        protected RendererCollector rendererCollector;
+
+        public Manager(ModInformation modInformation, ItemBuilder.Manager itemManager) {
+            this.register = DeferredRegister.create(Registries.ENTITY_TYPE, modInformation.getNamespace());
             this.itemManager = itemManager;
+            if (FMLEnvironment.dist.isClient()) rendererCollector = new RendererCollector(modInformation.getModEventBus());
         }
 
         public <T extends Entity> EntityBuilder<T> createBuilder() {
-            EntityBuilder<T> newborn = new EntityBuilder<>(datagenInstance, register, itemManager);
-            if (rendererReciever != null) {
-                newborn.withRendererReciever(rendererReciever);
-            }
+            EntityBuilder<T> newborn = new EntityBuilder<>(this, itemManager);
             return newborn;
         }
 
-        // this is required if you are using a custom renderer
-        // attach this to something that will register the renderer to the entity, it's a ClientModEvent. make a queue out of an ArrayList or something
-        // did not add that functionality directly here because events are static
-        public <T extends Entity> Manager withRendererReciever(BiConsumer<Supplier<EntityType<? extends T>>, Supplier<EntityRendererProvider<T>>> rendererReciever) {
-            this.rendererReciever = (BiConsumer<Supplier<EntityType<? extends Entity>>, Supplier<EntityRendererProvider<? extends Entity>>>)(Object) rendererReciever;
-            return this;
+        public DeferredRegister<EntityType<?>> getRegister() {
+            return register;
+        }
+
+        @Override
+        public void register(IEventBus modEventBus) {
+            register.register(modEventBus);
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public static class RendererCollector {
+            public RendererCollector(IEventBus modEventBus) {
+                modEventBus.addListener(this::onClientSetup);
+            }
+
+            private final ArrayList<Consumer<FMLClientSetupEvent>> CLIENT_SETUP_REQUESTS = new ArrayList<>();
+
+            public <T extends Entity> void addCustomRenderer(Supplier<EntityType<T>> entity, EntityRendererProvider<T> renderer) {
+                LOGGER.info("Queueing renderer " + renderer);
+                CLIENT_SETUP_REQUESTS.add(fmlClientSetupEvent -> {
+                    LOGGER.info("Registering renderer " + renderer + " for entity type " + entity.get().getDescriptionId());
+                    EntityRenderers.register(entity.get(), renderer);
+                });
+            }
+
+            @SubscribeEvent
+            public void onClientSetup(FMLClientSetupEvent event) {
+                for (Consumer<FMLClientSetupEvent> requests : CLIENT_SETUP_REQUESTS) {
+                    requests.accept(event);
+                }
+            }
         }
     }
 
-    private final DatagenInstance datagenInstance;
-    private final DeferredRegister<EntityType<?>> register;
+    private final Manager MANAGER;
     private final ItemBuilder.Manager itemManager;
-    private BiConsumer<Supplier<EntityType<? extends Entity>>, Supplier<EntityRendererProvider<? extends Entity>>> rendererReciever;
 
-    private EntityBuilder(DatagenInstance datagenInstance, DeferredRegister<EntityType<?>> register, ItemBuilder.Manager itemManager) {
-        this.datagenInstance = datagenInstance;
-        this.register = register;
+    private EntityBuilder(EntityBuilder.Manager manager, ItemBuilder.Manager itemManager) {
+        this.MANAGER = manager;
         this.itemManager = itemManager;
-    }
-
-    private EntityBuilder<T> withRendererReciever(BiConsumer<Supplier<EntityType<? extends Entity>>, Supplier<EntityRendererProvider<? extends Entity>>> rendererReciever) {
-        // sjut up
-        this.rendererReciever = rendererReciever;
-        return this;
     }
 
     public EntityBuilder<T> withTypeSupplier(Supplier<EntityType.Builder<T>> entityTypeBuilderSupplier) {
@@ -115,7 +135,7 @@ public class EntityBuilder<T extends Entity> {
     public EntityRegistryEntry<T> build() {
         checkForInsufficientParams();
         Supplier<EntityType<T>> entityTypeSupplier = () -> entityTypeBuilderSupplier.get().build(name);
-        Supplier<EntityType<T>> newborn = register.register(name, entityTypeSupplier);
+        Supplier<EntityType<T>> newborn = MANAGER.getRegister().register(name, entityTypeSupplier);
 
         if (attributesBuilderSupplier != null) {
             EntityTools.addAttributeRequest((Supplier<EntityType<? extends LivingEntity>>)(Object) newborn, () -> attributesBuilderSupplier.get().build());
@@ -136,7 +156,7 @@ public class EntityBuilder<T extends Entity> {
         //EntityRegistryEntry<T> entry = new EntityRegistryEntry<>(newborn);
 
         if (FMLEnvironment.dist.isClient()) {
-            if (rendererProvider != null) rendererReciever.accept(newborn::get, () -> rendererProvider);
+            if (rendererProvider != null) MANAGER.rendererCollector.addCustomRenderer(newborn, rendererProvider);
         }
 
         return new EntityRegistryEntry<>(newborn, egg);

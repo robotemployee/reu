@@ -5,8 +5,10 @@ import com.robotemployee.reu.util.registry.entry.CreativeTabMutableRegistryEntry
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import com.robotemployee.reu.util.registry.entry.ItemRegistryEntry;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
@@ -26,33 +28,42 @@ public class ItemBuilder {
     private Supplier<Item> supplier;
     private final ArrayList<Supplier<TagKey<Item>>> tags = new ArrayList<>();
     private BiConsumer<DatagenInstance, Supplier<Item>> datagenConsumer;
-    private final DatagenInstance datagenInstance;
-    private final DeferredRegister<Item> register;
-    @Nullable
-    private CreativeTabMutableRegistryEntry creativeModeTab;
+    private final Manager MANAGER;
+    private CreativeTabMutableRegistryEntry creativeTab;
 
     private boolean doDatagen = true;
 
-    protected ItemBuilder(DatagenInstance datagenInstance, DeferredRegister<Item> register, @Nullable CreativeTabMutableRegistryEntry creativeModeTab) {
+    protected ItemBuilder(Manager manager) {
         datagenConsumer = DatagenInstance::basicItem;
-        this.datagenInstance = datagenInstance;
-        this.register = register;
-        this.creativeModeTab = creativeModeTab;
+        this.MANAGER = manager;
+        this.creativeTab = manager.getDefaultTab();
     }
 
     @EventBusSubscriber
-    public static class Manager {
-        public final DatagenInstance datagenInstance;
-        public final DeferredRegister<Item> register;
-        public final List<Supplier<Item>> registeredItems = new ArrayList<>();
-        protected SoundBuilder.Manager soundManager;
+    public static class Manager implements IManager {
+        private final ModInformation modInformation;
+        private final DeferredRegister<Item> register;
+        private final List<Supplier<Item>> registeredItems = new ArrayList<>();
+        private SoundBuilder.Manager soundManager;
 
         @Nullable
         public CreativeTabMutableRegistryEntry defaultTab;
-        public Manager(@NotNull DatagenInstance datagenInstance, DeferredRegister<Item> register) {
-            this.datagenInstance = datagenInstance;
-            this.register = register;
+        public Manager(ModInformation modInformation) {
+            this.modInformation = modInformation;
+            this.register = DeferredRegister.create(Registries.ITEM, modInformation.getNamespace());
             Manager.MANAGERS.add(this);
+        }
+
+        public ModInformation getModInformation() {
+            return modInformation;
+        }
+
+        public DeferredRegister<Item> getRegister() {
+            return register;
+        }
+
+        public CreativeTabMutableRegistryEntry getDefaultTab() {
+            return defaultTab;
         }
 
         public Manager defaultCreativeTab(CreativeTabMutableRegistryEntry defaultTab) {
@@ -92,7 +103,7 @@ public class ItemBuilder {
         // and actually i think that queue was intended to be in your thing
 
         public ItemBuilder createBuilder() {
-            return new ItemBuilder(datagenInstance, register, defaultTab);
+            return new ItemBuilder(this);
         }
 
         public static final List<Manager> MANAGERS = new ArrayList<>();
@@ -100,6 +111,11 @@ public class ItemBuilder {
         @SubscribeEvent
         public static void onRegisterCapabilities(RegisterCapabilitiesEvent event) {
             MANAGERS.forEach(manager -> manager.registerMyCapabilities(event));
+        }
+
+        @Override
+        public void register(IEventBus modEventBus) {
+            register.register(modEventBus);
         }
     }
 
@@ -115,11 +131,11 @@ public class ItemBuilder {
 
     public ItemRegistryEntry build() {
         checkForInsufficientParams();
-        DeferredHolder<Item, Item> newborn = register.register(name, supplier);
-        if (creativeModeTab != null) creativeModeTab.addItem(newborn::value);
-        if (doDatagen) datagenConsumer.accept(datagenInstance, newborn::value);
+        DeferredHolder<Item, Item> newborn = MANAGER.getRegister().register(name, supplier);
+        if (creativeTab != null) creativeTab.addItem(newborn::value);
+        if (doDatagen) datagenConsumer.accept(MANAGER.getModInformation().getDatagenInstance(), newborn::value);
         for (Supplier<TagKey<Item>> tag : tags) {
-            datagenInstance.addTagToItem(newborn::value, tag);
+            MANAGER.getModInformation().getDatagenInstance().addTagToItem(newborn::value, tag);
         }
         return new ItemRegistryEntry(newborn);
     }
@@ -150,12 +166,12 @@ public class ItemBuilder {
     }
 
     public ItemBuilder overrideCreativeTab(CreativeTabMutableRegistryEntry creativeModeTab) {
-        this.creativeModeTab = creativeModeTab;
+        this.creativeTab = creativeModeTab;
         return this;
     }
 
     public ItemBuilder noCreativeTab() {
-        this.creativeModeTab = null;
+        this.creativeTab = null;
         return this;
     }
 

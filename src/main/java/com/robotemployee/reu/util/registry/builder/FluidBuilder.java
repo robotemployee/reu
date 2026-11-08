@@ -9,6 +9,7 @@ import com.robotemployee.reu.util.registry.entry.ItemRegistryEntry;
 import com.robotemployee.reu.util.registry.generics.FilledBottleItem;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
@@ -17,8 +18,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.Fluid;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -50,32 +53,48 @@ public class FluidBuilder {
 
     int tint = 0xFFFFFF;
 
-    public static class Manager {
-        private final DatagenInstance datagenInstance;
+    public static class Manager implements IManager {
         private final ItemBuilder.Manager itemManager;
         private final BlockBuilder.Manager blockManager;
         private final DeferredRegister<Fluid> register;
-        public Manager(DatagenInstance datagenInstance, ItemBuilder.Manager itemManager, BlockBuilder.Manager blockManager, DeferredRegister<Fluid> register) {
-            this.datagenInstance = datagenInstance;
+        private final ModInformation modInformation;
+
+        public Manager(ModInformation modInformation, ItemBuilder.Manager itemManager, BlockBuilder.Manager blockManager) {
+            this.modInformation = modInformation;
             this.itemManager = itemManager;
             this.blockManager = blockManager;
-            this.register = register;
+            this.register = DeferredRegister.create(Registries.FLUID, modInformation.getNamespace());
         }
 
         public FluidBuilder createBuilder() {
-            return new FluidBuilder(datagenInstance, itemManager, blockManager, register);
+            return new FluidBuilder(this);
+        }
+
+        @Override
+        public void register(IEventBus modEventBus) {
+            register.register(modEventBus);
+        }
+
+        public ItemBuilder.Manager getItemManager() {
+            return itemManager;
+        }
+
+        public BlockBuilder.Manager getBlockManager() {
+            return blockManager;
+        }
+
+        public ModInformation getModInformation() {
+            return modInformation;
+        }
+
+        public DeferredRegister<Fluid> getRegister() {
+            return register;
         }
     }
 
-    private final DatagenInstance datagenInstance;
-    private final ItemBuilder.Manager itemManager;
-    private final BlockBuilder.Manager blockManager;
-    private final DeferredRegister<Fluid> register;
-    private FluidBuilder(DatagenInstance datagenInstance, ItemBuilder.Manager itemManager, BlockBuilder.Manager blockManager, DeferredRegister<Fluid> register) {
-        this.datagenInstance = datagenInstance;
-        this.itemManager = itemManager;
-        this.blockManager = blockManager;
-        this.register = register;
+    private final Manager MANAGER;
+    private FluidBuilder(Manager manager) {
+        this.MANAGER = manager;
     }
 
     // Required things
@@ -103,7 +122,7 @@ public class FluidBuilder {
 
     public FluidRegistryEntry build() {
 
-        DeferredRegister<Fluid> FLUIDS = register;
+        DeferredRegister<Fluid> FLUIDS = MANAGER.getRegister();
 
         checkForInsufficientParams();
 
@@ -133,18 +152,18 @@ public class FluidBuilder {
 
         if (hasBucket) {
             Supplier<Item> supplier = getBucketSupplier(sourceFluid);
-            bucket = itemManager.createBuilder().withName(name + "_bucket").withSupplier(supplier).build();
+            bucket = MANAGER.getItemManager().createBuilder().withName(name + "_bucket").withSupplier(supplier).build();
             // fixme FluidTools.bucketLookupTable.put(sourceFluid, bucket);
             queueBucketDatagen(bucket);
         } else bucket = null;
         if (hasBottle) {
             Supplier<Item> supplier = getBottleSupplier(sourceFluid);
-            bottle = itemManager.createBuilder().withName(name + "_bottle").withSupplier(supplier).build();
+            bottle = MANAGER.getItemManager().createBuilder().withName(name + "_bottle").withSupplier(supplier).build();
             // fixme FluidTools.bottleLookupTable.put(sourceFluid, bottle);
             queueBottleDatagen(bottle);
         } else bottle = null;
         if (hasBlock) {
-            block = blockManager.createBuilder().withName(name).withSupplier(getBlockSupplier(() -> (BaseFlowingFluid.Source)sourceFluid.get())).noCreativeTab().build();
+            block = MANAGER.getBlockManager().createBuilder().withName(name).withSupplier(getBlockSupplier(() -> (BaseFlowingFluid.Source)sourceFluid.get())).noCreativeTab().build();
             //block = BLOCKS.register(name, getBlockSupplier());
         } else block = null;
 
@@ -257,11 +276,11 @@ public class FluidBuilder {
     }
 
     private void queueBucketDatagen(Supplier<Item> supplier) {
-        datagenInstance.generateBucket(supplier);
+        MANAGER.getModInformation().getDatagenInstance().generateBucket(supplier);
     }
 
     private void queueBottleDatagen(Supplier<Item> supplier) {
-        datagenInstance.generateBottle(supplier);
+        MANAGER.getModInformation().getDatagenInstance().generateBottle(supplier);
     }
 
     public enum Mode {

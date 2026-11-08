@@ -3,11 +3,13 @@ package com.robotemployee.reu.util.registry.builder;
 import com.robotemployee.reu.util.datagen.DatagenInstance;
 import com.robotemployee.reu.util.registry.entry.SoundRegistryEntry;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.JukeboxSong;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.data.SoundDefinition;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -29,14 +31,16 @@ public class SoundBuilder {
     private BiFunction<Holder<SoundEvent>, ResourceLocation, JukeboxSong> jukeboxSongCreator;
     private String jukeboxSongName;
 
-    public static class Manager {
-        public final DatagenInstance datagenInstance;
+    public static class Manager implements IManager {
+        private final ModInformation modInformation;
         public final DeferredRegister<SoundEvent> register;
-        public final String modid;
-        public Manager(DatagenInstance datagenInstance, DeferredRegister<SoundEvent> register, String modid)  {
-            this.datagenInstance = datagenInstance;
-            this.register = register;
-            this.modid = modid;
+        public Manager(ModInformation modInformation)  {
+            this.modInformation = modInformation;
+            this.register = DeferredRegister.create(Registries.SOUND_EVENT, modInformation.getNamespace());
+        }
+
+        public ModInformation getModInformation() {
+            return modInformation;
         }
 
         public SoundBuilder createBuilder() {
@@ -47,12 +51,9 @@ public class SoundBuilder {
             return register;
         }
 
-        public DatagenInstance getDatagenInstance() {
-            return datagenInstance;
-        }
-
-        public String getModid() {
-            return modid;
+        @Override
+        public void register(IEventBus modEventBus) {
+            register.register(modEventBus);
         }
     }
 
@@ -67,7 +68,7 @@ public class SoundBuilder {
     }
 
     public SoundBuilder soundLocation(String path) {
-        this.location = ResourceLocation.fromNamespaceAndPath(MANAGER.getModid(), path);
+        this.location = ResourceLocation.fromNamespaceAndPath(MANAGER.getModInformation().getNamespace(), path);
         return this;
     }
 
@@ -117,7 +118,7 @@ public class SoundBuilder {
         checkForInsufficientParams();
         DeferredHolder<SoundEvent, SoundEvent> newborn;
 
-        ResourceLocation identifier = ResourceLocation.fromNamespaceAndPath(MANAGER.getModid(), name);
+        ResourceLocation identifier = ResourceLocation.fromNamespaceAndPath(MANAGER.getModInformation().getNamespace(), name);
         ResourceLocation jukeboxSongLoc = identifier;
 
         // if i ever look back here in the future
@@ -139,7 +140,7 @@ public class SoundBuilder {
         ResourceKey<JukeboxSong> jukeboxSongKey;
         if (jukeboxSongCreator != null) {
             JukeboxSong song = jukeboxSongCreator.apply(newborn, jukeboxSongLoc);
-            jukeboxSongKey = MANAGER.getDatagenInstance().modJukeboxSongProviderManager.registerJukeboxSong(jukeboxSongLoc, song);
+            jukeboxSongKey = MANAGER.getModInformation().getDatagenInstance().modJukeboxSongProviderManager.registerJukeboxSong(jukeboxSongLoc, song);
         } else jukeboxSongKey = null;
 
         runDatagen(newborn);
@@ -149,7 +150,7 @@ public class SoundBuilder {
     protected ResourceLocation getSoundFileLocation() {
         if (location != null) return location;
         if (name == null) throw new IllegalStateException("Name nor location present when trying to get resource location. Don't try to get the resource location outside of build()");
-        return ResourceLocation.fromNamespaceAndPath(MANAGER.getModid(), name);
+        return ResourceLocation.fromNamespaceAndPath(MANAGER.getModInformation().getNamespace(), name);
     }
 
 
@@ -159,7 +160,7 @@ public class SoundBuilder {
             if (soundModifier != null) soundModifier.accept(sound);
             definition = SoundDefinition.definition().with(sound);
         }
-        MANAGER.getDatagenInstance().modSoundProviderManager.register(newborn, definition);
+        MANAGER.getModInformation().getDatagenInstance().modSoundProviderManager.register(newborn, definition);
     }
 
     private void checkForInsufficientParams() {
